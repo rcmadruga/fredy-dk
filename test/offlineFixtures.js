@@ -241,6 +241,7 @@ export function buildFetchMock() {
   let bieniciPlaces = null;
   let bieniciList = null;
   let bieniciDetail = null;
+  let boligsidenCases = null;
 
   return async (url, init) => {
     const urlStr = String(url);
@@ -418,6 +419,14 @@ export function buildFetchMock() {
     // The one thing in a search request that says which national site it belongs to is its
     // geocode: Austrian adverts live in the German index under `/at/...`, everything else is
     // Germany's own.
+    if (urlStr.includes('api.boligsiden.dk/search/cases')) {
+      if (boligsidenCases == null) {
+        const raw = await tryReadFile(path.join(FIXTURES_DIR, 'boligsiden_cases.json'));
+        boligsidenCases = raw ? JSON.parse(raw) : { cases: [] };
+      }
+      return { ok: true, status: 200, json: () => Promise.resolve(boligsidenCases) };
+    }
+
     if (urlStr.includes('api.mobile.immobilienscout24.de/search/list')) {
       const country = immoscoutCountryOf(urlStr);
       if (!immoscoutListData[country]) {

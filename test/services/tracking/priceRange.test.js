@@ -144,6 +144,14 @@ const RECORDED_SEARCHES = [
     'https://www.seloger.com/classified-search?distributionTypes=Rent&estateTypes=Apartment&locations=AD08FR31096&priceMin=500&priceMax=1000',
     { min: 500, max: 1000 },
   ],
+  // boligsiden has no page to record a URL from - www.boligsiden.dk sits behind a Cloudflare
+  // challenge - so the job's "search URL" is a direct, hand-built query against the JSON API its
+  // own frontend calls (see lib/provider/boligsiden.js). priceMin/priceMax verified live.
+  [
+    'boligsiden',
+    'https://api.boligsiden.dk/search/cases?addressTypes=villa,condo&zipCodes=5000&priceMin=1000000&priceMax=2000000',
+    { min: 1000000, max: 2000000 },
+  ],
 ];
 
 /**
