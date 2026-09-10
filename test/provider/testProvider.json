@@ -98,5 +98,9 @@
   "subito": {
     "url": "https://www.subito.it/annunci-lazio/affitto/appartamenti/roma/",
     "enabled": true
+  },
+  "boligsiden": {
+    "url": "https://api.boligsiden.dk/search/cases?addressTypes=villa,condo&zipCodes=5000",
+    "enabled": true
   }
 }

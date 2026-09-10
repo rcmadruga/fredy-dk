@@ -184,6 +184,7 @@ export function buildFetchMock() {
   let willhabenHtml = null;
   let flatfoxPins = null;
   let flatfoxListings = null;
+  let boligsidenCases = null;
 
   return async (url, init) => {
     const urlStr = String(url);
@@ -296,6 +297,14 @@ export function buildFetchMock() {
         flatfoxListings = raw ? JSON.parse(raw) : { results: [] };
       }
       return { ok: true, status: 200, json: () => Promise.resolve(flatfoxListings) };
+    }
+
+    if (urlStr.includes('api.boligsiden.dk/search/cases')) {
+      if (boligsidenCases == null) {
+        const raw = await tryReadFile(path.join(FIXTURES_DIR, 'boligsiden_cases.json'));
+        boligsidenCases = raw ? JSON.parse(raw) : { cases: [] };
+      }
+      return { ok: true, status: 200, json: () => Promise.resolve(boligsidenCases) };
     }
 
     if (urlStr.includes('api.mobile.immobilienscout24.de/search/list')) {
