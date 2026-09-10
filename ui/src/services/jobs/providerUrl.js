@@ -64,14 +64,37 @@ function carriesASearch(url) {
 }
 
 /**
+ * The host(s) a pasted URL is allowed to live on.
+ *
+ * Almost every provider is reached at the same host the job form links to, so `baseUrl` alone
+ * answers this. `searchHosts` exists for the rest: a provider whose actual search endpoint sits on
+ * a different host than the page a human would browse to configure a search - see boligsiden.js,
+ * reached through api.boligsiden.dk while baseUrl still points at www.boligsiden.dk for the "open
+ * in new tab" link. When it is declared, it replaces baseUrl's host rather than adding to it: a URL
+ * copied from baseUrl's own host would parse here but carry none of the query shape the provider's
+ * `getListings` expects, and would fail silently exactly the way this whole check exists to prevent.
+ *
+ * @param {{baseUrl?: string, searchHosts?: string[]}|null|undefined} provider
+ * @returns {string[]}
+ */
+function expectedHostsOf(provider) {
+  if (Array.isArray(provider?.searchHosts) && provider.searchHosts.length > 0) {
+    return provider.searchHosts.map(normalizeHost).filter((host) => host != null);
+  }
+  const host = normalizeHost(provider?.baseUrl);
+  return host == null ? [] : [host];
+}
+
+/**
  * Check a pasted provider URL.
  *
  * @param {string|null|undefined} url
- * @param {{id: string, name: string, baseUrl: string}|null|undefined} provider
+ * @param {{id: string, name: string, baseUrl: string, searchHosts?: string[]}|null|undefined} provider
  * @returns {{ok: boolean, problem: ProviderUrlProblem, expectedHost: string|null}}
  */
 export function validateProviderUrl(url, provider) {
-  const expectedHost = normalizeHost(provider?.baseUrl);
+  const expectedHosts = expectedHostsOf(provider);
+  const expectedHost = expectedHosts[0] ?? null;
 
   if (provider == null) {
     return { ok: false, problem: 'noProvider', expectedHost: null };
@@ -84,7 +107,7 @@ export function validateProviderUrl(url, provider) {
   if (inputHost == null) {
     return { ok: false, problem: 'unparsable', expectedHost };
   }
-  if (expectedHost == null || inputHost !== expectedHost) {
+  if (expectedHosts.length === 0 || !expectedHosts.includes(inputHost)) {
     return { ok: false, problem: 'wrongHost', expectedHost };
   }
   if (!carriesASearch(url)) {
