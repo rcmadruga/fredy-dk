@@ -86,6 +86,28 @@ describe('validateProviderUrl', () => {
       problem: 'wrongHost',
     });
   });
+
+  describe('a provider whose search host differs from its baseUrl (e.g. boligsiden)', () => {
+    const boligsiden = {
+      id: 'boligsiden',
+      name: 'Boligsiden',
+      baseUrl: 'https://www.boligsiden.dk/',
+      hosts: ['api.boligsiden.dk'],
+    };
+
+    it('accepts a url on the declared search host, not on baseUrl', () => {
+      const result = validateProviderUrl(
+        'https://api.boligsiden.dk/search/cases?addressTypes=villa,condo&zipCodes=5000',
+        boligsiden,
+      );
+      expect(result).toMatchObject({ ok: true, problem: null, expectedHost: 'api.boligsiden.dk' });
+    });
+
+    it('refuses a url on baseUrl itself once hosts replaces it', () => {
+      const result = validateProviderUrl('https://www.boligsiden.dk/tilsalg/odense', boligsiden);
+      expect(result).toMatchObject({ ok: false, problem: 'wrongHost', expectedHost: 'api.boligsiden.dk' });
+    });
+  });
 });
 
 // A portal serving several countries as several domains - immowelt as .de and .at, idealista as

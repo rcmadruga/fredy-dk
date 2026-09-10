@@ -69,7 +69,11 @@ function carriesASearch(url) {
  * Most portals have one, and `baseUrl` is it. A portal serving several countries as several domains
  * declares them all - immowelt as `.de` and `.at`, idealista as `.com`, `.it` and `.pt` - and
  * comparing against `baseUrl` alone is what used to refuse a perfectly good Austrian or Italian
- * search with "that address is not on immowelt.de".
+ * search with "that address is not on immowelt.de". It is also what a provider reached through a
+ * different host than the page a human would browse declares instead of `baseUrl` - boligsiden.js
+ * is reached through api.boligsiden.dk while `baseUrl` still points at www.boligsiden.dk for the
+ * "open in new tab" link, so a URL copied from `baseUrl`'s own host would parse here but carry none
+ * of the query shape the provider's `getListings` expects.
  *
  * @param {{baseUrl?: string, hosts?: string[]}|null|undefined} provider
  * @returns {string[]} bare hosts, possibly empty when the provider declares nothing usable.
