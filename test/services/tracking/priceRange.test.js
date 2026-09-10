@@ -99,6 +99,14 @@ const RECORDED_SEARCHES = [
     'https://immobilien.sparkasse.de/immobilien/treffer?estateTypeGroupingId=403&marketingType=buy&maxPrice=500000&minPrice=100000&perimeter=10&usageType=residential&zipCityEstateId=51.22422%2F6.78006%2F0__D%C3%BCsseldorf',
     { min: 100000, max: 500000 },
   ],
+  // boligsiden has no page to record a URL from - www.boligsiden.dk sits behind a Cloudflare
+  // challenge - so the job's "search URL" is a direct, hand-built query against the JSON API its
+  // own frontend calls (see lib/provider/boligsiden.js). priceMin/priceMax verified live.
+  [
+    'boligsiden',
+    'https://api.boligsiden.dk/search/cases?addressTypes=villa,condo&zipCodes=5000&priceMin=1000000&priceMax=2000000',
+    { min: 1000000, max: 2000000 },
+  ],
 ];
 
 /**

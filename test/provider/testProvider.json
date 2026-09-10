@@ -80,5 +80,9 @@
   "idealista": {
     "url": "https://www.idealista.com/alquiler-viviendas/madrid-madrid/",
     "enabled": true
+  },
+  "boligsiden": {
+    "url": "https://api.boligsiden.dk/search/cases?addressTypes=villa,condo&zipCodes=5000",
+    "enabled": true
   }
 }
