@@ -18,19 +18,80 @@
  *     < ~/fredy-dk/tools/deploy/browser-probe.mjs
  *
  * For each URL it prints the HTTP status, the page title once any challenge has had time to resolve,
- * a sample of the visible text, how many links the page has, and every JSON response the page fetched
- * (URL, size, first bytes) - the shortlist of endpoints a provider could call directly. The full HTML
- * and each JSON body are written to /tmp/probe-out inside the container, to `docker cp` out as
- * fixtures:
+ * a sample of the visible text, and how many links the page has. Then where the data comes from:
+ * every request the page made for data (method and URL, whatever it answered), every JSON response
+ * that could be read (URL, size, first bytes), and what the HTML itself embeds - listing links, a
+ * sample card, JSON blobs in script tags, API paths named in the page. That is the shortlist a
+ * provider is built from. The full HTML and each JSON body are written to /tmp/probe-out inside the
+ * container, to `docker cp` out as fixtures:
  *
  *   docker cp fredy-new:/tmp/probe-out ./probe-out
  *
  * Options (before the URLs): --wait=<seconds> to give a slow challenge longer (default 30),
  * --dry-run to check the arguments and that the browser library resolves, without opening a browser.
+ * --inspect-file=<path> runs only the HTML inspection on a saved page, with no browser and no URL.
  */
 
 import fs from 'fs';
 import path from 'path';
+import * as cheerio from 'cheerio';
+
+/** A link to one advert: BoligPortal writes `...-id-5670816`, others `/id-123` or `/annonce/123`. */
+const AD_LINK = /(-id-\d+|\/id-\d+|\/annonce\/\d+|\/bolig\/\d+)/i;
+
+/**
+ * What a page's HTML says about where its listings come from, as lines of text.
+ *
+ * Runs on a string, in Node, so it can be tried on a saved page without a browser.
+ *
+ * @param {string} html
+ * @returns {string[]}
+ */
+export function inspectHtml(html) {
+  const $ = cheerio.load(html);
+  const lines = [];
+
+  const adLinks = [...new Set($('a[href]').map((_, a) => $(a).attr('href')).get().filter((href) => AD_LINK.test(href)))];
+  lines.push(`advert links:   ${adLinks.length}${adLinks.length ? ` e.g. ${adLinks.slice(0, 3).join('  ')}` : ''}`);
+
+  const total = $('body').text().replace(/\s+/g, ' ').match(/(\d[\d.,]*)\s+(lejeboliger|boliger|resultater|annoncer|lejligheder)/i);
+  if (total) lines.push(`result count:   "${total[0]}"`);
+
+  const first = adLinks.length ? $(`a[href="${adLinks[0]}"]`).first() : null;
+  if (first?.length) {
+    const card = first.closest('article, li, [class*="card" i], [class*="result" i]');
+    const markup = (card.length ? card : first.parent()).toString().replace(/\s+/g, ' ');
+    lines.push(`first card:     ${markup.slice(0, 900)}`);
+  }
+
+  const scripts = $('script:not([src])')
+    .map((_, el) => ({ type: $(el).attr('type') ?? '', id: $(el).attr('id') ?? '', text: $(el).text() }))
+    .get()
+    .filter((script) => script.text.length > 1500);
+  lines.push(`inline scripts: ${scripts.length} over 1.5 kB`);
+  for (const script of scripts.slice(0, 12)) {
+    const label = `${script.id || script.type || 'script'} ${script.text.length}B`;
+    let shape = '';
+    try {
+      const parsed = JSON.parse(script.text);
+      shape = Array.isArray(parsed)
+        ? `JSON array of ${parsed.length}`
+        : `JSON keys: ${Object.keys(parsed).slice(0, 12).join(', ')}`;
+    } catch {
+      const assigned = [...script.text.matchAll(/window\.([A-Za-z_$][\w$]*)\s*=/g)].map((m) => m[1]);
+      const adsArrays = (script.text.match(/"(ads|results|listings|items)"\s*:\s*\[/g) ?? []).length;
+      shape = `not JSON${assigned.length ? `; assigns window.${[...new Set(assigned)].join(', window.')}` : ''}${adsArrays ? `; ${adsArrays} list-like arrays` : ''}`;
+    }
+    lines.push(`  ${label}: ${shape}`);
+  }
+
+  const apiPaths = [...new Set(html.match(/\/api\/[a-zA-Z0-9_\-/]+/g) ?? [])].slice(0, 25);
+  lines.push(`api paths named in the page: ${apiPaths.length ? apiPaths.join('  ') : '(none)'}`);
+
+  const paging = [...new Set($('a[href]').map((_, a) => $(a).attr('href')).get().filter((href) => /[?&](page|offset|side)=\d+/.test(href)))];
+  lines.push(`paging links:   ${paging.length}${paging.length ? ` e.g. ${paging.slice(0, 3).join('  ')}` : ''}`);
+  return lines;
+}
 
 const OUT_DIR = '/tmp/probe-out';
 const args = process.argv.slice(2);
@@ -41,6 +102,12 @@ const option = (name, fallback) => {
 const urls = args.filter((arg) => /^https?:\/\//.test(arg));
 const dryRun = args.includes('--dry-run');
 const waitSeconds = Number(option('wait', 30));
+const inspectFile = option('inspect-file', null);
+
+if (inspectFile) {
+  inspectHtml(fs.readFileSync(inspectFile, 'utf8')).forEach((line) => console.log(line));
+  process.exit(0);
+}
 
 if (urls.length === 0) {
   console.error('Usage: node - [--wait=30] [--dry-run] <url> [<url>...]   (script on stdin)');
@@ -88,7 +155,18 @@ try {
     const base = slug(url);
     let mainStatus = null;
     const jsonResponses = [];
+    const failedReads = [];
+    const dataRequests = new Set();
     const pending = [];
+
+    // Every request the page makes for data, whether or not its answer could be read below - the
+    // list of results can come from a call whose body was not readable, and hiding that is how a
+    // probe ends up saying "no list" about a page that has one.
+    page.on('request', (request) => {
+      if (['xhr', 'fetch'].includes(request.resourceType())) {
+        dataRequests.add(`${request.method()} ${request.url().slice(0, 170)}`);
+      }
+    });
 
     page.on('response', (response) => {
       if (response.url() === url) mainStatus = response.status();
@@ -100,7 +178,7 @@ try {
           .then((body) => {
             jsonResponses.push({ url: response.url(), status: response.status(), bytes: body.length, body });
           })
-          .catch(() => {}),
+          .catch((error) => failedReads.push(`${response.url().slice(0, 130)} (${error.message})`)),
       );
     });
 
@@ -141,6 +219,15 @@ try {
     console.log(`text:        ${page_.text.length} chars - ${page_.text.slice(0, 240)}`);
     console.log(`links:       ${page_.links.length} (${new Set(page_.links.map((l) => new URL(l).hostname)).size} hosts)`);
     console.log(`html saved:  ${path.join(OUT_DIR, `${base}.html`)} (${page_.html.length} bytes)`);
+
+    console.log(`data requests: ${dataRequests.size}`);
+    [...dataRequests].forEach((request) => console.log(`  ${request}`));
+    if (failedReads.length) {
+      console.log(`unreadable json responses: ${failedReads.length}`);
+      failedReads.forEach((line) => console.log(`  ${line}`));
+    }
+    console.log('what the HTML embeds:');
+    inspectHtml(page_.html).forEach((line) => console.log(`  ${line}`));
 
     console.log(`json calls:  ${jsonResponses.length}`);
     jsonResponses.forEach((entry, index) => {
