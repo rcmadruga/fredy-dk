@@ -1,0 +1,73 @@
+/*
+ * Copyright (c) 2026 by Christian Kellner.
+ * Licensed under Apache-2.0 with Commons Clause and Attribution/Naming Clause
+ */
+
+@import '../../tokens.less';
+
+.school-panel {
+  &__summary {
+    min-height: 24px;
+  }
+
+  &__section {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    // The rule above each block, so the panel reads as a few groups rather than one long list.
+    padding-top: 10px;
+    border-top: 1px solid @color-map-panel-border;
+  }
+
+  &__kind {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  // The legend swatch: the marker's own colour, ringed like the marker. The ring is the theme's
+  // surface rather than a literal white, so it follows the light and the dark theme.
+  &__dot {
+    flex: none;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 1.5px solid @color-surface;
+    box-shadow: 0 0 0 1px @color-map-panel-border;
+  }
+
+  &__slider {
+    padding: 0 6px;
+  }
+
+  &__sliderLabels {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.3rem;
+    color: @color-muted;
+    font-size: 0.75rem;
+  }
+
+  // The slider's own look. Scoped here rather than left to the listings view's global rules, which
+  // are only there when that view has been loaded.
+  .range-slider {
+    background: @color-fill-strong;
+    border-radius: 4px;
+    height: 4px !important;
+  }
+
+  .range-slider .range-slider__range {
+    background: @color-accent;
+  }
+
+  .range-slider .range-slider__thumb {
+    position: absolute;
+    z-index: 3;
+    top: 50%;
+    width: 14px;
+    height: 14px;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    background: @color-accent;
+  }
+}

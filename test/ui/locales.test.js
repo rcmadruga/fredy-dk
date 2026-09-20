@@ -22,6 +22,7 @@ import { SCAM_SIGNALS } from '../../ui/src/services/listings/scamSignals.js';
 import { PLACEHOLDERS, FLAG_PLACEHOLDERS } from '../../lib/services/application/placeholders.js';
 import { TEMPLATE_LANGUAGES } from '../../lib/services/application/templates/index.js';
 import { TOUR_STEPS, stepBodyKey, stepTitleKey } from '../../ui/src/services/tour/tourSteps.js';
+import { SCHOOL_CATEGORIES } from '../../ui/src/components/map/schoolFilters.js';
 
 const localeDir = path.join(path.dirname(fileURLToPath(import.meta.url)), '../../ui/src/locales');
 const donateComponent = fs.readFileSync(path.join(localeDir, '../components/donate/Donate.jsx'), 'utf-8');
@@ -102,6 +103,17 @@ const UNTRANSLATED_BACKLOG = {
     'map.schoolPopupSpecialSchool',
     'map.schoolPopupPupils',
     'map.schoolPopupYear',
+    'map.schoolShowing',
+    'map.schoolResetFilters',
+    'map.schoolTypeTitle',
+    'map.schoolCategory.special',
+    'map.schoolCategory.folkeskole',
+    'map.schoolCategory.friskole',
+    'map.schoolCategory.efterskole',
+    'map.schoolCategory.other',
+    'map.schoolScoreTitle',
+    'map.schoolIncludeUnscored',
+    'map.schoolScoreNote',
   ],
 };
 
@@ -185,6 +197,9 @@ const COMPUTED_KEYS = [
   ...['In', 'Ago'].flatMap((direction) =>
     ['Minutes', 'Hours', 'Day', 'Days'].map((unit) => `dashboard.time${direction}${unit}`),
   ),
+  // The kinds of school the map colours by, which the panel writes out as a legend and the special
+  // one as its own switch. Built from the list, so adding a kind is what adds the assertion.
+  ...SCHOOL_CATEGORIES.map((category) => `map.schoolCategory.${category.id}`),
 ];
 
 /**
