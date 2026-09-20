@@ -52,6 +52,9 @@ const MAP_URL_STATE = {
   // On by default: "how do I get out of here?" is asked about every flat, so the answer should be
   // on screen without switching anything on first. `?transit=false` turns it off.
   transit: { defaultValue: true, codec: parseBoolean },
+  // Denmark-only and off by default - see `MapControls.jsx`/`Map.jsx` for the scoping.
+  taxLayer: { defaultValue: false, codec: parseBoolean },
+  schoolLayer: { defaultValue: false, codec: parseBoolean },
 };
 
 /**
@@ -105,6 +108,8 @@ export default function MapView() {
     style,
     buildings: show3dBuildings,
     transit: showTransit,
+    taxLayer,
+    schoolLayer,
   } = urlState;
   const setJobId = (value) => setUrlValue('job', value);
   const setDistanceFilter = (value) => setUrlValue('distance', value);
@@ -212,13 +217,15 @@ export default function MapView() {
    * `setValues` drops any value equal to its declared default, so a pristine view keeps a clean
    * address, and the map already clears the 3D buildings flag when the basemap goes to satellite.
    *
-   * @param {{style?: string, show3dBuildings?: boolean, showTransit?: boolean}} patch
+   * @param {{style?: string, show3dBuildings?: boolean, showTransit?: boolean, taxLayer?: boolean, schoolLayer?: boolean}} patch
    */
   const handleControlsChange = (patch) => {
     setValues({
       ...('style' in patch ? { style: patch.style } : {}),
       ...('show3dBuildings' in patch ? { buildings: patch.show3dBuildings } : {}),
       ...('showTransit' in patch ? { transit: patch.showTransit } : {}),
+      ...('taxLayer' in patch ? { taxLayer: patch.taxLayer } : {}),
+      ...('schoolLayer' in patch ? { schoolLayer: patch.schoolLayer } : {}),
     });
   };
 
@@ -476,6 +483,8 @@ export default function MapView() {
             style={style}
             show3dBuildings={show3dBuildings}
             showTransit={showTransit}
+            taxLayer={taxLayer}
+            schoolLayer={schoolLayer}
             onControlsChange={handleControlsChange}
             controlsMode="always"
             transitExtra={

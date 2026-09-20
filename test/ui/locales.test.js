@@ -88,6 +88,13 @@ const UNTRANSLATED_BACKLOG = {
     'settings.toastListingAttachmentInvalid',
     'listings.cardDocumentsOne',
     'listings.cardDocuments',
+    'map.filterTaxLayer',
+    'map.filterSchoolLayer',
+    'map.filterSchoolLayerUnavailable',
+    'map.taxPopupKommuneskat',
+    'map.taxPopupGrundskyld',
+    'map.schoolPopupGradeAverage',
+    'map.schoolPopupInclusionPct',
   ],
 };
 

@@ -71,6 +71,7 @@
     "@modelcontextprotocol/sdk": "^1.30.0",
     "@sendgrid/mail": "8.1.6",
     "@turf/boolean-point-in-polygon": "^7.4.0",
+    "@turf/simplify": "^7.4.0",
     "@vitejs/plugin-react": "6.1.1",
     "adm-zip": "^0.6.1",
     "better-sqlite3": "^13.0.3",

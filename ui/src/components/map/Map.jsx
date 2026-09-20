@@ -3,7 +3,7 @@
  * Licensed under Apache-2.0 with Commons Clause and Attribution/Naming Clause
  */
 
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '@douyinfe/semi-ui-19';
 import { IconFullScreenStroked, IconShrinkScreenStroked } from '@douyinfe/semi-icons';
 import maplibregl from './maplibre.js';
@@ -21,6 +21,8 @@ import { ensureTransitIcons } from './transitIcons.js';
 import { boundsForCountries, DEFAULT_COUNTRIES } from './countryBounds.js';
 import { keepPopupInView, mountPopupNode } from './popupContent.jsx';
 import DeparturesBoard from '../transit/DeparturesBoard.jsx';
+import { applyTaxLayer, applySchoolLayer, TAX_FILL_LAYER_ID, SCHOOL_LAYER_ID } from './regionalDataLayers.js';
+import { fetchTaxChoropleth, fetchSchoolLayer } from '../../services/regionalData/regionalData.js';
 import { useControllableState } from '../../hooks/useControllableState.js';
 import { useSelector } from '../../services/state/store.js';
 import { useTranslation } from '../../services/i18n/i18n.jsx';
@@ -114,9 +116,17 @@ const GERMANY_CENTER = [10.4515, 51.1657];
  * @param {'STANDARD'|'SATELLITE'} [props.style] - Controlled basemap.
  * @param {boolean} [props.show3dBuildings] - Controlled 3D buildings overlay.
  * @param {boolean} [props.showTransit] - Controlled public transport overlay.
+ * @param {boolean} [props.taxLayer] - Controlled Denmark kommune tax choropleth. Offered only while
+ *   `countries` includes `dk`; fetched (and cached for the life of this map instance) the first time
+ *   it is switched on.
+ * @param {boolean} [props.schoolLayer] - Controlled Denmark school grades/inclusion overlay. Same
+ *   Denmark scoping as `taxLayer`; disabled in `MapControls` with an explanatory tooltip when the
+ *   server has no `UDDANNELSESSTATISTIK_API_KEY` configured.
  * @param {'STANDARD'|'SATELLITE'} [props.defaultStyle]
  * @param {boolean} [props.defaultShow3dBuildings]
  * @param {boolean} [props.defaultShowTransit]
+ * @param {boolean} [props.defaultTaxLayer]
+ * @param {boolean} [props.defaultSchoolLayer]
  * @param {(patch: Object) => void} [props.onControlsChange]
  * @param {'expanded'|'always'|'never'} [props.controlsMode] - When to show the controls panel.
  * @param {import('react').ReactNode} [props.transitExtra] - Extra row under the transit switch.
@@ -145,9 +155,13 @@ export default function Map({
   style,
   show3dBuildings,
   showTransit,
+  taxLayer,
+  schoolLayer,
   defaultStyle = 'STANDARD',
   defaultShow3dBuildings = false,
   defaultShowTransit = false,
+  defaultTaxLayer = false,
+  defaultSchoolLayer = false,
   onControlsChange = null,
   controlsMode = 'expanded',
   transitExtra = null,
@@ -182,7 +196,20 @@ export default function Map({
   const [styleValue, setStyleValue] = useControllableState(style, defaultStyle);
   const [buildingsValue, setBuildingsValue] = useControllableState(show3dBuildings, defaultShow3dBuildings);
   const [transitValue, setTransitValue] = useControllableState(showTransit, defaultShowTransit);
+  const [taxLayerValue, setTaxLayerValue] = useControllableState(taxLayer, defaultTaxLayer);
+  const [schoolLayerValue, setSchoolLayerValue] = useControllableState(schoolLayer, defaultSchoolLayer);
   const [isExpanded, setIsExpanded] = useControllableState(expanded, defaultExpanded);
+
+  // Whether this map is showing a Danish context at all - the same `countries` union the job form
+  // and the geocoder already scope DK-only behaviour by (see `lib/types/providerConfig.js`'s
+  // `countries` field). The two regional layers are offered, fetched and rendered only when this is
+  // true, so a map with no Danish job in scope never pays for either.
+  const isDenmarkScoped = useMemo(() => countries.some((code) => String(code).toLowerCase() === 'dk'), [countries]);
+
+  /** @type {import('react').MutableRefObject<{type: string, features: Array<Object>}|null>} */
+  const taxDataRef = useRef(null);
+  /** Fetched once per mount so `MapControls` can disable the school switch before it is ever touched. */
+  const [schoolLayerData, setSchoolLayerData] = useState(null);
 
   /**
    * The single entry point for control changes, so a controlled parent is told once per action.
@@ -194,6 +221,8 @@ export default function Map({
     if ('style' in next) setStyleValue(next.style);
     if ('show3dBuildings' in next) setBuildingsValue(next.show3dBuildings);
     if ('showTransit' in next) setTransitValue(next.showTransit);
+    if ('taxLayer' in next) setTaxLayerValue(next.taxLayer);
+    if ('schoolLayer' in next) setSchoolLayerValue(next.schoolLayer);
     onControlsChange?.(next);
   };
 
@@ -370,6 +399,154 @@ export default function Map({
       mapRef.current?.off('styledata', onStyleData);
     };
   }, [transitValue, styleValue]);
+
+  // Whether the Denmark school layer has anything to show, fetched once per mount rather than only
+  // once the switch is touched: `MapControls` needs to know *before* that, to disable the switch
+  // with an explanatory tooltip when the server has no STIL API key rather than offering one that
+  // always turns itself back off empty. The response is cheap either way - with no key configured,
+  // the backend never makes an upstream call at all (see `lib/services/regionalData/schoolClient.js`).
+  useEffect(() => {
+    if (!isDenmarkScoped) return;
+
+    let cancelled = false;
+    fetchSchoolLayer()
+      .then((data) => {
+        if (!cancelled) setSchoolLayerData(data);
+      })
+      .catch(() => {
+        // A network hiccup here must not be able to break the map; it just leaves the switch
+        // disabled, same as "no key configured" does.
+        if (!cancelled) setSchoolLayerData({ available: false, schools: [], attribution: [] });
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isDenmarkScoped]);
+
+  // Handle Denmark kommune tax choropleth
+  useEffect(() => {
+    if (!mapRef.current) return;
+
+    const onStyleData = async () => {
+      const mapInstance = mapRef.current;
+      if (!mapInstance) return;
+
+      if (!taxLayerValue || !isDenmarkScoped) {
+        applyTaxLayer(mapInstance, null);
+        return;
+      }
+
+      // Fetched once and kept for the life of this map instance - kommune polygons and tax rates
+      // are already cached hard on the server (see `regionalDataService.js`), and re-fetching the
+      // same national dataset on every toggle would only add latency the data never earns.
+      if (taxDataRef.current == null) {
+        try {
+          taxDataRef.current = await fetchTaxChoropleth();
+        } catch (error) {
+          console.error('Error fetching the Denmark tax choropleth', error);
+        }
+        if (mapRef.current !== mapInstance) return;
+      }
+
+      applyTaxLayer(mapInstance, taxDataRef.current);
+    };
+
+    if (mapRef.current.isStyleLoaded()) {
+      onStyleData();
+    }
+
+    mapRef.current.on('styledata', onStyleData);
+
+    return () => {
+      mapRef.current?.off('styledata', onStyleData);
+    };
+  }, [taxLayerValue, styleValue, isDenmarkScoped]);
+
+  // Handle Denmark school markers
+  useEffect(() => {
+    if (!mapRef.current) return;
+
+    const onStyleData = () => {
+      if (!mapRef.current) return;
+      const show = schoolLayerValue && isDenmarkScoped && schoolLayerData?.available;
+      applySchoolLayer(mapRef.current, show ? schoolLayerData.schools : null);
+    };
+
+    if (mapRef.current.isStyleLoaded()) {
+      onStyleData();
+    }
+
+    mapRef.current.on('styledata', onStyleData);
+
+    return () => {
+      mapRef.current?.off('styledata', onStyleData);
+    };
+  }, [schoolLayerValue, styleValue, isDenmarkScoped, schoolLayerData]);
+
+  // Popups for the two regional layers. Plain `setHTML` rather than the React-mounted popups the
+  // listing/transit markers use: the content is two labelled numbers, nothing interactive lives
+  // inside it, and MapLibre's own `closeOnClick` default is exactly the dismiss behaviour wanted.
+  useEffect(() => {
+    if (!mapRef.current || !isDenmarkScoped) return undefined;
+
+    const mapInstance = mapRef.current;
+    const percent = (value) => (value == null ? t('common.na') : `${value.toFixed(1)}%`);
+    const perMille = (value) => (value == null ? t('common.na') : `${value.toFixed(1)}‰`);
+
+    const onTaxClick = (event) => {
+      const feature = event.features?.[0];
+      if (!feature) return;
+      const { name, kommuneskatPct, grundskyldPromille } = feature.properties;
+
+      new maplibregl.Popup({ offset: 8 })
+        .setLngLat(event.lngLat)
+        .setHTML(
+          `<div class="map-popup-content"><h4>${name}</h4>` +
+            `<p>${t('map.taxPopupKommuneskat')}: ${percent(kommuneskatPct)}</p>` +
+            `<p>${t('map.taxPopupGrundskyld')}: ${perMille(grundskyldPromille)}</p></div>`,
+        )
+        .addTo(mapInstance);
+    };
+
+    const onSchoolClick = (event) => {
+      const feature = event.features?.[0];
+      if (!feature) return;
+      const { name, gradeAverage, inclusionPct } = feature.properties;
+
+      new maplibregl.Popup({ offset: 8 })
+        .setLngLat(event.lngLat)
+        .setHTML(
+          `<div class="map-popup-content"><h4>${name}</h4>` +
+            `<p>${t('map.schoolPopupGradeAverage')}: ${gradeAverage == null ? t('common.na') : gradeAverage.toFixed(1)}</p>` +
+            `<p>${t('map.schoolPopupInclusionPct')}: ${percent(inclusionPct)}</p></div>`,
+        )
+        .addTo(mapInstance);
+    };
+
+    const showPointer = () => {
+      mapInstance.getCanvas().style.cursor = 'pointer';
+    };
+    const clearPointer = () => {
+      mapInstance.getCanvas().style.cursor = '';
+    };
+
+    mapInstance.on('click', TAX_FILL_LAYER_ID, onTaxClick);
+    mapInstance.on('mouseenter', TAX_FILL_LAYER_ID, showPointer);
+    mapInstance.on('mouseleave', TAX_FILL_LAYER_ID, clearPointer);
+    mapInstance.on('click', SCHOOL_LAYER_ID, onSchoolClick);
+    mapInstance.on('mouseenter', SCHOOL_LAYER_ID, showPointer);
+    mapInstance.on('mouseleave', SCHOOL_LAYER_ID, clearPointer);
+
+    return () => {
+      mapInstance.off('click', TAX_FILL_LAYER_ID, onTaxClick);
+      mapInstance.off('mouseenter', TAX_FILL_LAYER_ID, showPointer);
+      mapInstance.off('mouseleave', TAX_FILL_LAYER_ID, clearPointer);
+      mapInstance.off('click', SCHOOL_LAYER_ID, onSchoolClick);
+      mapInstance.off('mouseenter', SCHOOL_LAYER_ID, showPointer);
+      mapInstance.off('mouseleave', SCHOOL_LAYER_ID, clearPointer);
+    };
+  }, [isDenmarkScoped, t]);
 
   // Handle pitch for 3D
   useEffect(() => {
@@ -683,6 +860,10 @@ export default function Map({
             showTransit={transitValue}
             onChange={applyControls}
             transitExtra={transitExtra}
+            showRegionalLayers={isDenmarkScoped}
+            taxLayer={taxLayerValue}
+            schoolLayer={schoolLayerValue}
+            schoolLayerAvailable={schoolLayerData?.available ?? false}
           />
         )}
 
