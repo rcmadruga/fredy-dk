@@ -64,6 +64,9 @@ const MAP_URL_STATE = {
   // map with nothing open, and the pin you were looking at had to be found again. The id, not the
   // pin, because it also says which page of a stacked popup was showing.
   popup: { defaultValue: null, codec: parseString },
+  // Denmark-only and off by default - see `MapControls.jsx`/`Map.jsx` for the scoping.
+  taxLayer: { defaultValue: false, codec: parseBoolean },
+  schoolLayer: { defaultValue: false, codec: parseBoolean },
 };
 
 /**
@@ -116,6 +119,8 @@ export default function MapView() {
     buildings: show3dBuildings,
     transit: showTransit,
     popup: openListingId,
+    taxLayer,
+    schoolLayer,
   } = urlState;
   // Read the same way `components/map/Map.jsx` reads it, so the ring drawn on top of the basemap
   // and the basemap itself can never disagree about how dark the map is.
@@ -292,13 +297,15 @@ export default function MapView() {
    * `setValues` drops any value equal to its declared default, so a pristine view keeps a clean
    * address, and the map already clears the 3D buildings flag when the basemap goes to satellite.
    *
-   * @param {{style?: string, show3dBuildings?: boolean, showTransit?: boolean}} patch
+   * @param {{style?: string, show3dBuildings?: boolean, showTransit?: boolean, taxLayer?: boolean, schoolLayer?: boolean}} patch
    */
   const handleControlsChange = (patch) => {
     setValues({
       ...('style' in patch ? { style: patch.style } : {}),
       ...('show3dBuildings' in patch ? { buildings: patch.show3dBuildings } : {}),
       ...('showTransit' in patch ? { transit: patch.showTransit } : {}),
+      ...('taxLayer' in patch ? { taxLayer: patch.taxLayer } : {}),
+      ...('schoolLayer' in patch ? { schoolLayer: patch.schoolLayer } : {}),
     });
   };
 
@@ -641,6 +648,8 @@ export default function MapView() {
             style={style}
             show3dBuildings={show3dBuildings}
             showTransit={showTransit}
+            taxLayer={taxLayer}
+            schoolLayer={schoolLayer}
             onControlsChange={handleControlsChange}
             controlsMode="always"
             // This is the map where an address search earns its place: the pins are spread over

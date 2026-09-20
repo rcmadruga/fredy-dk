@@ -3,13 +3,14 @@
  * Licensed under Apache-2.0 with Commons Clause and Attribution/Naming Clause
  */
 
-import { Select, Switch, Typography } from '@douyinfe/semi-ui-19';
+import { Select, Switch, Tooltip, Typography } from '@douyinfe/semi-ui-19';
 import { useTranslation } from '../../services/i18n/i18n.jsx';
 
 const { Text } = Typography;
 
 /**
- * The basemap and overlay switches every map shares.
+ * The basemap and overlay switches every map shares, plus the two Denmark-only regional layers
+ * (kommune tax choropleth, school grades/inclusion) when the map is showing a Danish context.
  *
  * Presentational on purpose: it owns no state and reports changes as a patch object, so the map can
  * forward one update per user action to a parent that keeps the state somewhere else (the map
@@ -19,12 +20,21 @@ const { Text } = Typography;
  * @param {'STANDARD'|'SATELLITE'} props.style
  * @param {boolean} props.show3dBuildings
  * @param {boolean} props.showTransit
- * @param {(patch: {style?: string, show3dBuildings?: boolean, showTransit?: boolean}) => void} props.onChange
+ * @param {(patch: {style?: string, show3dBuildings?: boolean, showTransit?: boolean, taxLayer?: boolean, schoolLayer?: boolean}) => void} props.onChange
  * @param {import('react').ReactNode} [props.transitExtra] - Rendered indented below the transit row
  *   while transit is on, for settings that only mean something once the layer is there.
  * @param {boolean} [props.bare=false] Render only the rows, without the panel box. For a view that
  *   puts these rows into a panel of its own together with its own filters, so the user sees one
  *   box with two named groups rather than two identical boxes four pixels apart.
+ * @param {boolean} [props.showRegionalLayers] - Whether the map is showing a Danish context at all;
+ *   the two switches below are not offered otherwise. Computed by the caller from the same
+ *   `countries` prop `Map.jsx` already takes, the same way DK-only behaviour is scoped elsewhere
+ *   (see `lib/types/providerConfig.js`'s `countries` field).
+ * @param {boolean} [props.taxLayer]
+ * @param {boolean} [props.schoolLayer]
+ * @param {boolean} [props.schoolLayerAvailable] - Whether the server has a STIL API key configured.
+ *   `false` disables the switch rather than hiding it, with a tooltip explaining why - the same
+ *   layer a user could otherwise reasonably expect to just work.
  */
 export default function MapControls({
   style,
@@ -33,6 +43,10 @@ export default function MapControls({
   onChange,
   transitExtra = null,
   bare = false,
+  showRegionalLayers = false,
+  taxLayer = false,
+  schoolLayer = false,
+  schoolLayerAvailable = true,
 }) {
   const t = useTranslation();
 
@@ -69,6 +83,31 @@ export default function MapControls({
       </div>
 
       {showTransit && transitExtra}
+
+      {showRegionalLayers && (
+        <>
+          <div className="map-panel__row">
+            <Text size="small" strong className="map-panel__label">
+              {t('map.filterTaxLayer')}
+            </Text>
+            <Switch size="small" checked={taxLayer} onChange={(value) => onChange({ taxLayer: value })} />
+          </div>
+
+          <div className="map-panel__row">
+            <Text size="small" strong className="map-panel__label">
+              {t('map.filterSchoolLayer')}
+            </Text>
+            <Tooltip content={schoolLayerAvailable ? null : t('map.filterSchoolLayerUnavailable')} position="left">
+              <Switch
+                size="small"
+                checked={schoolLayer}
+                disabled={!schoolLayerAvailable}
+                onChange={(value) => onChange({ schoolLayer: value })}
+              />
+            </Tooltip>
+          </div>
+        </>
+      )}
     </div>
   );
 }
