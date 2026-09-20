@@ -143,6 +143,11 @@ const NO_RANGE_IN_URL = [
     'https://www.imaxx.de/immobilien/?post_type=immomakler_object&radius=1&vermarktungsart%5B0%5D=kauf&typ%5B0%5D=wohnung',
   ],
   ['inberlinwohnen', 'https://inberlinwohnen.de/wohnungsfinder/'],
+  // Every filter but the city path segment is submitted as a POST and only persists for the
+  // session that submitted it - a plain GET, live or fixture-replayed, never reflects one back into
+  // the URL (see lib/provider/lejebolig.js). Verified live with `?Rent=8000` returning the same
+  // result count as the URL without it.
+  ['lejebolig', 'https://www.lejebolig.dk/lejeboliger/koebenhavn'],
   ['regionalimmobilien24', 'https://www.regionalimmobilien24.de/rostock/rostock/kaufen/haus/-/-/-/?rd=5'],
   ['wgGesucht', 'https://www.wg-gesucht.de/wg-zimmer-in-Duesseldorf.30.0.1.0.html'],
   ['willhaben', 'https://www.willhaben.at/iad/immobilien/mietwohnungen/wien'],

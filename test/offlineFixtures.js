@@ -185,6 +185,7 @@ export function buildFetchMock() {
   let flatfoxPins = null;
   let flatfoxListings = null;
   let boligsidenCases = null;
+  let lejeboligHtml = null;
 
   return async (url, init) => {
     const urlStr = String(url);
@@ -305,6 +306,13 @@ export function buildFetchMock() {
         boligsidenCases = raw ? JSON.parse(raw) : { cases: [] };
       }
       return { ok: true, status: 200, json: () => Promise.resolve(boligsidenCases) };
+    }
+
+    if (urlStr.includes('www.lejebolig.dk/lejeboliger')) {
+      if (lejeboligHtml == null) {
+        lejeboligHtml = (await tryReadFile(path.join(FIXTURES_DIR, 'lejebolig_search.html'))) ?? '';
+      }
+      return { ok: true, status: 200, text: () => Promise.resolve(lejeboligHtml) };
     }
 
     if (urlStr.includes('api.mobile.immobilienscout24.de/search/list')) {
