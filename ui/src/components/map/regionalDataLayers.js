@@ -5,13 +5,15 @@
 
 /**
  * Denmark-only optional overlays: a kommune-level tax choropleth (kommuneskat + grundskyld) and
- * school markers (grade average + inclusion percentage). Both are fed by `lib/services/regionalData/`
+ * school markers coloured by kind of school. Both are fed by `lib/services/regionalData/`
  * through `/api/regional-data/dk/*` and are off by default - see `Map.jsx` for the fetch-on-toggle
- * wiring and `MapControls.jsx` for the switches.
+ * wiring, `MapControls.jsx` for the tax switch and `SchoolPanel.jsx` for everything about schools.
  *
  * Same shape as `overlayLayers.js`: free of React, only talks to the MapLibre map instance handed
  * in, `apply*` idempotent in both directions so it can be replayed on every `styledata`.
  */
+
+import { SCHOOL_CATEGORIES, categoryColor, categoryOf } from './schoolFilters.js';
 
 export const TAX_SOURCE_ID = 'dk-kommune-tax';
 export const TAX_FILL_LAYER_ID = 'dk-kommune-tax-fill';
@@ -19,9 +21,6 @@ export const TAX_OUTLINE_LAYER_ID = 'dk-kommune-tax-outline';
 
 export const SCHOOL_SOURCE_ID = 'dk-schools';
 export const SCHOOL_LAYER_ID = 'dk-schools-points';
-
-/** Special schools and special-education offers, which the inclusion scale does not describe. */
-export const SPECIAL_SCHOOL_COLOR = '#7c3aed';
 
 /**
  * Kommuneskat stops, in percent. Denmark's 98 municipalities have run roughly 22.5-27.8 % for years;
@@ -99,6 +98,7 @@ export function schoolsToGeoJson(schools) {
       properties: {
         name: school.name,
         schoolType: school.schoolType,
+        category: categoryOf(school),
         isSpecialSchool: school.isSpecialSchool === true,
         inclusionPct: school.inclusionPct,
         specialClassPct: school.specialClassPct,
@@ -141,20 +141,21 @@ export function applySchoolLayer(map, schools) {
       type: 'circle',
       source: SCHOOL_SOURCE_ID,
       paint: {
-        // A special school or special-education offer is its own kind of marker - purple, and a little
-        // larger - rather than a point on the inclusion scale: its "inclusion" is 0 by definition, and
-        // shading it red would read as a poor ordinary school when it is the offer someone is looking
-        // for. Ordinary schools are greener the higher their inclusion percentage; one with no figure
-        // falls back to a neutral grey rather than the bottom of the scale.
+        // Coloured by kind of school, from the same table the panel's legend is drawn from, so the two
+        // cannot disagree. Inclusion is in the popup rather than on the marker: colour is carrying the
+        // kind, and one marker cannot carry two scales legibly.
         'circle-color': [
-          'case',
-          ['==', ['get', 'isSpecialSchool'], true],
-          SPECIAL_SCHOOL_COLOR,
-          ['==', ['get', 'inclusionPct'], null],
-          '#9ca3af',
-          ['interpolate', ['linear'], ['get', 'inclusionPct'], 80, '#e34a33', 90, '#fdcc8a', 97, '#31a354'],
+          'match',
+          ['get', 'category'],
+          ...SCHOOL_CATEGORIES.filter((category) => category.id !== 'other').flatMap((category) => [
+            category.id,
+            category.color,
+          ]),
+          categoryColor('other'),
         ],
-        'circle-radius': ['case', ['==', ['get', 'isSpecialSchool'], true], 8, 6],
+        // A special school a little larger: it is the offer being looked for, and it should not vanish
+        // among two thousand ordinary markers.
+        'circle-radius': ['case', ['==', ['get', 'category'], 'special'], 8, 6],
         'circle-stroke-color': '#ffffff',
         'circle-stroke-width': 1.5,
       },

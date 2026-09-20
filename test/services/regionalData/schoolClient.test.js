@@ -12,6 +12,7 @@ import {
   joinSchoolStats,
   parseDanishNumber,
   recentSchoolYears,
+  schoolCategoryOf,
 } from '../../../lib/services/regionalData/schoolClient.js';
 
 const originalEnv = process.env[UDDANNELSESSTATISTIK_API_KEY_ENV];
@@ -123,6 +124,28 @@ describe('recentSchoolYears', () => {
   });
 });
 
+describe('schoolCategoryOf', () => {
+  it.each([
+    ['Folkeskoler', 'folkeskole'],
+    ['Friskoler og private grundskoler', 'friskole'],
+    ['Efterskoler', 'efterskole'],
+    ['Specialskoler for børn', 'special'],
+    ['Behandlings- og specialundervisningstilbud', 'special'],
+    ['Specialundervisningstilbud på børne- og ungehjem', 'special'],
+    ['Uddannelsesinstitutioner for unge med særlige behov', 'special'],
+    ['Kommunale ungdomsskoler og ungdomskostskoler', 'other'],
+    ['Erhvervsskoler m.v.', 'other'],
+    [null, 'other'],
+    [undefined, 'other'],
+  ])('reads "%s" as %s', (registerType, expected) => {
+    expect(schoolCategoryOf(registerType)).toBe(expected);
+  });
+
+  it('files an efterskole for special-needs pupils with the special schools, not the boarding schools', () => {
+    expect(schoolCategoryOf('Efterskoler med samlet særligt tilbud')).toBe('special');
+  });
+});
+
 describe('joinSchoolStats', () => {
   it('places a school by its institution number and carries its inclusion figures', () => {
     const [school] = joinSchoolStats({
@@ -143,6 +166,7 @@ describe('joinSchoolStats', () => {
       lat: 55.69,
       lng: 12.58,
       schoolType: 'Folkeskoler',
+      category: 'folkeskole',
       isSpecialSchool: false,
       inclusionPct: 83.7,
       specialClassPct: 16.3,

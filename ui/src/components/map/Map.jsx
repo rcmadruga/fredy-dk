@@ -24,6 +24,14 @@ import DeparturesBoard from '../transit/DeparturesBoard.jsx';
 import { applyTaxLayer, applySchoolLayer, TAX_FILL_LAYER_ID, SCHOOL_LAYER_ID } from './regionalDataLayers.js';
 import { fetchTaxChoropleth, fetchSchoolLayer } from '../../services/regionalData/regionalData.js';
 import { buildTaxPopupHtml, buildSchoolPopupHtml } from './regionalPopups.js';
+import SchoolPanel from './SchoolPanel.jsx';
+import {
+  DEFAULT_SCHOOL_FILTERS,
+  filterSchools,
+  loadSchoolFilters,
+  sanitizeSchoolFilters,
+  saveSchoolFilters,
+} from './schoolFilters.js';
 import { useControllableState } from '../../hooks/useControllableState.js';
 import { useSelector } from '../../services/state/store.js';
 import { useTranslation } from '../../services/i18n/i18n.jsx';
@@ -221,6 +229,25 @@ export default function Map({
         : schoolLayerData.available
           ? 'ready'
           : 'no-key';
+
+  // What the school panel narrows the markers by. Remembered in the browser, not the URL: it is a
+  // preference of whoever is looking, and a shared link should open with everything showing.
+  const [schoolFilters, setSchoolFilters] = useState(loadSchoolFilters);
+  const updateSchoolFilters = useCallback((patch) => {
+    setSchoolFilters((previous) => {
+      const next = sanitizeSchoolFilters({ ...previous, ...patch });
+      saveSchoolFilters(next);
+      return next;
+    });
+  }, []);
+  const resetSchoolFilters = useCallback(() => {
+    saveSchoolFilters(DEFAULT_SCHOOL_FILTERS);
+    setSchoolFilters(sanitizeSchoolFilters(DEFAULT_SCHOOL_FILTERS));
+  }, []);
+  const filteredSchools = useMemo(
+    () => filterSchools(schoolLayerData?.schools, schoolFilters),
+    [schoolLayerData, schoolFilters],
+  );
 
   /**
    * The single entry point for control changes, so a controlled parent is told once per action.
@@ -483,7 +510,7 @@ export default function Map({
     const onStyleData = () => {
       if (!mapRef.current) return;
       const show = schoolLayerValue && isDenmarkScoped && schoolLayerStatus === 'ready';
-      applySchoolLayer(mapRef.current, show ? schoolLayerData.schools : null);
+      applySchoolLayer(mapRef.current, show ? filteredSchools : null);
     };
 
     if (mapRef.current.isStyleLoaded()) {
@@ -495,7 +522,7 @@ export default function Map({
     return () => {
       mapRef.current?.off('styledata', onStyleData);
     };
-  }, [schoolLayerValue, styleValue, isDenmarkScoped, schoolLayerData, schoolLayerStatus]);
+  }, [schoolLayerValue, styleValue, isDenmarkScoped, filteredSchools, schoolLayerStatus]);
 
   // Popups for the two regional layers. Plain `setHTML` rather than the React-mounted popups the
   // listing/transit markers use: the content is a few labelled figures and a link, nothing stateful
@@ -863,8 +890,19 @@ export default function Map({
             transitExtra={transitExtra}
             showRegionalLayers={isDenmarkScoped}
             taxLayer={taxLayerValue}
-            schoolLayer={schoolLayerValue}
-            schoolLayerStatus={schoolLayerStatus}
+          />
+        )}
+
+        {showControls && isDenmarkScoped && (
+          <SchoolPanel
+            status={schoolLayerStatus}
+            enabled={schoolLayerValue}
+            onEnabledChange={(value) => applyControls({ schoolLayer: value })}
+            filters={schoolFilters}
+            onFiltersChange={updateSchoolFilters}
+            schools={schoolLayerData?.schools ?? []}
+            shownCount={filteredSchools.length}
+            onReset={resetSchoolFilters}
           />
         )}
 
