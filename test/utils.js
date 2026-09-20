@@ -43,6 +43,18 @@ vi.mock('../lib/services/extractor/puppeteerExtractor.js', async (importOriginal
   };
 });
 
+// BoligPortal sits behind a Cloudflare challenge that only a browser clears. Offline runs replace the
+// navigation with the recorded result page, exactly as for idealista above; the module's selector
+// constant is kept, since the provider reads its data by it.
+vi.mock('../lib/services/boligportal/boligportalSearch.js', async (importOriginal) => {
+  const actual = await importOriginal();
+  if (process.env.TEST_MODE !== 'offline') {
+    return actual;
+  }
+  const { readFixture } = await import('./offlineFixtures.js');
+  return { ...actual, fetchSearchHtml: async (url) => readFixture(url) };
+});
+
 // Immowelt talks to its search BFF from inside the browser page (the only place a DataDome cookie
 // is worth anything), so neither the extractor mock nor the fetch mock above can intercept it. The
 // transport module is swapped out wholesale instead.

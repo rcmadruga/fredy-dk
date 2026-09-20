@@ -119,6 +119,13 @@ const RECORDED_SEARCHES = [
     'https://www.tecnorete.it/affitto/immobili/lombardia/brescia/brescia.html?min_price=500&max_price=1000',
     { min: 500, max: 1000 },
   ],
+  // Recorded off the site with only a ceiling set; the floor's parameter, min_monthly_rent, is the
+  // filter's own name for it (see lib/provider/boligportal.js) but has not been seen in a URL.
+  [
+    'boligportal',
+    'https://www.boligportal.dk/lejeboliger/hiller%C3%B8d/alle-v%C3%A6relser/?max_monthly_rent=18424',
+    { min: null, max: 18424 },
+  ],
   // boligsiden has no page to record a URL from - www.boligsiden.dk sits behind a Cloudflare
   // challenge - so the job's "search URL" is a direct, hand-built query against the JSON API its
   // own frontend calls (see lib/provider/boligsiden.js). priceMin/priceMax verified live.
