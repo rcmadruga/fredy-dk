@@ -75,6 +75,25 @@ describe('provider metaInformation', () => {
     }
   });
 
+  // Optional, and read leniently everywhere (a bad value quietly becomes euros), so a typo would
+  // otherwise show up only as a wrong currency sign on someone's listings.
+  it('declares a currency, when it declares one, as an ISO 4217 code', () => {
+    for (const provider of providers) {
+      const { id, currency } = provider.metaInformation;
+      if (currency == null) continue;
+      expect(currency, `${id}.currency must be a three-letter upper-case code`).toMatch(/^[A-Z]{3}$/);
+    }
+  });
+
+  it('lists the Danish providers in kroner', () => {
+    for (const provider of providers) {
+      const { id, countries, currency } = provider.metaInformation;
+      if (countries.length === 1 && countries[0] === 'dk') {
+        expect(currency, `${id} serves only Denmark`).toBe('DKK');
+      }
+    }
+  });
+
   // The check above states the rule; this one states it as "nothing gets thrown away", which is the
   // failure that actually matters. A discarded code is a country the geocoder will not search.
   it('declares nothing the resolver would have to discard', () => {

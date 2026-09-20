@@ -6,7 +6,8 @@
 import { Link } from 'react-router';
 import { IconMapPin } from '@douyinfe/semi-icons';
 import no_image from '../../assets/no_image.png';
-import { formatEuroPrice } from '../../services/price/priceService.js';
+import { formatPrice } from '../../services/price/priceService.js';
+import { useCurrencyOf } from '../../hooks/useCurrencyOf.js';
 import * as timeService from '../../services/time/timeService.js';
 import StatusControl from '../listings/StatusControl.jsx';
 import AffordabilityChip from '../listings/AffordabilityChip.jsx';
@@ -37,6 +38,7 @@ const ListingsTable = ({
 }) => {
   const t = useTranslation();
   const locale = useLocale();
+  const currencyOf = useCurrencyOf();
   return (
     <div className="listingsTable">
       {/* The rows carried four unlabelled values side by side while the roomier grid spelled each
@@ -100,7 +102,7 @@ const ListingsTable = ({
           <div className="listingsTable__row__price">
             {item.price ? (
               <>
-                <span className="listingsTable__row__amount">{formatEuroPrice(item.price, locale)}</span>
+                <span className="listingsTable__row__amount">{formatPrice(item.price, locale, null, currencyOf(item.provider))}</span>
                 <span className="listingsTable__row__perSqm">
                   <PricePerSqmBadge listing={item} />
                   <AffordabilityChip
@@ -112,6 +114,7 @@ const ListingsTable = ({
                     price={item.price}
                     previousPrice={item.previous_price}
                     changedAt={item.price_changed_at}
+                    currency={currencyOf(item.provider)}
                   />
                 </span>
               </>

@@ -35,6 +35,7 @@ import MapFilterPanel from './components/MapFilterPanel.jsx';
 import { MARKER_COLORS } from '../../components/map/markerColors.js';
 import { useProviderCountries } from '../../hooks/useProviderCountries.js';
 import { PHONE_BREAKPOINT, useScreenWidth } from '../../hooks/screenWidth.js';
+import { useCurrencyOf } from '../../hooks/useCurrencyOf.js';
 import Headline from '../../components/headline/Headline.jsx';
 import { useTranslation, useLocale } from '../../services/i18n/i18n.jsx';
 import { keepPopupInView, mountPopupNode } from '../../components/map/popupContent.jsx';
@@ -83,6 +84,7 @@ const { Text } = Typography;
 export default function MapView() {
   const t = useTranslation();
   const locale = useLocale();
+  const currencyOf = useCurrencyOf();
   const map = useRef(null);
   const markers = useRef([]);
   const homeMarkers = useRef([]);
@@ -525,6 +527,7 @@ export default function MapView() {
         t,
         locale,
         language,
+        currencyOf,
         onDelete: (id) => deleteListingRef.current(id),
         onNavigate: (id) => navigate(`/listings/listing/${id}`),
         // Opens on the listing the URL names, so a stacked popup comes back on the page it was

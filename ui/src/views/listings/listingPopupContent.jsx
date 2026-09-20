@@ -7,7 +7,7 @@ import { renderToString } from 'react-dom/server';
 import { IconChevronLeft, IconChevronRight } from '@douyinfe/semi-icons';
 import no_image from '../../assets/no_image.png';
 import { availableModes, formatMinutes, hasAnyTime } from '../../components/transit/travelTimeFormat.js';
-import { formatEuroPrice } from '../../services/price/priceService.js';
+import { formatPrice } from '../../services/price/priceService.js';
 import { formatDecimal } from '../../services/number/numberService.js';
 import { mountPopupNode } from '../../components/map/popupContent.jsx';
 import MapPopupActions from './components/MapPopupActions.jsx';
@@ -28,6 +28,8 @@ import MapPopupActions from './components/MapPopupActions.jsx';
  * @param {Object} params
  * @param {object[]} params.listings - The listings at this position, at least one.
  * @param {(key: string, vars?: Record<string, string|number>) => string} params.t
+ * @param {(providerId: string) => string} [params.currencyOf] - resolves a listing's provider to its
+ *   currency code; without it prices print in euros.
  * @param {string} [params.locale] - BCP 47 locale for the price. This markup is built outside
  * React, so the view hands its `useLocale()` value down.
  * @param {string} params.language - Active language code, for the translation provider the mounted
@@ -50,6 +52,7 @@ export function createListingPopupContent({
   t,
   locale,
   language,
+  currencyOf,
   onDelete,
   onNavigate,
   initialId = null,
@@ -93,7 +96,7 @@ export function createListingPopupContent({
     unmountActions?.();
     unmountActions = null;
 
-    body.innerHTML = renderListingBody(listings[index], index, listings.length, t, locale);
+    body.innerHTML = renderListingBody(listings[index], index, listings.length, t, locale, currencyOf);
 
     const step = (delta) => {
       index = (index + delta + listings.length) % listings.length;
@@ -178,9 +181,10 @@ function renderTravelTimes(listing, t) {
  * @param {number} total - Size of the group.
  * @param {(key: string, vars?: Record<string, string|number>) => string} t
  * @param {string} [locale] - BCP 47 locale for the price.
+ * @param {(providerId: string) => string} [currencyOf] - resolves a listing's provider to its currency.
  * @returns {string}
  */
-function renderListingBody(listing, index, total, t, locale) {
+function renderListingBody(listing, index, total, t, locale, currencyOf) {
   const capitalizedProvider = listing.provider
     ? listing.provider.charAt(0).toUpperCase() + listing.provider.slice(1)
     : 'N/A';
@@ -207,7 +211,7 @@ function renderListingBody(listing, index, total, t, locale) {
     <a class="map-popup-content__title" href="#/listings/listing/${encodeURIComponent(listing.id)}">${escapeHtml(listing.title)}</a>
     <div class="map-popup-content__facts">
       <span>${t('map.popupPrice')}</span>
-      <span class="map-popup-content__num">${listing.price ? escapeHtml(formatEuroPrice(listing.price, locale)) : t('common.na')}</span>
+      <span class="map-popup-content__num">${listing.price ? escapeHtml(formatPrice(listing.price, locale, null, currencyOf?.(listing.provider))) : t('common.na')}</span>
       <span>${t('map.popupAddress')}</span>
       <span>${escapeHtml(listing.address || t('common.na'))}</span>
       <span>${t('map.popupJob')}</span>

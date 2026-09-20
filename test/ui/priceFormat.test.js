@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { formatEuroPrice } from '../../ui/src/services/price/priceService.js';
+import { formatEuroPrice, formatPrice } from '../../ui/src/services/price/priceService.js';
 import { formatEuro } from '../../ui/src/components/cards/chartTheme.js';
 
 /**
@@ -72,5 +72,30 @@ describe('formatEuro (charts)', () => {
   it('keeps its own dash for values that are not numbers', () => {
     expect(formatEuro(null, 'de-DE')).toBe('–');
     expect(formatEuro('auf Anfrage', 'de-DE')).toBe('–');
+  });
+});
+
+/**
+ * The Danish providers list in kroner. A 2.000.000 kr. house printed as `2.000.000 €` is a price off
+ * by a factor of seven, so the currency has to follow the listing rather than the app.
+ */
+describe('formatPrice in another currency', () => {
+  it("prints kroner for a Danish listing, in the reader's own grouping", () => {
+    expect(normalize(formatPrice(2000000, 'da-DK', null, 'DKK'))).toBe('2.000.000 kr.');
+    expect(normalize(formatPrice(2000000, 'de-DE', null, 'DKK'))).toBe('2.000.000 DKK');
+  });
+
+  it('never prints a euro sign for a non-euro price', () => {
+    expect(formatPrice(12500, 'en-GB', null, 'DKK')).not.toContain('€');
+  });
+
+  it('stays euros when no currency, or a malformed one, is given', () => {
+    expect(normalize(formatPrice(1200, 'de-DE'))).toBe(normalize(formatEuroPrice(1200, 'de-DE')));
+    expect(normalize(formatPrice(1200, 'de-DE', null, 'kroner'))).toBe(normalize(formatEuroPrice(1200, 'de-DE')));
+  });
+
+  it('labels a non-numeric price with its own currency rather than a euro sign', () => {
+    expect(formatPrice('auf Anfrage', 'de-DE', null, 'DKK')).toBe('auf Anfrage DKK');
+    expect(formatPrice('auf Anfrage', 'de-DE')).toBe('auf Anfrage €');
   });
 });

@@ -3,7 +3,7 @@
  * Licensed under Apache-2.0 with Commons Clause and Attribution/Naming Clause
  */
 
-import { formatEuroPrice } from '../price/priceService.js';
+import { formatPrice, DEFAULT_CURRENCY } from '../price/priceService.js';
 
 /**
  * Reading the price per square metre a listing carries, and how it compares to the area.
@@ -125,12 +125,13 @@ export function readMarketBenchmark(listing) {
  *
  * @param {number} value
  * @param {string} locale BCP 47 locale, from `useLocale()`.
+ * @param {string} [currency='EUR'] ISO 4217 code of the listing's provider.
  * @param {boolean} [withUnit=true] Whether to append `/m²`. A figure sitting under a label that
  *   already reads "price per m²" does not need it, and carrying it there costs the four characters
  *   that push the number out of a narrow tile.
  * @returns {string} e.g. `12,40 €/m²`.
  */
-export function formatPricePerSqm(value, locale, withUnit = true) {
+export function formatPricePerSqm(value, locale, currency = DEFAULT_CURRENCY, withUnit = true) {
   const parsed = toNumber(value);
   if (parsed == null) {
     return '';
@@ -140,7 +141,7 @@ export function formatPricePerSqm(value, locale, withUnit = true) {
   // square metre to the cent.
   const whole = parsed >= WHOLE_EURO_ABOVE;
   const rounded = whole ? Math.round(parsed) : Math.round(parsed * 100) / 100;
-  const amount = formatEuroPrice(rounded, locale, whole ? 0 : 2);
+  const amount = formatPrice(rounded, locale, whole ? 0 : 2, currency);
   return withUnit ? `${amount}/m²` : amount;
 }
 

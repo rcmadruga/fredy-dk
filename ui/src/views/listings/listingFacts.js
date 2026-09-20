@@ -3,7 +3,7 @@
  * Licensed under Apache-2.0 with Commons Clause and Attribution/Naming Clause
  */
 
-import { formatEuroPrice } from '../../services/price/priceService.js';
+import { formatPrice, DEFAULT_CURRENCY } from '../../services/price/priceService.js';
 import { formatDecimal } from '../../services/number/numberService.js';
 import { formatPricePerSqm, readMarketBenchmark } from '../../services/listings/marketBenchmark.js';
 import { rentIncludesCharges, verdictExplanation } from '../../services/finance/rentBasis.js';
@@ -48,6 +48,9 @@ import * as timeService from '../../services/time/timeService.js';
  * @property {Object} [financeThresholds] - As `useFinanceProfile` returns them.
  * @property {(benchmark: Object, t: Function, locale: string) => string} [describeBenchmark]
  * @property {(value: number, locale: string) => string} [formatEuro] - For the affordability limit.
+ * @property {string} [currency] - ISO 4217 code of the listing's provider, from `useCurrencyOf()`.
+ *   Defaults to EUR when absent, which keeps every caller that has no listing-specific currency
+ *   (tests, anything not yet wired to a provider) working exactly as before this field existed.
  */
 
 /**
@@ -66,12 +69,13 @@ export function buildObjectFacts(listing, ctx) {
   const na = t('common.na');
   const benchmark = readMarketBenchmark(row);
   const isRental = row.dealType === 'rent';
+  const currency = ctx.currency ?? DEFAULT_CURRENCY;
 
   const price = {
-    text: row.price != null ? formatEuroPrice(row.price, locale) : na,
+    text: row.price != null ? formatPrice(row.price, locale, null, currency) : na,
     // Split so the page can set the digits large and leave the currency symbol at reading size.
     // A 40px euro sign is louder than the sum it belongs to, and every listing has the same one.
-    ...splitPrice(row.price, locale, na),
+    ...splitPrice(row.price, locale, na, currency),
     // Names what the number is, which the number alone cannot: the same "1.200 EUR" is a monthly
     // rent on one listing and a purchase price on the next, and a rent is quoted with the charges
     // on some portals and without them on the rest.
@@ -97,7 +101,7 @@ export function buildObjectFacts(listing, ctx) {
       label: t('listing.detail.fieldPricePerSqm'),
       // Without the unit: the tile's own label already says "per m²", and repeating it there is
       // what pushed the figure past the width of a third of the rail.
-      value: benchmark != null ? formatPricePerSqm(benchmark.pricePerSqm, locale, false) : null,
+      value: benchmark != null ? formatPricePerSqm(benchmark.pricePerSqm, locale, currency, false) : null,
       // Two different explanations. With a benchmark the interesting part is the comparison and
       // where it came from; without one it is why no comparison is shown, which is a question the
       // page would otherwise leave the reader to guess at.
@@ -133,15 +137,16 @@ function priceReferenceKey(row, isRental) {
  * @param {number|null|undefined} value
  * @param {string} locale
  * @param {string} fallback - Shown when there is no price at all.
+ * @param {string} [currency='EUR'] ISO 4217 code of the listing's provider.
  * @returns {{amount: string, currency: string|null}}
  */
-function splitPrice(value, locale, fallback) {
+function splitPrice(value, locale, fallback, currency = DEFAULT_CURRENCY) {
   if (value == null) return { amount: fallback, currency: null };
 
   try {
     const parts = new Intl.NumberFormat(locale, {
       style: 'currency',
-      currency: 'EUR',
+      currency,
       maximumFractionDigits: 0,
     }).formatToParts(value);
 
@@ -154,7 +159,7 @@ function splitPrice(value, locale, fallback) {
     };
   } catch {
     // An unknown locale is not worth an empty price; the joined form is still readable.
-    return { amount: formatEuroPrice(value, locale), currency: null };
+    return { amount: formatPrice(value, locale, null, currency), currency: null };
   }
 }
 
