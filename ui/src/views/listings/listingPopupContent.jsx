@@ -8,6 +8,7 @@ import { IconChevronLeft, IconChevronRight, IconDelete, IconEyeOpened, IconLink 
 import no_image from '../../assets/no_image.png';
 import { availableModes, formatMinutes, hasAnyTime } from '../../components/transit/travelTimeFormat.js';
 import { formatPrice } from '../../services/price/priceService.js';
+import { escapeHtml } from '../../components/map/escapeHtml.js';
 import { formatDecimal } from '../../services/number/numberService.js';
 
 /**
@@ -63,19 +64,6 @@ export function createListingPopupContent({ listings, t, locale, currencyOf, onP
   render();
 
   return { element, transitMount: transit.querySelector('.map-popup-content__transit-mount') };
-}
-
-/**
- * Escapes text that came from the user's own settings before it goes into the popup markup.
- *
- * @param {string} value
- * @returns {string}
- */
-function escapeHtml(value) {
-  return String(value).replace(
-    /[&<>"']/g,
-    (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char],
-  );
 }
 
 /**

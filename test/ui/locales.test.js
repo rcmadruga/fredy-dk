@@ -95,6 +95,10 @@ const UNTRANSLATED_BACKLOG = {
     'map.taxPopupGrundskyld',
     'map.schoolPopupGradeAverage',
     'map.schoolPopupInclusionPct',
+    'map.schoolPopupSpecialClassPct',
+    'map.schoolPopupSpecialSchool',
+    'map.schoolPopupPupils',
+    'map.schoolPopupYear',
   ],
 };
 

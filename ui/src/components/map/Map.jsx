@@ -23,6 +23,7 @@ import { keepPopupInView, mountPopupNode } from './popupContent.jsx';
 import DeparturesBoard from '../transit/DeparturesBoard.jsx';
 import { applyTaxLayer, applySchoolLayer, TAX_FILL_LAYER_ID, SCHOOL_LAYER_ID } from './regionalDataLayers.js';
 import { fetchTaxChoropleth, fetchSchoolLayer } from '../../services/regionalData/regionalData.js';
+import { buildTaxPopupHtml, buildSchoolPopupHtml } from './regionalPopups.js';
 import { useControllableState } from '../../hooks/useControllableState.js';
 import { useSelector } from '../../services/state/store.js';
 import { useTranslation } from '../../services/i18n/i18n.jsx';
@@ -485,42 +486,30 @@ export default function Map({
   }, [schoolLayerValue, styleValue, isDenmarkScoped, schoolLayerData]);
 
   // Popups for the two regional layers. Plain `setHTML` rather than the React-mounted popups the
-  // listing/transit markers use: the content is two labelled numbers, nothing interactive lives
-  // inside it, and MapLibre's own `closeOnClick` default is exactly the dismiss behaviour wanted.
+  // listing/transit markers use: the content is a few labelled figures and a link, nothing stateful
+  // lives inside it, and MapLibre's own `closeOnClick` default is exactly the dismiss behaviour wanted.
+  // The markup itself is built in regionalPopups.js, where everything external is escaped.
   useEffect(() => {
     if (!mapRef.current || !isDenmarkScoped) return undefined;
 
     const mapInstance = mapRef.current;
-    const percent = (value) => (value == null ? t('common.na') : `${value.toFixed(1)}%`);
-    const perMille = (value) => (value == null ? t('common.na') : `${value.toFixed(1)}‰`);
-
     const onTaxClick = (event) => {
       const feature = event.features?.[0];
       if (!feature) return;
-      const { name, kommuneskatPct, grundskyldPromille } = feature.properties;
 
       new maplibregl.Popup({ offset: 8 })
         .setLngLat(event.lngLat)
-        .setHTML(
-          `<div class="map-popup-content"><h4>${name}</h4>` +
-            `<p>${t('map.taxPopupKommuneskat')}: ${percent(kommuneskatPct)}</p>` +
-            `<p>${t('map.taxPopupGrundskyld')}: ${perMille(grundskyldPromille)}</p></div>`,
-        )
+        .setHTML(buildTaxPopupHtml(feature.properties, t))
         .addTo(mapInstance);
     };
 
     const onSchoolClick = (event) => {
       const feature = event.features?.[0];
       if (!feature) return;
-      const { name, gradeAverage, inclusionPct } = feature.properties;
 
-      new maplibregl.Popup({ offset: 8 })
+      new maplibregl.Popup({ offset: 8, maxWidth: '320px' })
         .setLngLat(event.lngLat)
-        .setHTML(
-          `<div class="map-popup-content"><h4>${name}</h4>` +
-            `<p>${t('map.schoolPopupGradeAverage')}: ${gradeAverage == null ? t('common.na') : gradeAverage.toFixed(1)}</p>` +
-            `<p>${t('map.schoolPopupInclusionPct')}: ${percent(inclusionPct)}</p></div>`,
-        )
+        .setHTML(buildSchoolPopupHtml(feature.properties, t))
         .addTo(mapInstance);
     };
 

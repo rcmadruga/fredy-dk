@@ -20,6 +20,9 @@ export const TAX_OUTLINE_LAYER_ID = 'dk-kommune-tax-outline';
 export const SCHOOL_SOURCE_ID = 'dk-schools';
 export const SCHOOL_LAYER_ID = 'dk-schools-points';
 
+/** Special schools and special-education offers, which the inclusion scale does not describe. */
+export const SPECIAL_SCHOOL_COLOR = '#7c3aed';
+
 /**
  * Kommuneskat stops, in percent. Denmark's 98 municipalities have run roughly 22.5-27.8 % for years;
  * chosen as fixed stops rather than derived from the fetched min/max so the colour of "24 %" does not
@@ -95,8 +98,16 @@ export function schoolsToGeoJson(schools) {
       geometry: { type: 'Point', coordinates: [school.lng, school.lat] },
       properties: {
         name: school.name,
-        gradeAverage: school.gradeAverage,
+        schoolType: school.schoolType,
+        isSpecialSchool: school.isSpecialSchool === true,
         inclusionPct: school.inclusionPct,
+        specialClassPct: school.specialClassPct,
+        pupils: school.pupils,
+        gradeAverage: school.gradeAverage,
+        schoolYear: school.schoolYear,
+        gradeYear: school.gradeYear,
+        address: school.address,
+        website: school.website,
       },
     })),
   };
@@ -130,15 +141,20 @@ export function applySchoolLayer(map, schools) {
       type: 'circle',
       source: SCHOOL_SOURCE_ID,
       paint: {
-        // Greener the higher the inclusion percentage; a school with no figure at all (nothing to
-        // shade it by) falls back to a neutral grey rather than the bottom of the scale.
+        // A special school or special-education offer is its own kind of marker - purple, and a little
+        // larger - rather than a point on the inclusion scale: its "inclusion" is 0 by definition, and
+        // shading it red would read as a poor ordinary school when it is the offer someone is looking
+        // for. Ordinary schools are greener the higher their inclusion percentage; one with no figure
+        // falls back to a neutral grey rather than the bottom of the scale.
         'circle-color': [
           'case',
+          ['==', ['get', 'isSpecialSchool'], true],
+          SPECIAL_SCHOOL_COLOR,
           ['==', ['get', 'inclusionPct'], null],
           '#9ca3af',
           ['interpolate', ['linear'], ['get', 'inclusionPct'], 80, '#e34a33', 90, '#fdcc8a', 97, '#31a354'],
         ],
-        'circle-radius': 6,
+        'circle-radius': ['case', ['==', ['get', 'isSpecialSchool'], true], 8, 6],
         'circle-stroke-color': '#ffffff',
         'circle-stroke-width': 1.5,
       },
