@@ -40,6 +40,53 @@ import * as cheerio from 'cheerio';
 const AD_LINK = /(-id-\d+|\/id-\d+|\/annonce\/\d+|\/bolig\/\d+)/i;
 
 /**
+ * A compact outline of a JSON value: keys down to `depth`, arrays as their length and the keys of
+ * their first element. Enough to see the shape of a page's data without reading all of it.
+ *
+ * @param {unknown} value
+ * @param {number} depth
+ * @returns {string}
+ */
+function outline(value, depth = 3) {
+  if (Array.isArray(value)) {
+    return `[${value.length}${value.length && depth > 0 ? ` x ${outline(value[0], depth - 1)}` : ''}]`;
+  }
+  if (value !== null && typeof value === 'object') {
+    const keys = Object.keys(value);
+    if (depth <= 0) return `{${keys.length} keys}`;
+    return `{${keys
+      .slice(0, 24)
+      .map((key) => `${key}: ${outline(value[key], depth - 1)}`)
+      .join(', ')}${keys.length > 24 ? `, +${keys.length - 24} more` : ''}}`;
+  }
+  return typeof value === 'string' ? 'str' : typeof value;
+}
+
+/**
+ * Where in a JSON value the adverts are: arrays of at least three objects that each carry an `id`.
+ * The longest wins, and an ad is the shape the provider would read, so its first element is shown whole.
+ *
+ * @param {unknown} root
+ * @returns {Array<{path: string, count: number, first: unknown}>} Longest first.
+ */
+export function findAdLists(root) {
+  const found = [];
+  const walk = (value, path, depth) => {
+    if (depth > 8 || value === null || typeof value !== 'object') return;
+    if (Array.isArray(value)) {
+      if (value.length >= 3 && value.every((item) => item !== null && typeof item === 'object' && 'id' in item)) {
+        found.push({ path, count: value.length, first: value[0] });
+      }
+      value.slice(0, 3).forEach((item, index) => walk(item, `${path}[${index}]`, depth + 1));
+      return;
+    }
+    for (const [key, child] of Object.entries(value)) walk(child, path ? `${path}.${key}` : key, depth + 1);
+  };
+  walk(root, '', 0);
+  return found.sort((a, b) => b.count - a.count);
+}
+
+/**
  * What a page's HTML says about where its listings come from, as lines of text.
  *
  * Runs on a string, in Node, so it can be tried on a saved page without a browser.
@@ -77,6 +124,13 @@ export function inspectHtml(html) {
       shape = Array.isArray(parsed)
         ? `JSON array of ${parsed.length}`
         : `JSON keys: ${Object.keys(parsed).slice(0, 12).join(', ')}`;
+      // The outline and the adverts are the point: they say what to read and where it is.
+      lines.push(`  ${label}: ${shape}`);
+      lines.push(`    outline: ${outline(parsed, 4).slice(0, 1800)}`);
+      for (const list of findAdLists(parsed).slice(0, 3)) {
+        lines.push(`    ad list at "${list.path}": ${list.count} items; first = ${JSON.stringify(list.first).slice(0, 1600)}`);
+      }
+      continue;
     } catch {
       const assigned = [...script.text.matchAll(/window\.([A-Za-z_$][\w$]*)\s*=/g)].map((m) => m[1]);
       const adsArrays = (script.text.match(/"(ads|results|listings|items)"\s*:\s*\[/g) ?? []).length;
