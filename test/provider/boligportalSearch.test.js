@@ -15,7 +15,8 @@ vi.mock('../../lib/utils.js', async (importOriginal) => ({
 vi.mock('../../lib/services/tracking/Tracker.js', () => ({ trackPoi: vi.fn(async () => {}) }));
 
 const { fetchSearchHtml, STORE_SELECTOR } = await import('../../lib/services/boligportal/boligportalSearch.js');
-const { config, readSearchPage, createConfig, metaInformation } = await import('../../lib/provider/boligportal.js');
+const { config, readSearchPage, createConfig, metaInformation, newestFirst } =
+  await import('../../lib/provider/boligportal.js');
 const { trackPoi } = await import('../../lib/services/tracking/Tracker.js');
 
 const FIXTURE = fs.readFileSync(
@@ -189,6 +190,36 @@ describe('the provider config', () => {
   });
 });
 
+describe('newestFirst', () => {
+  const base = 'https://www.boligportal.dk/lejeboliger/hiller%C3%B8d/alle-v%C3%A6relser/';
+
+  it.each(['RENT_ASC', 'SIZE_M2_DESC'])(
+    "takes a chosen sort (%s) off, which leaves the site's newest-first default",
+    (order) => {
+      expect(newestFirst(`${base}?max_monthly_rent=18424&order=${order}`)).toBe(`${base}?max_monthly_rent=18424`);
+    },
+  );
+
+  it('takes the page offset off, so a url copied from page two still starts at the first page', () => {
+    expect(newestFirst(`${base}?max_monthly_rent=18424&offset=18`)).toBe(`${base}?max_monthly_rent=18424`);
+  });
+
+  it('keeps every filter, in the path and the query, and the encoding of the path', () => {
+    const url =
+      'https://www.boligportal.dk/lejligheder,r%C3%A6kkehuse,huse/hiller%C3%B8d/5-v%C3%A6relser/?min_size_m2=90&min_rental_period=0&newbuild=1';
+    expect(newestFirst(url)).toBe(url);
+  });
+
+  it('leaves a url with nothing to remove exactly as it was', () => {
+    expect(newestFirst(`${base}?max_monthly_rent=18424`)).toBe(`${base}?max_monthly_rent=18424`);
+    expect(newestFirst(base)).toBe(base);
+  });
+
+  it('hands back something that is not a url unchanged, for the navigation to report', () => {
+    expect(newestFirst('not a url')).toBe('not a url');
+  });
+});
+
 describe('getListings', () => {
   const run = (browser, url = 'https://www.boligportal.dk/lejeboliger/x/') => config.getListings(url, browser);
 
@@ -208,6 +239,14 @@ describe('getListings', () => {
       'https://www.boligportal.dk/lejeboliger/x/',
       'https://www.boligportal.dk/lejeboliger/x/?offset=18',
     ]);
+  });
+
+  it('asks for the first page, newest first, whatever sort and page the saved url has', async () => {
+    const browser = fakeBrowser({ html: pageWith([advert(1)], null) });
+
+    await run(browser, 'https://www.boligportal.dk/lejeboliger/x/?max_monthly_rent=9000&order=RENT_ASC&offset=36');
+
+    expect(browser.page.goto.mock.calls[0][0]).toBe('https://www.boligportal.dk/lejeboliger/x/?max_monthly_rent=9000');
   });
 
   it('does not ask for a second page when the site names none', async () => {
