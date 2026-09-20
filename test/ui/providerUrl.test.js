@@ -92,7 +92,7 @@ describe('validateProviderUrl', () => {
       id: 'boligsiden',
       name: 'Boligsiden',
       baseUrl: 'https://www.boligsiden.dk/',
-      hosts: ['api.boligsiden.dk'],
+      searchHosts: ['api.boligsiden.dk'],
     };
 
     it('accepts a url on the declared search host, not on baseUrl', () => {
@@ -103,7 +103,7 @@ describe('validateProviderUrl', () => {
       expect(result).toMatchObject({ ok: true, problem: null, expectedHost: 'api.boligsiden.dk' });
     });
 
-    it('refuses a url on baseUrl itself once hosts replaces it', () => {
+    it('refuses a url on baseUrl itself once searchHosts is declared', () => {
       const result = validateProviderUrl('https://www.boligsiden.dk/tilsalg/odense', boligsiden);
       expect(result).toMatchObject({ ok: false, problem: 'wrongHost', expectedHost: 'api.boligsiden.dk' });
     });

@@ -67,18 +67,25 @@ function carriesASearch(url) {
  * Every host a provider's searches may be on.
  *
  * Most portals have one, and `baseUrl` is it. A portal serving several countries as several domains
- * declares them all - immowelt as `.de` and `.at`, idealista as `.com`, `.it` and `.pt` - and
- * comparing against `baseUrl` alone is what used to refuse a perfectly good Austrian or Italian
- * search with "that address is not on immowelt.de". It is also what a provider reached through a
- * different host than the page a human would browse declares instead of `baseUrl` - boligsiden.js
- * is reached through api.boligsiden.dk while `baseUrl` still points at www.boligsiden.dk for the
- * "open in new tab" link, so a URL copied from `baseUrl`'s own host would parse here but carry none
- * of the query shape the provider's `getListings` expects.
+ * declares them all *in addition to* `baseUrl` - immowelt as `.de` and `.at`, idealista as `.com`,
+ * `.it` and `.pt` - and comparing against `baseUrl` alone is what used to refuse a perfectly good
+ * Austrian or Italian search with "that address is not on immowelt.de".
  *
- * @param {{baseUrl?: string, hosts?: string[]}|null|undefined} provider
+ * `searchHosts` is the other shape: a provider whose real search endpoint sits on a host that is
+ * never a valid place to paste a URL from, because `baseUrl` exists only for the "open in new tab"
+ * link - see boligsiden.js, reached through api.boligsiden.dk while `baseUrl` still points at the
+ * Cloudflare-walled www.boligsiden.dk. Unlike `hosts`, it *replaces* `baseUrl` rather than adding to
+ * it: a URL copied from `baseUrl`'s own host would parse here but carry none of the query shape the
+ * provider's `getListings` expects, and would fail silently exactly the way this check exists to
+ * prevent - so it is checked first and, when declared, is the only answer this returns.
+ *
+ * @param {{baseUrl?: string, hosts?: string[], searchHosts?: string[]}|null|undefined} provider
  * @returns {string[]} bare hosts, possibly empty when the provider declares nothing usable.
  */
 function hostsOf(provider) {
+  if (Array.isArray(provider?.searchHosts) && provider.searchHosts.length > 0) {
+    return [...new Set(provider.searchHosts.map(normalizeHost).filter((host) => host != null))];
+  }
   const declared = Array.isArray(provider?.hosts) && provider.hosts.length > 0 ? provider.hosts : [provider?.baseUrl];
   return [...new Set(declared.map(normalizeHost).filter((host) => host != null))];
 }
@@ -87,7 +94,7 @@ function hostsOf(provider) {
  * Check a pasted provider URL.
  *
  * @param {string|null|undefined} url
- * @param {{id: string, name: string, baseUrl: string, hosts?: string[]}|null|undefined} provider
+ * @param {{id: string, name: string, baseUrl: string, hosts?: string[], searchHosts?: string[]}|null|undefined} provider
  * @returns {{ok: boolean, problem: ProviderUrlProblem, expectedHost: string|null}} `expectedHost`
  *   names every accepted host, comma separated, because it is what the error message shows the
  *   user. Joined with a comma rather than an "or" so that no English word leaks into de.json and

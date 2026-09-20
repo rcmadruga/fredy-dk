@@ -117,6 +117,8 @@ describe('the providers Fredy actually ships', () => {
 
     expect(ranks, `every shipped country needs a rank in COUNTRY_ORDER: ${countries.join(', ')}`).not.toContain(-1);
     expect(ranks).toEqual([...ranks].sort((a, b) => a - b));
+    // 'pt' never appears here even though idealista covers it: groupCountryOf picks one
+    // representative country per provider - the best-ranked one - and es outranks pt for idealista.
     expect(new Set(countries)).toEqual(new Set(['de', 'at', 'ch', 'es', 'it', 'fr', 'dk']));
   });
 
