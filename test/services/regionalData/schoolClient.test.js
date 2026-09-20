@@ -7,6 +7,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { UDDANNELSESSTATISTIK_API_KEY_ENV } from '../../../lib/services/regionalData/constants.js';
 import {
   hasApiKey,
+  readApiKey,
   fetchSchoolStats,
   joinSchoolStats,
   parseDanishNumber,
@@ -27,6 +28,32 @@ afterEach(() => {
   } else {
     process.env[UDDANNELSESSTATISTIK_API_KEY_ENV] = originalEnv;
   }
+});
+
+describe('readApiKey', () => {
+  it('strips the quotes and whitespace that come in with an env file or a wrapped paste', () => {
+    process.env[UDDANNELSESSTATISTIK_API_KEY_ENV] = ' "abc.def \n ghi.jkl" ';
+    expect(readApiKey()).toBe('abc.defghi.jkl');
+    process.env[UDDANNELSESSTATISTIK_API_KEY_ENV] = "'abc.def.ghi'";
+    expect(readApiKey()).toBe('abc.def.ghi');
+  });
+
+  it('leaves a clean key alone, and reads nothing as nothing', () => {
+    process.env[UDDANNELSESSTATISTIK_API_KEY_ENV] = 'abc.def.ghi';
+    expect(readApiKey()).toBe('abc.def.ghi');
+    process.env[UDDANNELSESSTATISTIK_API_KEY_ENV] = '  ""  ';
+    expect(readApiKey()).toBeNull();
+    delete process.env[UDDANNELSESSTATISTIK_API_KEY_ENV];
+    expect(readApiKey()).toBeNull();
+  });
+
+  it('is what is sent as the bearer token', async () => {
+    process.env[UDDANNELSESSTATISTIK_API_KEY_ENV] = '"abc.def \n ghi"';
+    fetch.mockResolvedValue({ ok: true, json: async () => [] });
+    await fetchSchoolStats();
+    const [, options] = fetch.mock.calls.find(([url]) => String(url).includes('uddannelsesstatistik'));
+    expect(options.headers.Authorization).toBe('Bearer abc.defghi');
+  });
 });
 
 describe('hasApiKey', () => {
