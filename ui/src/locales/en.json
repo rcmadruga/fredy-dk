@@ -371,6 +371,7 @@
   "map.filterTaxLayer": "Kommune Taxes",
   "map.filterSchoolLayer": "Schools",
   "map.filterSchoolLayerUnavailable": "Set the UDDANNELSESSTATISTIK_API_KEY environment variable on the server to enable this layer.",
+  "map.filterSchoolLayerError": "School data could not be loaded right now. Try again in a few minutes.",
   "map.taxPopupKommuneskat": "Kommuneskat",
   "map.taxPopupGrundskyld": "Grundskyld",
   "map.schoolPopupGradeAverage": "9th-grade exam average",

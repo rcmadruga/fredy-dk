@@ -371,6 +371,7 @@
   "map.filterTaxLayer": "Kommunale Steuern",
   "map.filterSchoolLayer": "Schulen",
   "map.filterSchoolLayerUnavailable": "Setze die Umgebungsvariable UDDANNELSESSTATISTIK_API_KEY auf dem Server, um diese Ebene zu aktivieren.",
+  "map.filterSchoolLayerError": "Die Schuldaten konnten gerade nicht geladen werden. Versuche es in ein paar Minuten erneut.",
   "map.taxPopupKommuneskat": "Kommuneskat",
   "map.taxPopupGrundskyld": "Grundskyld",
   "map.schoolPopupGradeAverage": "Notendurchschnitt (9. Klasse)",

@@ -97,6 +97,7 @@ describe('getSchoolLayer', () => {
     const layer = await getSchoolLayer();
 
     expect(layer.available).toBe(true);
+    expect(layer.failed).toBe(false);
     expect(layer.schools).toHaveLength(1);
     expect(layer.attribution.length).toBeGreaterThan(0);
   });
@@ -119,6 +120,6 @@ describe('getSchoolLayer', () => {
 
     const layer = await getSchoolLayer();
 
-    expect(layer).toEqual({ available: true, schools: [], attribution: expect.any(Array) });
+    expect(layer).toEqual({ available: true, failed: true, schools: [], attribution: expect.any(Array) });
   });
 });

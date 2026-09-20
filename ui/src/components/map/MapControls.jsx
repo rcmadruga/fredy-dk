@@ -8,6 +8,12 @@ import { useTranslation } from '../../services/i18n/i18n.jsx';
 
 const { Text } = Typography;
 
+/** The tooltip for each state the school switch can be disabled in; `ready` and `loading` have none. */
+const SCHOOL_STATUS_HINT = {
+  'no-key': (t) => t('map.filterSchoolLayerUnavailable'),
+  error: (t) => t('map.filterSchoolLayerError'),
+};
+
 /**
  * The basemap and overlay switches every map shares, plus the two Denmark-only regional layers
  * (kommune tax choropleth, school grades/inclusion) when the map is showing a Danish context.
@@ -29,9 +35,12 @@ const { Text } = Typography;
  *   (see `lib/types/providerConfig.js`'s `countries` field).
  * @param {boolean} [props.taxLayer]
  * @param {boolean} [props.schoolLayer]
- * @param {boolean} [props.schoolLayerAvailable] - Whether the server has a STIL API key configured.
- *   `false` disables the switch rather than hiding it, with a tooltip explaining why - the same
- *   layer a user could otherwise reasonably expect to just work.
+ * @param {'loading'|'ready'|'no-key'|'error'} [props.schoolLayerStatus] - What the school data is
+ *   doing. Anything but `ready` disables the switch rather than hiding it, and each says why in its
+ *   own words: a missing key and a failed request need different things from the person reading the
+ *   tooltip, and `loading` needs nothing at all.
+ *   The switch used to take one boolean, which showed "set the API key" for a request that had
+ *   merely failed.
  */
 export default function MapControls({
   style,
@@ -42,7 +51,7 @@ export default function MapControls({
   showRegionalLayers = false,
   taxLayer = false,
   schoolLayer = false,
-  schoolLayerAvailable = true,
+  schoolLayerStatus = 'ready',
 }) {
   const t = useTranslation();
 
@@ -93,11 +102,11 @@ export default function MapControls({
             <Text size="small" strong className="map-panel__label">
               {t('map.filterSchoolLayer')}
             </Text>
-            <Tooltip content={schoolLayerAvailable ? null : t('map.filterSchoolLayerUnavailable')} position="left">
+            <Tooltip content={SCHOOL_STATUS_HINT[schoolLayerStatus]?.(t) ?? null} position="left">
               <Switch
                 size="small"
                 checked={schoolLayer}
-                disabled={!schoolLayerAvailable}
+                disabled={schoolLayerStatus !== 'ready'}
                 onChange={(value) => onChange({ schoolLayer: value })}
               />
             </Tooltip>

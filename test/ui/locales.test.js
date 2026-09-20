@@ -91,6 +91,7 @@ const UNTRANSLATED_BACKLOG = {
     'map.filterTaxLayer',
     'map.filterSchoolLayer',
     'map.filterSchoolLayerUnavailable',
+    'map.filterSchoolLayerError',
     'map.taxPopupKommuneskat',
     'map.taxPopupGrundskyld',
     'map.schoolPopupGradeAverage',
