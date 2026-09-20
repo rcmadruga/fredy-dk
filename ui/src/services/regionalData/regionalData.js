@@ -11,8 +11,16 @@ import { xhrGet } from '../xhr.js';
  * @property {string} name
  * @property {number} lat
  * @property {number} lng
- * @property {number|null} gradeAverage
- * @property {number|null} inclusionPct
+ * @property {string|null} schoolType - The institution register's category, in Danish.
+ * @property {boolean} isSpecialSchool - A special school or special-education offer in its own right.
+ * @property {number|null} inclusionPct - Share of pupils taught in ordinary classes.
+ * @property {number|null} specialClassPct - Share taught in separate special classes.
+ * @property {number|null} pupils
+ * @property {number|null} gradeAverage - 9th-grade exam average; null for schools without one.
+ * @property {string|null} schoolYear - School year of the inclusion figures.
+ * @property {string|null} gradeYear - School year of the grade average.
+ * @property {string|null} address
+ * @property {string|null} website
  */
 
 /**

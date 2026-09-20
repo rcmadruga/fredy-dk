@@ -8,9 +8,13 @@ import { IconChevronLeft, IconChevronRight } from '@douyinfe/semi-icons';
 import no_image from '../../assets/no_image.png';
 import { availableModes, formatMinutes, hasAnyTime } from '../../components/transit/travelTimeFormat.js';
 import { formatPrice } from '../../services/price/priceService.js';
+import { escapeHtml } from '../../components/map/escapeHtml.js';
 import { formatDecimal } from '../../services/number/numberService.js';
 import { mountPopupNode } from '../../components/map/popupContent.jsx';
 import MapPopupActions from './components/MapPopupActions.jsx';
+
+// Upstream's other popups import it from here, so it stays reachable under this name.
+export { escapeHtml };
 
 /**
  * Builds the DOM for a listing popup on the map.
@@ -126,25 +130,6 @@ export function createListingPopupContent({
     /** Which listing is on screen, for the caller to put in the address bar when it opens. */
     currentId: () => listings[index].id,
   };
-}
-
-/**
- * Escapes text before it goes into markup that MapLibre hands to `innerHTML`.
- *
- * Text from the user's own settings, and every field of a listing: the title, the address, the job
- * name and the image URL all arrive from a scraped portal, and a `<` or a `"` in one of them used to
- * land in this markup unescaped - which in a document served from Fredy's own origin is stored
- * cross-site scripting. Exported for the other popups built from strings (the listing detail map,
- * the home markers on the map view).
- *
- * @param {unknown} value
- * @returns {string}
- */
-export function escapeHtml(value) {
-  return String(value).replace(
-    /[&<>"']/g,
-    (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char],
-  );
 }
 
 /**
