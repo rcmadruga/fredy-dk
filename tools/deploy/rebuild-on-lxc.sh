@@ -17,6 +17,15 @@
 #   6. Starts a new container named fredy-new, reusing the same named volumes and
 #      port, and tails its logs so you can watch it come up.
 #
+# Environment for the new container - NOT carried over from the old one, so anything the app needs
+# has to be supplied here every time:
+#   - UDDANNELSESSTATISTIK_API_KEY: turns on the Denmark school layer. Passed through from your shell
+#     when set (by name, so the value never appears in the process list or in this script's output):
+#       UDDANNELSESSTATISTIK_API_KEY=... ./rebuild-on-lxc.sh
+#   - ENV_FILE (default ~/fredy.env, used only if it exists): a `KEY=value` per line file handed to
+#     `docker run --env-file`, so a key is written down once instead of exported on every rebuild.
+#     Keep it private: chmod 600 ~/fredy.env
+#
 # It does NOT touch the old container beyond stopping it, and does NOT rename/remove
 # anything at the end - that's a manual step after you've confirmed the new one works
 # in the browser (see the printed instructions at the end).
@@ -30,6 +39,7 @@ REPO_URL="https://github.com/rcmadruga/fredy-dk.git"
 CHECKOUT_DIR="$HOME/fredy-dk"
 IMAGE_TAG="fredy-dk:local"
 NEW_CONTAINER="fredy-new"
+ENV_FILE="${ENV_FILE:-$HOME/fredy.env}"
 
 echo "== 1. Disk space =="
 df -h /
@@ -83,8 +93,27 @@ docker stop "$OLD_CONTAINER"
 echo
 echo "== 6. Starting new container: $NEW_CONTAINER =="
 docker rm -f "$NEW_CONTAINER" >/dev/null 2>&1 || true
+
+# Extra `docker run` arguments, built up so each source of environment is reported (names only, never
+# values) before the container starts.
+ENV_ARGS=()
+if [ -f "$ENV_FILE" ]; then
+  ENV_ARGS+=(--env-file "$ENV_FILE")
+  echo "Environment file:  $ENV_FILE ($(grep -cE '^[[:space:]]*[A-Za-z_][A-Za-z0-9_]*=' "$ENV_FILE" || true) variables)"
+fi
+if [ -n "${UDDANNELSESSTATISTIK_API_KEY:-}" ]; then
+  # `-e NAME` with no value copies it from this shell, so it is not on the command line.
+  ENV_ARGS+=(-e UDDANNELSESSTATISTIK_API_KEY)
+fi
+if [ -n "${UDDANNELSESSTATISTIK_API_KEY:-}" ] || { [ -f "$ENV_FILE" ] && grep -qE '^[[:space:]]*UDDANNELSESSTATISTIK_API_KEY=.+' "$ENV_FILE"; }; then
+  echo "School layer key:  set"
+else
+  echo "School layer key:  NOT set - the Denmark school layer will stay off (see the header of this script)"
+fi
+
 docker run -d --name "$NEW_CONTAINER" --restart unless-stopped -p 9998:9998 \
-  -v "$CONF_VOLUME":/conf -v "$DB_VOLUME":/db "$IMAGE_TAG"
+  -v "$CONF_VOLUME":/conf -v "$DB_VOLUME":/db \
+  ${ENV_ARGS[@]+"${ENV_ARGS[@]}"} "$IMAGE_TAG"
 
 echo
 echo "Tailing logs - Ctrl+C once it looks healthy (server listening, no fatal errors)."
