@@ -257,6 +257,16 @@ export default function Map({
   /** Fetched once per mount so `MapControls` can disable the school switch before it is ever touched. */
   const [schoolLayerData, setSchoolLayerData] = useState(null);
 
+  /** What the school switch should say: still asking, fine, no key on the server, or a failed fetch. */
+  const schoolLayerStatus =
+    schoolLayerData == null
+      ? 'loading'
+      : schoolLayerData.failed
+        ? 'error'
+        : schoolLayerData.available
+          ? 'ready'
+          : 'no-key';
+
   /**
    * The single entry point for control changes, so a controlled parent is told once per action.
    */
@@ -529,10 +539,12 @@ export default function Map({
       .then((data) => {
         if (!cancelled) setSchoolLayerData(data);
       })
-      .catch(() => {
-        // A network hiccup here must not be able to break the map; it just leaves the switch
-        // disabled, same as "no key configured" does.
-        if (!cancelled) setSchoolLayerData({ available: false, schools: [], attribution: [] });
+      .catch((error) => {
+        // A network hiccup here must not be able to break the map; it leaves the switch disabled. It
+        // is marked as an error rather than as "no key", which is a different thing to fix, and
+        // logged, because this used to fail without a trace.
+        console.error('Error fetching the Denmark school layer', error);
+        if (!cancelled) setSchoolLayerData({ available: true, failed: true, schools: [], attribution: [] });
       });
 
     return () => {
@@ -585,7 +597,7 @@ export default function Map({
 
     const onStyleData = () => {
       if (!mapRef.current) return;
-      const show = schoolLayerValue && isDenmarkScoped && schoolLayerData?.available;
+      const show = schoolLayerValue && isDenmarkScoped && schoolLayerStatus === 'ready';
       applySchoolLayer(mapRef.current, show ? schoolLayerData.schools : null);
     };
 
@@ -598,7 +610,7 @@ export default function Map({
     return () => {
       mapRef.current?.off('styledata', onStyleData);
     };
-  }, [schoolLayerValue, styleValue, isDenmarkScoped, schoolLayerData]);
+  }, [schoolLayerValue, styleValue, isDenmarkScoped, schoolLayerData, schoolLayerStatus]);
 
   // Popups for the two regional layers. Plain `setHTML` rather than the React-mounted popups the
   // listing/transit markers use: the content is a few labelled figures and a link, nothing stateful
@@ -1004,7 +1016,7 @@ export default function Map({
             showRegionalLayers={isDenmarkScoped}
             taxLayer={taxLayerValue}
             schoolLayer={schoolLayerValue}
-            schoolLayerAvailable={schoolLayerData?.available ?? false}
+            schoolLayerStatus={schoolLayerStatus}
           />
         )}
 
