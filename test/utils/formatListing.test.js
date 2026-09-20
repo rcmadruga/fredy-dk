@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { formatListing } from '../../lib/utils/formatListing.js';
+import { formatListing, formatPriceChange } from '../../lib/utils/formatListing.js';
 
 /**
  * Notification text used to be German whatever the user had set the interface to, because the
@@ -52,5 +52,30 @@ describe('formatListing', () => {
     const original = { ...listing };
     formatListing(listing, 'de');
     expect(listing).toEqual(original);
+  });
+});
+
+describe('formatListing currency', () => {
+  const listing = { id: 'l1', title: 'Hus', price: 2000000, size: 120, rooms: 5 };
+
+  it('prints euros unless told otherwise', () => {
+    expect(formatListing(listing, 'en').price).toBe('2000000 €');
+  });
+
+  it('prints kroner for a provider that lists in DKK', () => {
+    expect(formatListing(listing, 'en', 'DKK').price).toBe('2000000 kr.');
+  });
+
+  it('falls back to the code for a currency it has no symbol for, and to euros for junk', () => {
+    expect(formatListing(listing, 'en', 'SEK').price).toBe('2000000 SEK');
+    expect(formatListing(listing, 'en', 'kroner').price).toBe('2000000 €');
+  });
+
+  it('carries the currency through a price change', () => {
+    const change = { listing, oldPrice: 2100000, newPrice: 2000000, changePercent: -4.8, direction: 'down' };
+    const formatted = formatPriceChange(change, 'en', 'DKK');
+    expect(formatted.oldPrice).toBe('2100000 kr.');
+    expect(formatted.newPrice).toBe('2000000 kr.');
+    expect(formatted.price).toBe('2000000 kr.');
   });
 });

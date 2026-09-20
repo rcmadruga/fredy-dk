@@ -30,6 +30,7 @@ import { createListingPopupContent } from './listingPopupContent.jsx';
 // component with no props, which fails somewhere inside it rather than where it was written.
 import MapCanvas, { HOME_MARKER_COLOR } from '../../components/map/Map.jsx';
 import { useProviderCountries } from '../../hooks/useProviderCountries.js';
+import { useCurrencyOf } from '../../hooks/useCurrencyOf.js';
 import Headline from '../../components/headline/Headline.jsx';
 import { useTranslation, useLocale } from '../../services/i18n/i18n.jsx';
 import { keepPopupInView, mountPopupNode } from '../../components/map/popupContent.jsx';
@@ -74,6 +75,7 @@ const { Text } = Typography;
 export default function MapView() {
   const t = useTranslation();
   const locale = useLocale();
+  const currencyOf = useCurrencyOf();
   const map = useRef(null);
   const markers = useRef([]);
   const homeMarkers = useRef([]);
@@ -405,6 +407,7 @@ export default function MapView() {
         listings: grouped,
         t,
         locale,
+        currencyOf,
         onPageChange: refit,
       });
 

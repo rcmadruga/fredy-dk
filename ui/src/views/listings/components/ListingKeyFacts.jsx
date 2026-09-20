@@ -13,6 +13,7 @@ import { buildObjectFacts } from '../listingFacts.js';
 import { formatDeviation } from '../../../services/listings/marketBenchmark.js';
 import { VERDICT_COLORS, formatEuro, withAlpha } from '../../../components/cards/chartTheme.js';
 import { useTranslation, useLocale } from '../../../services/i18n/i18n.jsx';
+import { useCurrencyOf } from '../../../hooks/useCurrencyOf.js';
 import './ListingKeyFacts.less';
 
 /** One icon per tile, in the order `buildObjectFacts` returns them. */
@@ -78,6 +79,7 @@ function MarketPill({ benchmark }) {
 export default function ListingKeyFacts({ listing, priceHistory, financeThresholds }) {
   const t = useTranslation();
   const locale = useLocale();
+  const currencyOf = useCurrencyOf();
   const na = t('common.na');
 
   const { price, benchmark, tiles, affordability } = buildObjectFacts(listing, {
@@ -86,6 +88,7 @@ export default function ListingKeyFacts({ listing, priceHistory, financeThreshol
     financeThresholds,
     describeBenchmark,
     formatEuro,
+    currency: currencyOf(listing?.provider),
   });
 
   return (

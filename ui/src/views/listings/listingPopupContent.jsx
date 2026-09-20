@@ -7,7 +7,7 @@ import { renderToString } from 'react-dom/server';
 import { IconChevronLeft, IconChevronRight, IconDelete, IconEyeOpened, IconLink } from '@douyinfe/semi-icons';
 import no_image from '../../assets/no_image.png';
 import { availableModes, formatMinutes, hasAnyTime } from '../../components/transit/travelTimeFormat.js';
-import { formatEuroPrice } from '../../services/price/priceService.js';
+import { formatPrice } from '../../services/price/priceService.js';
 import { formatDecimal } from '../../services/number/numberService.js';
 
 /**
@@ -24,6 +24,8 @@ import { formatDecimal } from '../../services/number/numberService.js';
  * @param {Object} params
  * @param {object[]} params.listings - The listings at this position, at least one.
  * @param {(key: string, vars?: Record<string, string|number>) => string} params.t
+ * @param {(providerId: string) => string} [params.currencyOf] - resolves a listing's provider to its
+ *   currency code; without it prices print in euros.
  * @param {string} [params.locale] - BCP 47 locale for the price. This markup is built outside
  * React, so the view hands its `useLocale()` value down.
  * @param {() => void} [params.onPageChange] - Called after the popup switched to another listing,
@@ -31,7 +33,7 @@ import { formatDecimal } from '../../services/number/numberService.js';
  * @returns {{element: HTMLElement, transitMount: HTMLElement}} The popup content and the empty node
  * the nearby stops are to be rendered into.
  */
-export function createListingPopupContent({ listings, t, locale, onPageChange }) {
+export function createListingPopupContent({ listings, t, locale, currencyOf, onPageChange }) {
   const element = document.createElement('div');
   element.className = 'map-popup-content';
 
@@ -47,7 +49,7 @@ export function createListingPopupContent({ listings, t, locale, onPageChange })
   let index = 0;
 
   const render = () => {
-    body.innerHTML = renderListingBody(listings[index], index, listings.length, t, locale);
+    body.innerHTML = renderListingBody(listings[index], index, listings.length, t, locale, currencyOf);
 
     const step = (delta) => {
       index = (index + delta + listings.length) % listings.length;
@@ -110,9 +112,10 @@ function renderTravelTimes(listing, t) {
  * @param {number} total - Size of the group.
  * @param {(key: string, vars?: Record<string, string|number>) => string} t
  * @param {string} [locale] - BCP 47 locale for the price.
+ * @param {(providerId: string) => string} [currencyOf] - resolves a listing's provider to its currency.
  * @returns {string}
  */
-function renderListingBody(listing, index, total, t, locale) {
+function renderListingBody(listing, index, total, t, locale, currencyOf) {
   const capitalizedProvider = listing.provider
     ? listing.provider.charAt(0).toUpperCase() + listing.provider.slice(1)
     : 'N/A';
@@ -138,7 +141,7 @@ function renderListingBody(listing, index, total, t, locale) {
     />
     <h4>${listing.title}</h4>
     <div class="info">
-      <span><strong>${t('map.popupPrice')}</strong> ${listing.price ? formatEuroPrice(listing.price, locale) : t('common.na')}</span>
+      <span><strong>${t('map.popupPrice')}</strong> ${listing.price ? formatPrice(listing.price, locale, null, currencyOf?.(listing.provider)) : t('common.na')}</span>
       <span><strong>${t('map.popupAddress')}</strong> ${listing.address || t('common.na')}</span>
       <span><strong>${t('map.popupJob')}</strong> ${listing.job_name || t('common.na')}</span>
       <span><strong>${t('map.popupProvider')}</strong> ${capitalizedProvider}</span>

@@ -17,7 +17,8 @@ import {
   IconRefresh,
 } from '@douyinfe/semi-icons';
 import no_image from '../../../assets/no_image.png';
-import { formatEuroPrice } from '../../../services/price/priceService.js';
+import { formatPrice } from '../../../services/price/priceService.js';
+import { useCurrencyOf } from '../../../hooks/useCurrencyOf.js';
 import * as timeService from '../../../services/time/timeService.js';
 import StatusControl from '../../listings/StatusControl.jsx';
 import ExternalListingLink from '../../listings/ExternalListingLink.jsx';
@@ -46,6 +47,7 @@ const ListingsGrid = ({
 }) => {
   const t = useTranslation();
   const locale = useLocale();
+  const currencyOf = useCurrencyOf();
   return (
     <div className="listingsGrid__grid">
       {listings.map((item) => (
@@ -102,12 +104,13 @@ const ListingsGrid = ({
             {item.price && (
               <div className="listingsGrid__card__price">
                 <IconCart size="small" />
-                {formatEuroPrice(item.price, locale)}
+                {formatPrice(item.price, locale, null, currencyOf(item.provider))}
                 <AffordabilityChip verdict={item.affordabilityVerdict} dealType={item.dealType} />
                 <PriceChangeBadge
                   price={item.price}
                   previousPrice={item.previous_price}
                   changedAt={item.price_changed_at}
+                  currency={currencyOf(item.provider)}
                 />
                 {/* Next to the price rather than on a line of its own: it is the same figure said
                     a second way, and reading the two together is the whole point. */}
