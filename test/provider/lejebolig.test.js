@@ -107,3 +107,62 @@ describe('#lejebolig search page parsing', () => {
     expect(listing.rooms).toBeNull();
   });
 });
+
+/**
+ * `fetchDetails` reads a listing's own page - the description and full address the search card
+ * never carries (see the file header). The same file runs against the fixture and, on `yarn test`,
+ * the live page for the exact listing the fixture was recorded from - both answer the same way.
+ */
+describe('#lejebolig fetchDetails', () => {
+  const DETAIL_URL = 'https://www.lejebolig.dk/lejebolig/1908590/2-vaerelses-bolig-oegaden';
+
+  it("reads the description, full address and posted date off the listing's own page", async () => {
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = async (url) => {
+      expect(String(url)).toBe(DETAIL_URL);
+      const html = fs.readFileSync(path.join(FIXTURES, 'lejebolig_detail.html'), 'utf8');
+      return { ok: true, status: 200, text: () => Promise.resolve(html) };
+    };
+
+    try {
+      const listing = await provider.config.fetchDetails({
+        id: '1908590',
+        link: DETAIL_URL,
+        description: null,
+        // What the search card has instead of a street address - see the file header.
+        address: 'Lejlighed i Aalborg',
+      });
+
+      expect(listing.description).toContain('Øgadekvarter');
+      expect(listing.address).toBe('Bornholmsgade, 9000 Aalborg');
+      expect(listing.publishedAt).toBe(new Date('2026-09-22').getTime());
+      // Boilerplate mixed in alongside the description on the page must not leak into it.
+      expect(listing.description).not.toContain('Digital fremvisning');
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it('leaves the listing untouched when the page cannot be read', async () => {
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = async () => ({ ok: false, status: 404, text: () => Promise.resolve('') });
+
+    try {
+      const listing = await provider.config.fetchDetails({
+        id: '1908590',
+        link: DETAIL_URL,
+        description: null,
+        address: 'Lejlighed i Aalborg',
+      });
+      expect(listing.description).toBeNull();
+      expect(listing.address).toBe('Lejlighed i Aalborg');
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it('is exactly the listing given back, unmutated, when there is no link', async () => {
+    const listing = await provider.config.fetchDetails({ id: '1', link: null, description: null });
+    expect(listing).toEqual({ id: '1', link: null, description: null });
+  });
+});
