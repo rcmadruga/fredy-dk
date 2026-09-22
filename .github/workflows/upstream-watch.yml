@@ -1,0 +1,67 @@
+name: Upstream watch
+
+# Read-only: reports how far rcmadruga:fredy-dk:master has drifted from
+# orangecoding/fredy, it never touches the actual sync (see sync-upstream.md).
+
+on:
+  schedule:
+    - cron: '0 8 * * 1' # Monday 08:00 UTC
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  upstream-watch:
+    name: Check how far behind upstream we are
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - name: Compare against upstream
+        id: compare
+        run: |
+          behind_by=$(gh api repos/orangecoding/fredy/compare/rcmadruga:fredy-dk:master...master --jq '.behind_by')
+          echo "behind_by=$behind_by" >> "$GITHUB_OUTPUT"
+
+      - name: Get latest upstream release
+        id: release
+        run: |
+          tag=$(gh api repos/orangecoding/fredy/releases/latest --jq '.tag_name')
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+      - name: Up to date
+        if: steps.compare.outputs.behind_by == '0'
+        run: echo "Fork is up to date with upstream (latest release ${{ steps.release.outputs.tag }})."
+
+      - name: File or update the drift issue
+        if: steps.compare.outputs.behind_by != '0'
+        run: |
+          behind_by="${{ steps.compare.outputs.behind_by }}"
+          tag="${{ steps.release.outputs.tag }}"
+          today=$(date -u +%Y-%m-%d)
+
+          gh label create upstream-sync --description "Upstream fredy has moved" --color FBCA04 || true
+
+          issue_number=$(gh issue list --label upstream-sync --state open --json number --jq '.[0].number // empty')
+
+          body_file=$(mktemp)
+          cat > "$body_file" <<BODY
+          orangecoding/fredy is $behind_by commit(s) ahead of our master, as of $today.
+          Latest upstream release: $tag.
+
+          Follow the playbook in sync-upstream.md at the repo root to pull the drift in.
+          This issue is filed and updated automatically by .github/workflows/upstream-watch.yml; it does not touch the sync itself.
+          BODY
+
+          if [ -z "$issue_number" ]; then
+            gh issue create \
+              --title "Upstream fredy is $behind_by commits ahead (latest: $tag)" \
+              --label upstream-sync \
+              --body-file "$body_file"
+          else
+            gh issue comment "$issue_number" \
+              --body "Still behind: $behind_by commit(s), latest release $tag (as of $today)."
+          fi
