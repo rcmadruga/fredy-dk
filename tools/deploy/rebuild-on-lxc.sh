@@ -46,15 +46,23 @@ df -h /
 
 echo
 echo "== 2. Currently running Fredy container =="
-OLD_CONTAINER="$(docker ps -a --filter "ancestor=ghcr.io/orangecoding/fredy:master" --format '{{.Names}}' | head -n1)"
+# Excludes $NEW_CONTAINER itself from both detection attempts. Without this, a previous run whose
+# promotion step (3, at the end) was skipped leaves "fredy-new" as the container actually serving
+# traffic, and the grep fallback below would happily pick it as the "old" one too - then step 5
+# stops it and step 6 force-removes it, destroying the live container this run was meant to replace,
+# all before the new one is even built.
+OLD_CONTAINER="$(docker ps -a --filter "ancestor=ghcr.io/orangecoding/fredy:master" --format '{{.Names}}' | grep -vx "$NEW_CONTAINER" | head -n1)"
 if [ -z "$OLD_CONTAINER" ]; then
-  OLD_CONTAINER="$(docker ps -a --format '{{.Names}}' | grep -i fredy | head -n1 || true)"
+  OLD_CONTAINER="$(docker ps -a --format '{{.Names}}' | grep -i fredy | grep -vx "$NEW_CONTAINER" | head -n1 || true)"
 fi
 
 if [ -z "$OLD_CONTAINER" ]; then
-  echo "Could not auto-detect a running Fredy container. List them yourself:"
+  echo "Could not auto-detect a Fredy container other than $NEW_CONTAINER itself."
+  echo "If the only fredy-named container docker knows about IS $NEW_CONTAINER, a previous"
+  echo "deploy's promotion step (3, at the end) was probably never run, and it is quietly the"
+  echo "one serving traffic right now. List containers yourself to check:"
   docker ps -a
-  echo "Then re-run with OLD_CONTAINER=<name> $0"
+  echo "Then either rename it out of the way first, or re-run with OLD_CONTAINER=<name> $0."
   exit 1
 fi
 echo "Found container: $OLD_CONTAINER"
