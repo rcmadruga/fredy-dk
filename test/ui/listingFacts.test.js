@@ -214,6 +214,6 @@ describe('formatPricePerSqm', () => {
   });
 
   it('drops the unit only when asked', () => {
-    expect(formatPricePerSqm(4194, 'de-DE', false)).not.toContain('/m\u00b2');
+    expect(formatPricePerSqm(4194, 'de-DE', undefined, false)).not.toContain('/m\u00b2');
   });
 });
