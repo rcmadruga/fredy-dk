@@ -166,6 +166,7 @@ describe('services/connectivity/connectivityService', () => {
       'ch-bakom': true,
       'at-rtr': true,
       'es-setid': true,
+      'dk-tjekditnet': true,
     });
   });
 

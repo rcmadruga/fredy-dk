@@ -18,7 +18,7 @@
  * framework along.
  * @type {string[]}
  */
-export const CONNECTIVITY_SOURCES = ['de-bba', 'ch-bakom', 'at-rtr', 'es-setid'];
+export const CONNECTIVITY_SOURCES = ['de-bba', 'ch-bakom', 'at-rtr', 'es-setid', 'dk-tjekditnet'];
 
 /**
  * The downstream thresholds the overview filter offers, in Mbit/s.
@@ -104,6 +104,12 @@ export const SOURCE_ATTRIBUTION = {
     // The parcels the Spanish map is drawn on are the cadastre's, not the ministry's.
     extraLabel: '© Dirección General del Catastro',
     extraHref: 'https://www.sedecatastro.gob.es/',
+  },
+  'dk-tjekditnet': {
+    label: 'Tjekditnet.dk',
+    href: 'https://tjekditnet.dk',
+    extraLabel: 'Digitaliseringsstyrelsen, CC0',
+    extraHref: 'https://tjekditnet.dk/dataudtr%C3%A6k',
   },
 };
 
