@@ -632,29 +632,25 @@ export default function Map({
     };
   }, [isDenmarkScoped]);
 
-  // Fetch the supermarkets on first use. A failure is remembered as `failed` rather than retried on
+  // Fetch the supermarkets on first use. Once per mount, guarded by a ref rather than by the loading
+  // state: with that state among the effect's dependencies, setting it re-ran the effect, whose
+  // cleanup cancelled the request that had just been started - the answer was thrown away and the
+  // panel stayed on "loading" for good. A failure is remembered as `failed` rather than retried on
   // every render; reloading the page is the retry, and the server caches a failure only briefly.
+  const groceryRequested = useRef(false);
   useEffect(() => {
-    if (!isDenmarkScoped || !groceryLayerValue || groceryLayerData != null || groceryLoading) return undefined;
+    if (!isDenmarkScoped || !groceryLayerValue || groceryRequested.current) return;
+    groceryRequested.current = true;
 
-    let cancelled = false;
     setGroceryLoading(true);
     fetchGroceryLayer()
-      .then((data) => {
-        if (!cancelled) setGroceryLayerData(data);
-      })
+      .then((data) => setGroceryLayerData(data))
       .catch((error) => {
         console.error('Error fetching the Denmark supermarkets', error);
-        if (!cancelled) setGroceryLayerData({ available: true, failed: true, stores: [], attribution: [] });
+        setGroceryLayerData({ available: true, failed: true, stores: [], attribution: [] });
       })
-      .finally(() => {
-        if (!cancelled) setGroceryLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [isDenmarkScoped, groceryLayerValue, groceryLayerData, groceryLoading]);
+      .finally(() => setGroceryLoading(false));
+  }, [isDenmarkScoped, groceryLayerValue]);
 
   // Handle Denmark kommune tax choropleth
   useEffect(() => {
