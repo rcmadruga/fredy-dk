@@ -23,6 +23,7 @@ import { PLACEHOLDERS, FLAG_PLACEHOLDERS } from '../../lib/services/application/
 import { TEMPLATE_LANGUAGES } from '../../lib/services/application/templates/index.js';
 import { TOUR_STEPS, stepBodyKey, stepTitleKey } from '../../ui/src/services/tour/tourSteps.js';
 import { SCHOOL_CATEGORIES } from '../../ui/src/components/map/schoolFilters.js';
+import { GROCERY_CHAINS } from '../../ui/src/components/map/groceryFilters.js';
 
 const localeDir = path.join(path.dirname(fileURLToPath(import.meta.url)), '../../ui/src/locales');
 const donateComponent = fs.readFileSync(path.join(localeDir, '../components/donate/Donate.jsx'), 'utf-8');
@@ -277,6 +278,8 @@ const COMPUTED_KEYS = [
   // The kinds of school the map colours by, which the panel writes out as a legend and the special
   // one as its own switch. Built from the list, so adding a kind is what adds the assertion.
   ...SCHOOL_CATEGORIES.map((category) => `map.schoolCategory.${category.id}`),
+  // The supermarket chains the panel lists and the popup names, built from the list for the same reason.
+  ...GROCERY_CHAINS.map((chain) => `map.groceryChain.${chain.id}`),
 ];
 
 /**

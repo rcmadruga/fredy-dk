@@ -4,8 +4,8 @@
  */
 
 /**
- * Denmark-only optional overlays: a kommune-level tax choropleth (kommuneskat + grundskyld) and
- * school markers coloured by kind of school. Both are fed by `lib/services/regionalData/`
+ * Denmark-only optional overlays: a kommune-level tax choropleth (kommuneskat + grundskyld),
+ * school markers coloured by kind of school, and supermarkets coloured by chain. Both are fed by `lib/services/regionalData/`
  * through `/api/regional-data/dk/*` and are off by default - see `Map.jsx` for the fetch-on-toggle
  * wiring, `MapControls.jsx` for the tax switch and `SchoolPanel.jsx` for everything about schools.
  *
@@ -14,6 +14,7 @@
  */
 
 import { SCHOOL_CATEGORIES, categoryColor, categoryOf } from './schoolFilters.js';
+import { GROCERY_CHAINS, chainColor, chainOf } from './groceryFilters.js';
 
 export const TAX_SOURCE_ID = 'dk-kommune-tax';
 export const TAX_FILL_LAYER_ID = 'dk-kommune-tax-fill';
@@ -21,6 +22,9 @@ export const TAX_OUTLINE_LAYER_ID = 'dk-kommune-tax-outline';
 
 export const SCHOOL_SOURCE_ID = 'dk-schools';
 export const SCHOOL_LAYER_ID = 'dk-schools-points';
+
+export const GROCERY_SOURCE_ID = 'dk-groceries';
+export const GROCERY_LAYER_ID = 'dk-groceries-points';
 
 /**
  * Kommuneskat stops, in percent. Denmark's 98 municipalities have run roughly 22.5-27.8 % for years;
@@ -170,4 +174,79 @@ export function removeSchoolLayer(map) {
   if (map == null) return;
   if (map.getLayer(SCHOOL_LAYER_ID) != null) map.removeLayer(SCHOOL_LAYER_ID);
   if (map.getSource(SCHOOL_SOURCE_ID) != null) map.removeSource(SCHOOL_SOURCE_ID);
+}
+
+/**
+ * @param {Array<import('../../services/regionalData/regionalData.js').GroceryStore>} stores
+ * @returns {{type: 'FeatureCollection', features: Array<Object>}}
+ */
+export function groceriesToGeoJson(stores) {
+  return {
+    type: 'FeatureCollection',
+    features: stores.map((store) => ({
+      type: 'Feature',
+      id: store.id,
+      geometry: { type: 'Point', coordinates: [store.lng, store.lat] },
+      properties: { name: store.name, brand: store.brand, chain: chainOf(store) },
+    })),
+  };
+}
+
+/**
+ * Adds or removes the supermarket markers.
+ *
+ * Smaller than the school markers and drawn underneath them: there are more of them, and where the
+ * two layers are on together the schools are what is being looked for.
+ *
+ * @param {import('maplibre-gl').Map} map
+ * @param {Array<Object>|null} stores - Raw store list, or `null`/empty to remove the layer.
+ */
+export function applyGroceryLayer(map, stores) {
+  if (map == null) return;
+
+  if (stores == null || stores.length === 0) {
+    removeGroceryLayer(map);
+    return;
+  }
+
+  const data = groceriesToGeoJson(stores);
+  const existing = map.getSource(GROCERY_SOURCE_ID);
+  if (existing != null) {
+    existing.setData(data);
+  } else {
+    map.addSource(GROCERY_SOURCE_ID, { type: 'geojson', data });
+  }
+
+  if (map.getLayer(GROCERY_LAYER_ID) == null) {
+    map.addLayer(
+      {
+        id: GROCERY_LAYER_ID,
+        type: 'circle',
+        source: GROCERY_SOURCE_ID,
+        paint: {
+          // From the same table the panel's legend is drawn from, so the two cannot disagree.
+          'circle-color': [
+            'match',
+            ['get', 'chain'],
+            ...GROCERY_CHAINS.filter((chain) => chain.id !== 'other').flatMap((chain) => [chain.id, chain.color]),
+            chainColor('other'),
+          ],
+          'circle-radius': 5,
+          'circle-stroke-color': '#ffffff',
+          'circle-stroke-width': 1,
+        },
+      },
+      // Under the schools when they are already there.
+      map.getLayer(SCHOOL_LAYER_ID) != null ? SCHOOL_LAYER_ID : undefined,
+    );
+  }
+}
+
+/**
+ * @param {import('maplibre-gl').Map} map
+ */
+export function removeGroceryLayer(map) {
+  if (map == null) return;
+  if (map.getLayer(GROCERY_LAYER_ID) != null) map.removeLayer(GROCERY_LAYER_ID);
+  if (map.getSource(GROCERY_SOURCE_ID) != null) map.removeSource(GROCERY_SOURCE_ID);
 }

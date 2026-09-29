@@ -15,6 +15,7 @@ vi.mock('../../../lib/services/regionalData/diskCache.js', () => ({
 
 vi.mock('../../../lib/services/regionalData/kommuneClient.js', () => ({ fetchKommuner: vi.fn() }));
 vi.mock('../../../lib/services/regionalData/taxClient.js', () => ({ fetchKommuneTaxRates: vi.fn() }));
+vi.mock('../../../lib/services/regionalData/groceryClient.js', () => ({ fetchGroceryStores: vi.fn() }));
 vi.mock('../../../lib/services/regionalData/schoolClient.js', () => ({
   fetchSchoolStats: vi.fn(),
   hasApiKey: vi.fn(),
@@ -23,7 +24,9 @@ vi.mock('../../../lib/services/regionalData/schoolClient.js', () => ({
 const { fetchKommuner } = await import('../../../lib/services/regionalData/kommuneClient.js');
 const { fetchKommuneTaxRates } = await import('../../../lib/services/regionalData/taxClient.js');
 const { fetchSchoolStats, hasApiKey } = await import('../../../lib/services/regionalData/schoolClient.js');
-const { getTaxChoropleth, getSchoolLayer } = await import('../../../lib/services/regionalData/regionalDataService.js');
+const { fetchGroceryStores } = await import('../../../lib/services/regionalData/groceryClient.js');
+const { getTaxChoropleth, getSchoolLayer, getGroceryLayer } =
+  await import('../../../lib/services/regionalData/regionalDataService.js');
 
 const kommune = (code, name) => ({ code, name, geometry: { type: 'Polygon', coordinates: [] } });
 
@@ -121,5 +124,26 @@ describe('getSchoolLayer', () => {
     const layer = await getSchoolLayer();
 
     expect(layer).toEqual({ available: true, failed: true, schools: [], attribution: expect.any(Array) });
+  });
+});
+
+describe('getGroceryLayer', () => {
+  it('hands over the stores, always available, with the OpenStreetMap credit', async () => {
+    fetchGroceryStores.mockResolvedValue([{ id: 'node/1', chain: 'netto', lat: 55, lng: 12 }]);
+
+    const layer = await getGroceryLayer();
+
+    expect(layer.available).toBe(true);
+    expect(layer.failed).toBe(false);
+    expect(layer.stores).toHaveLength(1);
+    expect(layer.attribution.join(' ')).toContain('OpenStreetMap');
+  });
+
+  it('says outright that the fetch failed, with no stores, instead of throwing', async () => {
+    fetchGroceryStores.mockResolvedValue(null);
+
+    const layer = await getGroceryLayer();
+
+    expect(layer).toMatchObject({ available: true, failed: true, stores: [] });
   });
 });

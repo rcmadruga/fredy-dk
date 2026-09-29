@@ -6,21 +6,25 @@
 import { Switch, Typography } from '@douyinfe/semi-ui-19';
 import { useTranslation } from '../../services/i18n/i18n.jsx';
 import SchoolPanel from './SchoolPanel.jsx';
+import GroceryPanel from './GroceryPanel.jsx';
 
 const { Text } = Typography;
 
 /**
  * The Denmark-only map layers in one box, in the same named groups the listings map's own panel
- * uses (MAP, LISTINGS): SCHOOLS with its switch and filters, and KOMMUNE with the tax choropleth.
+ * uses (MAP, LISTINGS): SCHOOLS with its switch and filters, KOMMUNE with the tax choropleth and
+ * GROCERIES with the supermarkets.
  *
- * Everything but the tax switch is handed straight to {@link SchoolPanel}.
+ * `groceries` is handed to {@link GroceryPanel}; everything else but the tax switch goes straight to
+ * {@link SchoolPanel}.
  *
  * @param {Object} props
  * @param {boolean} props.taxLayer - Whether the kommune tax layer is on.
  * @param {(enabled: boolean) => void} props.onTaxLayerChange
+ * @param {Object} props.groceries - The props of {@link GroceryPanel}, minus `bare`.
  * @returns {React.ReactElement}
  */
-export default function DenmarkPanel({ taxLayer, onTaxLayerChange, ...schoolProps }) {
+export default function DenmarkPanel({ taxLayer, onTaxLayerChange, groceries, ...schoolProps }) {
   const t = useTranslation();
 
   return (
@@ -37,6 +41,11 @@ export default function DenmarkPanel({ taxLayer, onTaxLayerChange, ...schoolProp
         </Text>
         <Switch size="small" aria-label={t('map.filterTaxLayer')} checked={taxLayer} onChange={onTaxLayerChange} />
       </div>
+
+      <div className="map-panel__divider" />
+
+      <div className="map-panel__groupTitle">{t('map.groupGroceries')}</div>
+      <GroceryPanel bare {...groceries} />
     </div>
   );
 }

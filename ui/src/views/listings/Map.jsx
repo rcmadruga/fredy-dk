@@ -68,6 +68,7 @@ const MAP_URL_STATE = {
   // Denmark-only and off by default - see `MapControls.jsx`/`Map.jsx` for the scoping.
   taxLayer: { defaultValue: false, codec: parseBoolean },
   schoolLayer: { defaultValue: false, codec: parseBoolean },
+  groceryLayer: { defaultValue: false, codec: parseBoolean },
 };
 
 /**
@@ -123,6 +124,7 @@ export default function MapView() {
     popup: openListingId,
     taxLayer,
     schoolLayer,
+    groceryLayer,
   } = urlState;
   // Read the same way `components/map/Map.jsx` reads it, so the ring drawn on top of the basemap
   // and the basemap itself can never disagree about how dark the map is.
@@ -299,7 +301,7 @@ export default function MapView() {
    * `setValues` drops any value equal to its declared default, so a pristine view keeps a clean
    * address, and the map already clears the 3D buildings flag when the basemap goes to satellite.
    *
-   * @param {{style?: string, show3dBuildings?: boolean, showTransit?: boolean, taxLayer?: boolean, schoolLayer?: boolean}} patch
+   * @param {{style?: string, show3dBuildings?: boolean, showTransit?: boolean, taxLayer?: boolean, schoolLayer?: boolean, groceryLayer?: boolean}} patch
    */
   const handleControlsChange = (patch) => {
     setValues({
@@ -308,6 +310,7 @@ export default function MapView() {
       ...('showTransit' in patch ? { transit: patch.showTransit } : {}),
       ...('taxLayer' in patch ? { taxLayer: patch.taxLayer } : {}),
       ...('schoolLayer' in patch ? { schoolLayer: patch.schoolLayer } : {}),
+      ...('groceryLayer' in patch ? { groceryLayer: patch.groceryLayer } : {}),
     });
   };
 
@@ -653,6 +656,7 @@ export default function MapView() {
             showTransit={showTransit}
             taxLayer={taxLayer}
             schoolLayer={schoolLayer}
+            groceryLayer={groceryLayer}
             onControlsChange={handleControlsChange}
             controlsMode="always"
             // This is the map where an address search earns its place: the pins are spread over

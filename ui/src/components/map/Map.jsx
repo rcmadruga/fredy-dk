@@ -24,9 +24,24 @@ import { boundsForCountries, DEFAULT_COUNTRIES } from './countryBounds.js';
 import { MARKER_COLORS } from './markerColors.js';
 import { keepPopupInView, mountPopupNode } from './popupContent.jsx';
 import DeparturesBoard from '../transit/DeparturesBoard.jsx';
-import { applyTaxLayer, applySchoolLayer, TAX_FILL_LAYER_ID, SCHOOL_LAYER_ID } from './regionalDataLayers.js';
-import { fetchTaxChoropleth, fetchSchoolLayer } from '../../services/regionalData/regionalData.js';
-import { buildTaxPopupHtml, buildSchoolPopupHtml } from './regionalPopups.js';
+import {
+  applyTaxLayer,
+  applySchoolLayer,
+  applyGroceryLayer,
+  TAX_FILL_LAYER_ID,
+  SCHOOL_LAYER_ID,
+  GROCERY_LAYER_ID,
+} from './regionalDataLayers.js';
+import { fetchTaxChoropleth, fetchSchoolLayer, fetchGroceryLayer } from '../../services/regionalData/regionalData.js';
+import { buildTaxPopupHtml, buildSchoolPopupHtml, buildGroceryPopupHtml } from './regionalPopups.js';
+import {
+  DEFAULT_GROCERY_FILTERS,
+  countByChain,
+  filterStores,
+  loadGroceryFilters,
+  sanitizeGroceryFilters,
+  saveGroceryFilters,
+} from './groceryFilters.js';
 import DenmarkPanel from './DenmarkPanel.jsx';
 import {
   DEFAULT_SCHOOL_FILTERS,
@@ -162,11 +177,14 @@ const GERMANY_CENTER = [10.4515, 51.1657];
  * @param {boolean} [props.schoolLayer] - Controlled Denmark school grades/inclusion overlay. Same
  *   Denmark scoping as `taxLayer`; disabled in `MapControls` with an explanatory tooltip when the
  *   server has no `UDDANNELSESSTATISTIK_API_KEY` configured.
+ * @param {boolean} [props.groceryLayer] - Controlled Denmark supermarket overlay. Same Denmark scoping
+ *   as `taxLayer`; nothing is fetched until it is first switched on.
  * @param {'STANDARD'|'SATELLITE'} [props.defaultStyle]
  * @param {boolean} [props.defaultShow3dBuildings]
  * @param {boolean} [props.defaultShowTransit]
  * @param {boolean} [props.defaultTaxLayer]
  * @param {boolean} [props.defaultSchoolLayer]
+ * @param {boolean} [props.defaultGroceryLayer]
  * @param {(patch: Object) => void} [props.onControlsChange]
  * @param {'expanded'|'always'|'never'} [props.controlsMode] - When to show the controls panel.
  * @param {boolean} [props.searchable] - Show the address search in the top right corner. Off by
@@ -206,11 +224,13 @@ export default function Map({
   showTransit,
   taxLayer,
   schoolLayer,
+  groceryLayer,
   defaultStyle = 'STANDARD',
   defaultShow3dBuildings = false,
   defaultShowTransit = false,
   defaultTaxLayer = false,
   defaultSchoolLayer = false,
+  defaultGroceryLayer = false,
   onControlsChange = null,
   controlsMode = 'expanded',
   controlsInPanels = false,
@@ -252,6 +272,7 @@ export default function Map({
   const [transitValue, setTransitValue] = useControllableState(showTransit, defaultShowTransit);
   const [taxLayerValue, setTaxLayerValue] = useControllableState(taxLayer, defaultTaxLayer);
   const [schoolLayerValue, setSchoolLayerValue] = useControllableState(schoolLayer, defaultSchoolLayer);
+  const [groceryLayerValue, setGroceryLayerValue] = useControllableState(groceryLayer, defaultGroceryLayer);
   const [isExpanded, setIsExpanded] = useControllableState(expanded, defaultExpanded);
 
   // Whether this map is showing a Danish context at all - the same `countries` union the job form
@@ -294,6 +315,37 @@ export default function Map({
     [schoolLayerData, schoolFilters],
   );
 
+  // The supermarkets are fetched the first time the layer is switched on rather than on mount: the
+  // server may have to ask OpenStreetMap for the whole country, which can take the better part of a
+  // minute, and a map that never uses the layer should not trigger it.
+  const [groceryLayerData, setGroceryLayerData] = useState(null);
+  const [groceryLoading, setGroceryLoading] = useState(false);
+  const groceryStatus = groceryLayerData?.failed
+    ? 'error'
+    : groceryLayerData != null
+      ? 'ready'
+      : groceryLoading
+        ? 'loading'
+        : 'idle';
+
+  const [groceryFilters, setGroceryFilters] = useState(loadGroceryFilters);
+  const updateGroceryFilters = useCallback((patch) => {
+    setGroceryFilters((previous) => {
+      const next = sanitizeGroceryFilters({ ...previous, ...patch });
+      saveGroceryFilters(next);
+      return next;
+    });
+  }, []);
+  const resetGroceryFilters = useCallback(() => {
+    saveGroceryFilters(DEFAULT_GROCERY_FILTERS);
+    setGroceryFilters(sanitizeGroceryFilters(DEFAULT_GROCERY_FILTERS));
+  }, []);
+  const filteredStores = useMemo(
+    () => filterStores(groceryLayerData?.stores, groceryFilters),
+    [groceryLayerData, groceryFilters],
+  );
+  const groceryCounts = useMemo(() => countByChain(groceryLayerData?.stores), [groceryLayerData]);
+
   /**
    * The single entry point for control changes, so a controlled parent is told once per action.
    */
@@ -306,6 +358,7 @@ export default function Map({
     if ('showTransit' in next) setTransitValue(next.showTransit);
     if ('taxLayer' in next) setTaxLayerValue(next.taxLayer);
     if ('schoolLayer' in next) setSchoolLayerValue(next.schoolLayer);
+    if ('groceryLayer' in next) setGroceryLayerValue(next.groceryLayer);
     onControlsChange?.(next);
   };
 
@@ -579,6 +632,30 @@ export default function Map({
     };
   }, [isDenmarkScoped]);
 
+  // Fetch the supermarkets on first use. A failure is remembered as `failed` rather than retried on
+  // every render; reloading the page is the retry, and the server caches a failure only briefly.
+  useEffect(() => {
+    if (!isDenmarkScoped || !groceryLayerValue || groceryLayerData != null || groceryLoading) return undefined;
+
+    let cancelled = false;
+    setGroceryLoading(true);
+    fetchGroceryLayer()
+      .then((data) => {
+        if (!cancelled) setGroceryLayerData(data);
+      })
+      .catch((error) => {
+        console.error('Error fetching the Denmark supermarkets', error);
+        if (!cancelled) setGroceryLayerData({ available: true, failed: true, stores: [], attribution: [] });
+      })
+      .finally(() => {
+        if (!cancelled) setGroceryLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isDenmarkScoped, groceryLayerValue, groceryLayerData, groceryLoading]);
+
   // Handle Denmark kommune tax choropleth
   useEffect(() => {
     if (!mapRef.current) return;
@@ -639,7 +716,28 @@ export default function Map({
     };
   }, [schoolLayerValue, styleValue, isDenmarkScoped, filteredSchools, schoolLayerStatus]);
 
-  // Popups for the two regional layers. Plain `setHTML` rather than the React-mounted popups the
+  // Handle Denmark supermarket markers
+  useEffect(() => {
+    if (!mapRef.current) return;
+
+    const onStyleData = () => {
+      if (!mapRef.current) return;
+      const show = groceryLayerValue && isDenmarkScoped && groceryStatus === 'ready';
+      applyGroceryLayer(mapRef.current, show ? filteredStores : null);
+    };
+
+    if (mapRef.current.isStyleLoaded()) {
+      onStyleData();
+    }
+
+    mapRef.current.on('styledata', onStyleData);
+
+    return () => {
+      mapRef.current?.off('styledata', onStyleData);
+    };
+  }, [groceryLayerValue, styleValue, isDenmarkScoped, filteredStores, groceryStatus]);
+
+  // Popups for the regional layers. Plain `setHTML` rather than the React-mounted popups the
   // listing/transit markers use: the content is a few labelled figures and a link, nothing stateful
   // lives inside it, and MapLibre's own `closeOnClick` default is exactly the dismiss behaviour wanted.
   // The markup itself is built in regionalPopups.js, where everything external is escaped.
@@ -667,6 +765,16 @@ export default function Map({
         .addTo(mapInstance);
     };
 
+    const onGroceryClick = (event) => {
+      const feature = event.features?.[0];
+      if (!feature) return;
+
+      new maplibregl.Popup({ offset: 8 })
+        .setLngLat(event.lngLat)
+        .setHTML(buildGroceryPopupHtml(feature.properties, t))
+        .addTo(mapInstance);
+    };
+
     const showPointer = () => {
       mapInstance.getCanvas().style.cursor = 'pointer';
     };
@@ -680,6 +788,9 @@ export default function Map({
     mapInstance.on('click', SCHOOL_LAYER_ID, onSchoolClick);
     mapInstance.on('mouseenter', SCHOOL_LAYER_ID, showPointer);
     mapInstance.on('mouseleave', SCHOOL_LAYER_ID, clearPointer);
+    mapInstance.on('click', GROCERY_LAYER_ID, onGroceryClick);
+    mapInstance.on('mouseenter', GROCERY_LAYER_ID, showPointer);
+    mapInstance.on('mouseleave', GROCERY_LAYER_ID, clearPointer);
 
     return () => {
       mapInstance.off('click', TAX_FILL_LAYER_ID, onTaxClick);
@@ -688,6 +799,9 @@ export default function Map({
       mapInstance.off('click', SCHOOL_LAYER_ID, onSchoolClick);
       mapInstance.off('mouseenter', SCHOOL_LAYER_ID, showPointer);
       mapInstance.off('mouseleave', SCHOOL_LAYER_ID, clearPointer);
+      mapInstance.off('click', GROCERY_LAYER_ID, onGroceryClick);
+      mapInstance.off('mouseenter', GROCERY_LAYER_ID, showPointer);
+      mapInstance.off('mouseleave', GROCERY_LAYER_ID, clearPointer);
     };
   }, [isDenmarkScoped, t]);
 
@@ -1055,6 +1169,17 @@ export default function Map({
             schools={schoolLayerData?.schools ?? []}
             shownCount={filteredSchools.length}
             onReset={resetSchoolFilters}
+            groceries={{
+              status: groceryStatus,
+              enabled: groceryLayerValue,
+              onEnabledChange: (value) => applyControls({ groceryLayer: value }),
+              filters: groceryFilters,
+              onFiltersChange: updateGroceryFilters,
+              counts: groceryCounts,
+              total: groceryLayerData?.stores?.length ?? 0,
+              shownCount: filteredStores.length,
+              onReset: resetGroceryFilters,
+            }}
           />
         )}
 

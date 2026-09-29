@@ -96,3 +96,23 @@ export function buildSchoolPopupHtml(properties, t) {
 
   return `<div class="map-popup-content"><h4>${escapeHtml(name)}</h4>${lines.join('')}</div>`;
 }
+
+/**
+ * A supermarket: its name, the chain it belongs to and where the data comes from. OpenStreetMap
+ * names are typed by volunteers, so all of it is escaped.
+ *
+ * @param {{name?: string, brand?: string|null, chain?: string}} properties A store feature's properties.
+ * @param {(key: string) => string} t
+ * @returns {string}
+ */
+export function buildGroceryPopupHtml(properties, t) {
+  const { name, brand, chain } = properties;
+  const title = name || brand || t('map.groceryPopupUnnamed');
+  const lines = [];
+  if (brand && brand !== title) lines.push(`<p><em>${escapeHtml(brand)}</em></p>`);
+  lines.push(`<p>${t(`map.groceryChain.${chain}`)}</p>`);
+  lines.push(
+    `<p><small><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">© OpenStreetMap</a></small></p>`,
+  );
+  return `<div class="map-popup-content"><h4>${escapeHtml(title)}</h4>${lines.join('')}</div>`;
+}

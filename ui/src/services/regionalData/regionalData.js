@@ -24,6 +24,16 @@ import { xhrGet } from '../xhr.js';
  */
 
 /**
+ * @typedef {Object} GroceryStore
+ * @property {string} id
+ * @property {string} name
+ * @property {string|null} brand
+ * @property {string} chain - A chain group id, see `groceryFilters.js`.
+ * @property {number} lat
+ * @property {number} lng
+ */
+
+/**
  * Fetches the Denmark tax choropleth: one GeoJSON feature per kommune, carrying `kommuneskatPct` and
  * `grundskyldPromille` in its properties.
  *
@@ -45,5 +55,18 @@ export async function fetchTaxChoropleth() {
  */
 export async function fetchSchoolLayer() {
   const { json } = await xhrGet('/api/regional-data/dk/schools');
+  return json;
+}
+
+/**
+ * Fetches every supermarket in Denmark.
+ *
+ * The first request after the server's cache went cold waits on one national OpenStreetMap query, so
+ * this can take the better part of a minute; later ones are served from disk.
+ *
+ * @returns {Promise<{available: boolean, failed: boolean, stores: GroceryStore[], attribution: string[]}>}
+ */
+export async function fetchGroceryLayer() {
+  const { json } = await xhrGet('/api/regional-data/dk/groceries');
   return json;
 }
