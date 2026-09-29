@@ -194,9 +194,9 @@ export function groceriesToGeoJson(stores) {
 }
 
 /**
- * Adds or removes the supermarket pins.
+ * Adds or removes the supermarket badges.
  *
- * Drawn as a symbol layer of pins in the chain's colour (see `groceryIcons.js`), under the school
+ * Drawn as a symbol layer of small square logo badges (see `groceryIcons.js`), under the school
  * markers when those are already there: there are more of them, and where the two layers are on
  * together the schools are what is being looked for. The pins are smaller when zoomed out, where two
  * thousand of them would otherwise be a wall.
@@ -241,11 +241,11 @@ export async function applyGroceryLayer(map, stores, { icons = loadGroceryIcons(
         source: GROCERY_SOURCE_ID,
         layout: {
           'icon-image': ['concat', 'dk-grocery-', ['get', 'chain']],
-          // The point of the pin is its tip, and there are enough of them that hiding the ones that
-          // overlap would hide stores.
-          'icon-anchor': 'bottom',
+          // Centred on the store, and never hidden where they overlap: there are enough of them that
+          // dropping the ones in the way would drop stores.
+          'icon-anchor': 'center',
           'icon-allow-overlap': true,
-          'icon-size': ['interpolate', ['linear'], ['zoom'], 6, 0.45, 11, 0.7, 14, 1],
+          'icon-size': ['interpolate', ['linear'], ['zoom'], 6, 0.5, 11, 0.75, 14, 1],
         },
       },
       // Under the schools when they are already there.

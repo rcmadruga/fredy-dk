@@ -8,8 +8,8 @@ import shopSvg from '../../assets/map-icons/shop.svg?raw';
 import { GROCERY_CHAINS } from './groceryFilters.js';
 
 /**
- * The supermarket badges: the chain's logo on a small white chip with a ring in the chain's colour
- * and a pointer to the store, drawn once per chain and handed to MapLibre as an image so a symbol
+ * The supermarket badges: the chain's logo on a small square chip with a ring in the chain's colour,
+ * drawn once per chain and handed to MapLibre as an image so a symbol
  * layer can draw two thousand of them cheaply.
  *
  * Logos live in `assets/map-logos/` (see the README there for where each came from). A chain without
@@ -21,17 +21,19 @@ import { GROCERY_CHAINS } from './groceryFilters.js';
  * are tested; drawing needs a browser.
  */
 
-/** Pixel ratio the badges are drawn at, so they stay sharp on a high-density screen. */
-export const ICON_PIXEL_RATIO = 2;
+/**
+ * Pixel ratio the badges are drawn at. High, because the badge is tiny and a logo in it is a few
+ * pixels across: drawn larger and scaled down, it stays legible on a high-density screen and when the
+ * map is zoomed in.
+ */
+export const ICON_PIXEL_RATIO = 4;
 
-/** The badge's size in CSS pixels: the chip, then the pointer under it. */
-export const CHIP_WIDTH = 34;
-export const CHIP_HEIGHT = 22;
-export const POINTER_HEIGHT = 5;
-export const ICON_WIDTH = CHIP_WIDTH;
-export const ICON_HEIGHT = CHIP_HEIGHT + POINTER_HEIGHT;
+/** The badge's size in CSS pixels at full zoom: a square, centred on the store. */
+export const CHIP_SIZE = 18;
+export const ICON_WIDTH = CHIP_SIZE;
+export const ICON_HEIGHT = CHIP_SIZE;
 
-const LOGO_PADDING = 3;
+const LOGO_PADDING = 1.5;
 
 /** What a logo sits on unless its chain says otherwise, in the badge and in the legend: white, whatever the theme. */
 export const LOGO_TILE_BACKGROUND = '#ffffff';
@@ -131,27 +133,21 @@ async function loadImage(src) {
 }
 
 /**
- * The badge outline: a rounded chip with a pointer centred under it.
+ * The badge outline: a square with slightly rounded corners.
  *
- * @param {CanvasRenderingContext2D} context
  * @returns {Path2D}
  */
 function badgePath() {
-  const r = 5;
-  const w = CHIP_WIDTH;
-  const h = CHIP_HEIGHT;
-  const mid = w / 2;
+  const r = 3;
+  const size = CHIP_SIZE;
   const path = new Path2D();
   path.moveTo(r, 0);
-  path.lineTo(w - r, 0);
-  path.quadraticCurveTo(w, 0, w, r);
-  path.lineTo(w, h - r);
-  path.quadraticCurveTo(w, h, w - r, h);
-  path.lineTo(mid + 3.5, h);
-  path.lineTo(mid, h + POINTER_HEIGHT);
-  path.lineTo(mid - 3.5, h);
-  path.lineTo(r, h);
-  path.quadraticCurveTo(0, h, 0, h - r);
+  path.lineTo(size - r, 0);
+  path.quadraticCurveTo(size, 0, size, r);
+  path.lineTo(size, size - r);
+  path.quadraticCurveTo(size, size, size - r, size);
+  path.lineTo(r, size);
+  path.quadraticCurveTo(0, size, 0, size - r);
   path.lineTo(0, r);
   path.quadraticCurveTo(0, 0, r, 0);
   path.closePath();
@@ -179,20 +175,20 @@ async function drawBadge(chain) {
   context.fillStyle = logo == null ? chain.color : (chain.tile ?? LOGO_TILE_BACKGROUND);
   context.fill(outline);
   context.lineJoin = 'round';
-  context.lineWidth = 2;
+  context.lineWidth = 1.5;
   context.strokeStyle = chain.color;
   context.stroke(outline);
 
   if (logo != null) {
     const image = await loadImage(logo);
-    const room = { w: CHIP_WIDTH - 2 * LOGO_PADDING, h: CHIP_HEIGHT - 2 * LOGO_PADDING };
+    const room = { w: CHIP_SIZE - 2 * LOGO_PADDING, h: CHIP_SIZE - 2 * LOGO_PADDING };
     const scale = Math.min(room.w / image.naturalWidth, room.h / image.naturalHeight);
     const w = image.naturalWidth * scale;
     const h = image.naturalHeight * scale;
-    context.drawImage(image, (CHIP_WIDTH - w) / 2, (CHIP_HEIGHT - h) / 2, w, h);
+    context.drawImage(image, (CHIP_SIZE - w) / 2, (CHIP_SIZE - h) / 2, w, h);
   } else {
-    const size = 14;
-    context.translate((CHIP_WIDTH - size) / 2, (CHIP_HEIGHT - size) / 2);
+    const size = 11;
+    context.translate((CHIP_SIZE - size) / 2, (CHIP_SIZE - size) / 2);
     context.scale(size / 15, size / 15);
     context.fillStyle = glyphColorOn(chain.color);
     context.fill(new Path2D(glyphFor(chain.id)));
