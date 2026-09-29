@@ -102,7 +102,9 @@ const ListingsTable = ({
           <div className="listingsTable__row__price">
             {item.price ? (
               <>
-                <span className="listingsTable__row__amount">{formatPrice(item.price, locale, null, currencyOf(item.provider))}</span>
+                <span className="listingsTable__row__amount">
+                  {formatPrice(item.price, locale, null, currencyOf(item.provider))}
+                </span>
                 <span className="listingsTable__row__perSqm">
                   <PricePerSqmBadge listing={item} />
                   <AffordabilityChip

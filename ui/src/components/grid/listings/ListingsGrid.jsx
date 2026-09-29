@@ -86,7 +86,9 @@ const ListingsGrid = ({
 
             {item.price && (
               <div className="listingsGrid__card__price">
-                <span className="listingsGrid__card__amount">{formatPrice(item.price, locale, null, currencyOf(item.provider))}</span>
+                <span className="listingsGrid__card__amount">
+                  {formatPrice(item.price, locale, null, currencyOf(item.provider))}
+                </span>
                 {/* Next to the price rather than on a line of its own: it is the same figure said
                     a second way, and reading the two together is the whole point. */}
                 <PricePerSqmBadge listing={item} />
