@@ -462,6 +462,8 @@
   "map.groupMap": "Map",
   "map.activeFilterCount": "Active filters: {{count}}",
   "map.groupListings": "Listings",
+  "map.groupSchools": "Schools",
+  "map.groupKommune": "Kommune",
   "map.searchPlaceholder": "Search an address or place",
   "map.searchLabel": "Address search on the map",
   "map.searchNotFound": "No coordinates found for that address.",

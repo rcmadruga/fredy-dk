@@ -51,6 +51,7 @@ function Dot({ category }) {
  *   it, so its ends do not move as the filters change.
  * @param {number} props.shownCount - How many of them the filters leave.
  * @param {() => void} props.onReset
+ * @param {boolean} [props.bare=false] - Render without the panel box, for a parent that supplies its own.
  */
 export default function SchoolPanel({
   status,
@@ -61,6 +62,7 @@ export default function SchoolPanel({
   schools,
   shownCount,
   onReset,
+  bare = false,
 }) {
   const t = useTranslation();
   const locale = useLocale();
@@ -86,7 +88,7 @@ export default function SchoolPanel({
   const setCategory = (id, checked) => onFiltersChange({ categories: { ...filters.categories, [id]: checked } });
 
   return (
-    <div className="map-panel school-panel">
+    <div className={bare ? 'map-panel__group school-panel' : 'map-panel school-panel'}>
       <div className="map-panel__row">
         <Text size="small" strong className="map-panel__label">
           {t('map.filterSchoolLayer')}

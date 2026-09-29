@@ -462,6 +462,8 @@
   "map.groupMap": "Karte",
   "map.activeFilterCount": "Aktive Filter: {{count}}",
   "map.groupListings": "Inserate",
+  "map.groupSchools": "Schulen",
+  "map.groupKommune": "Kommune",
   "map.searchPlaceholder": "Adresse oder Ort suchen",
   "map.searchLabel": "Adresssuche auf der Karte",
   "map.searchNotFound": "Zu dieser Adresse wurden keine Koordinaten gefunden.",

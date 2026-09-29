@@ -439,6 +439,8 @@
   "map.groupMap": "Carte",
   "map.activeFilterCount": "Filtres actifs : {{count}}",
   "map.groupListings": "Annonces",
+  "map.groupSchools": "Écoles",
+  "map.groupKommune": "Commune",
   "map.searchPlaceholder": "Rechercher une adresse ou un lieu",
   "map.searchLabel": "Recherche d'adresse sur la carte",
   "map.searchNotFound": "Aucune coordonnée trouvée pour cette adresse.",

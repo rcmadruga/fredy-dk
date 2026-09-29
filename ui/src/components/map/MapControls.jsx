@@ -9,8 +9,8 @@ import { useTranslation } from '../../services/i18n/i18n.jsx';
 const { Text } = Typography;
 
 /**
- * The basemap and overlay switches every map shares, plus the Denmark-only kommune tax layer when
- * the map is showing a Danish context. Schools have a box of their own (`SchoolPanel.jsx`).
+ * The basemap and overlay switches every map shares. The Denmark-only layers (schools and kommune
+ * tax) have a box of their own (`DenmarkPanel.jsx`).
  *
  * Presentational on purpose: it owns no state and reports changes as a patch object, so the map can
  * forward one update per user action to a parent that keeps the state somewhere else (the map
@@ -20,17 +20,12 @@ const { Text } = Typography;
  * @param {'STANDARD'|'SATELLITE'} props.style
  * @param {boolean} props.show3dBuildings
  * @param {boolean} props.showTransit
- * @param {(patch: {style?: string, show3dBuildings?: boolean, showTransit?: boolean, taxLayer?: boolean}) => void} props.onChange
+ * @param {(patch: {style?: string, show3dBuildings?: boolean, showTransit?: boolean}) => void} props.onChange
  * @param {import('react').ReactNode} [props.transitExtra] - Rendered indented below the transit row
  *   while transit is on, for settings that only mean something once the layer is there.
  * @param {boolean} [props.bare=false] Render only the rows, without the panel box. For a view that
  *   puts these rows into a panel of its own together with its own filters, so the user sees one
  *   box with two named groups rather than two identical boxes four pixels apart.
- * @param {boolean} [props.showRegionalLayers] - Whether the map is showing a Danish context at all;
- *   the tax switch below is not offered otherwise. Computed by the caller from the same
- *   `countries` prop `Map.jsx` already takes, the same way DK-only behaviour is scoped elsewhere
- *   (see `lib/types/providerConfig.js`'s `countries` field).
- * @param {boolean} [props.taxLayer]
  */
 export default function MapControls({
   style,
@@ -39,8 +34,6 @@ export default function MapControls({
   onChange,
   transitExtra = null,
   bare = false,
-  showRegionalLayers = false,
-  taxLayer = false,
 }) {
   const t = useTranslation();
 
@@ -77,15 +70,6 @@ export default function MapControls({
       </div>
 
       {showTransit && transitExtra}
-
-      {showRegionalLayers && (
-        <div className="map-panel__row">
-          <Text size="small" strong className="map-panel__label">
-            {t('map.filterTaxLayer')}
-          </Text>
-          <Switch size="small" checked={taxLayer} onChange={(value) => onChange({ taxLayer: value })} />
-        </div>
-      )}
     </div>
   );
 }

@@ -27,7 +27,7 @@ import DeparturesBoard from '../transit/DeparturesBoard.jsx';
 import { applyTaxLayer, applySchoolLayer, TAX_FILL_LAYER_ID, SCHOOL_LAYER_ID } from './regionalDataLayers.js';
 import { fetchTaxChoropleth, fetchSchoolLayer } from '../../services/regionalData/regionalData.js';
 import { buildTaxPopupHtml, buildSchoolPopupHtml } from './regionalPopups.js';
-import SchoolPanel from './SchoolPanel.jsx';
+import DenmarkPanel from './DenmarkPanel.jsx';
 import {
   DEFAULT_SCHOOL_FILTERS,
   filterSchools,
@@ -1040,13 +1040,13 @@ export default function Map({
             showTransit={transitValue}
             onChange={applyControls}
             transitExtra={transitExtra}
-            showRegionalLayers={isDenmarkScoped}
-            taxLayer={taxLayerValue}
           />
         )}
 
         {showControls && isDenmarkScoped && (
-          <SchoolPanel
+          <DenmarkPanel
+            taxLayer={taxLayerValue}
+            onTaxLayerChange={(value) => applyControls({ taxLayer: value })}
             status={schoolLayerStatus}
             enabled={schoolLayerValue}
             onEnabledChange={(value) => applyControls({ schoolLayer: value })}

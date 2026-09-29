@@ -408,6 +408,8 @@
   "map.groupMap": "Harita",
   "map.activeFilterCount": "Etkin filtreler: {{count}}",
   "map.groupListings": "İlanlar",
+  "map.groupSchools": "Okullar",
+  "map.groupKommune": "Kommune",
   "map.searchPlaceholder": "Adres veya yer ara",
   "map.searchLabel": "Haritada adres arama",
   "map.searchNotFound": "Bu adres için koordinat bulunamadı.",
