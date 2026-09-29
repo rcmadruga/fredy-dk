@@ -639,9 +639,12 @@ export default function Map({
   // every render; reloading the page is the retry, and the server caches a failure only briefly.
   const groceryRequested = useRef(false);
   useEffect(() => {
-    if (!isDenmarkScoped || !groceryLayerValue || groceryRequested.current) return;
+    if (!isDenmarkScoped || !groceryLayerValue) return;
+    // Switching the layer on again after a failure is the retry.
+    if (groceryRequested.current && groceryLayerData?.failed !== true) return;
     groceryRequested.current = true;
 
+    setGroceryLayerData(null);
     setGroceryLoading(true);
     fetchGroceryLayer()
       .then((data) => setGroceryLayerData(data))
@@ -650,6 +653,9 @@ export default function Map({
         setGroceryLayerData({ available: true, failed: true, stores: [], attribution: [] });
       })
       .finally(() => setGroceryLoading(false));
+    // `groceryLayerData` is read only to tell a failure from a success when the layer is switched on;
+    // it must not be a dependency, or its own arrival would start the next fetch.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isDenmarkScoped, groceryLayerValue]);
 
   // Handle Denmark kommune tax choropleth

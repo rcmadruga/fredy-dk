@@ -26,6 +26,7 @@ describe('toStore', () => {
       id: 'node/7',
       name: 'Netto Nord',
       brand: 'Netto',
+      operator: null,
       chain: 'netto',
       lat: 55.1,
       lng: 12.2,

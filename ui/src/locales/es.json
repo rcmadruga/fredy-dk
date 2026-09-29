@@ -443,7 +443,7 @@
   "map.groupKommune": "Municipio",
   "map.groupGroceries": "Supermercados",
   "map.filterGroceryLayer": "Supermercados",
-  "map.filterGroceryLayerError": "No se pudieron cargar los supermercados ahora",
+  "map.filterGroceryLayerError": "No se pudieron cargar los supermercados ahora: desactiva y vuelve a activar para reintentar",
   "map.groceryLoading": "Cargando supermercados: la primera carga puede tardar un minuto",
   "map.groceryShowing": "Mostrando {{shown}} de {{total}} tiendas",
   "map.groceryResetFilters": "Restablecer",

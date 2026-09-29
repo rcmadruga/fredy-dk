@@ -412,7 +412,7 @@
   "map.groupKommune": "Kommune",
   "map.groupGroceries": "Marketler",
   "map.filterGroceryLayer": "Marketler",
-  "map.filterGroceryLayerError": "Marketler şu anda yüklenemedi",
+  "map.filterGroceryLayerError": "Marketler şu anda yüklenemedi - yeniden denemek için kapatıp açın",
   "map.groceryLoading": "Marketler yükleniyor - ilk yükleme bir dakika sürebilir",
   "map.groceryShowing": "{{total}} marketten {{shown}} tanesi",
   "map.groceryResetFilters": "Sıfırla",

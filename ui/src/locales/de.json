@@ -466,7 +466,7 @@
   "map.groupKommune": "Kommune",
   "map.groupGroceries": "Lebensmittel",
   "map.filterGroceryLayer": "Supermärkte",
-  "map.filterGroceryLayerError": "Supermärkte konnten gerade nicht geladen werden",
+  "map.filterGroceryLayerError": "Supermärkte konnten gerade nicht geladen werden - aus- und wieder einschalten, um es erneut zu versuchen",
   "map.groceryLoading": "Supermärkte werden geladen - das erste Laden kann eine Minute dauern",
   "map.groceryShowing": "{{shown}} von {{total}} Märkten",
   "map.groceryResetFilters": "Zurücksetzen",

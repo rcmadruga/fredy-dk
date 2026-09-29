@@ -3,7 +3,7 @@
  * Licensed under Apache-2.0 with Commons Clause and Attribution/Naming Clause
  */
 
-import { Button, Checkbox, Spin, Switch, Tooltip, Typography } from '@douyinfe/semi-ui-19';
+import { Button, Checkbox, Spin, Switch, Typography } from '@douyinfe/semi-ui-19';
 import { useTranslation } from '../../services/i18n/i18n.jsx';
 import { GROCERY_CHAINS, hasActiveGroceryFilters } from './groceryFilters.js';
 import { LOGO_TILE_BACKGROUND, logoUrlOf } from './groceryIcons.js';
@@ -18,7 +18,7 @@ const { Text } = Typography;
  * Shares `SchoolPanel.less`: the rows and the colour dot are the same thing there and here.
  *
  * Unlike the schools, nothing is fetched until the layer is switched on, so the switch is offered
- * from the start; only a failed fetch disables it, with a tooltip that says why.
+ * from the start. After a failed fetch it stays usable: switching it off and on again retries.
  *
  * @param {Object} props
  * @param {'idle'|'loading'|'ready'|'error'} props.status - What the store data is doing.
@@ -55,16 +55,16 @@ export default function GroceryPanel({
         <Text size="small" strong className="map-panel__label">
           {t('map.filterGroceryLayer')}
         </Text>
-        <Tooltip content={status === 'error' ? t('map.filterGroceryLayerError') : null} position="left">
-          <Switch
-            size="small"
-            aria-label={t('map.filterGroceryLayer')}
-            checked={enabled}
-            disabled={status === 'error'}
-            onChange={onEnabledChange}
-          />
-        </Tooltip>
+        <Switch size="small" aria-label={t('map.filterGroceryLayer')} checked={enabled} onChange={onEnabledChange} />
       </div>
+
+      {enabled && status === 'error' && (
+        <div className="map-panel__row school-panel__summary">
+          <Text size="small" type="danger">
+            {t('map.filterGroceryLayerError')}
+          </Text>
+        </div>
+      )}
 
       {enabled && status === 'loading' && (
         <div className="map-panel__row school-panel__summary">

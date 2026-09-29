@@ -466,7 +466,7 @@
   "map.groupKommune": "Kommune",
   "map.groupGroceries": "Groceries",
   "map.filterGroceryLayer": "Supermarkets",
-  "map.filterGroceryLayerError": "Supermarkets could not be loaded right now",
+  "map.filterGroceryLayerError": "Supermarkets could not be loaded right now - switch off and on to try again",
   "map.groceryLoading": "Loading supermarkets - the first load can take a minute",
   "map.groceryShowing": "Showing {{shown}} of {{total}} stores",
   "map.groceryResetFilters": "Reset",

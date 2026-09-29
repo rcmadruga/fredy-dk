@@ -78,8 +78,10 @@ describe('GroceryPanel', () => {
     expect(html).not.toContain('Netto (');
   });
 
-  it('disables the switch after a failed fetch', () => {
-    expect(render({ status: 'error' })).toMatch(/role="switch"[^>]*disabled/);
+  it('says so after a failed fetch, and leaves the switch usable so it can be tried again', () => {
+    const html = render({ status: 'error', total: 0, shownCount: 0 });
+    expect(html).toContain('could not be loaded');
+    expect(html).not.toMatch(/role="switch"[^>]*disabled/);
   });
 
   it('offers a reset only when a filter is set', () => {

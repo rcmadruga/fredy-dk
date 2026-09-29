@@ -139,6 +139,19 @@ describe('getGroceryLayer', () => {
     expect(layer.attribution.join(' ')).toContain('OpenStreetMap');
   });
 
+  it('works the chain out again on every read, so a cached list never carries an old chain id', async () => {
+    // What a list cached before Salling was split into Foetex and Bilka looks like.
+    fetchGroceryStores.mockResolvedValue([
+      { id: 'node/1', name: 'føtex', brand: 'føtex', chain: 'salling', lat: 55, lng: 12 },
+      { id: 'node/2', name: 'Bilka Odense', brand: null, chain: 'salling', lat: 55, lng: 12 },
+      { id: 'node/3', name: 'Min Købmand', brand: null, chain: 'coop', lat: 55, lng: 12 },
+    ]);
+
+    const layer = await getGroceryLayer();
+
+    expect(layer.stores.map((store) => store.chain)).toEqual(['foetex', 'bilka', 'other']);
+  });
+
   it('says outright that the fetch failed, with no stores, instead of throwing', async () => {
     fetchGroceryStores.mockResolvedValue(null);
 
