@@ -35,6 +35,8 @@ describe('storeListings id propagation', () => {
         title TEXT,
         image_url TEXT,
         description TEXT,
+        description_en TEXT,
+        description_lang TEXT,
         address TEXT,
         link TEXT,
         created_at INTEGER,

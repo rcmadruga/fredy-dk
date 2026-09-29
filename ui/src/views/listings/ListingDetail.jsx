@@ -446,6 +446,20 @@ export default function ListingDetail() {
   };
 
   /**
+   * Ask the server for an English translation of the description and reload the listing with it.
+   * The reload goes through `getListing` rather than using the answer, for the same reason as the
+   * address: only that endpoint adds the affordability verdict.
+   */
+  const translateDescription = useCallback(async () => {
+    try {
+      await xhrPost(`/api/listings/${listingId}/translate`, {});
+      await actions.listingsData.getListing(listingId);
+    } catch (error) {
+      Toast.error(errorMessage(error, t('listing.detail.translateFailed')));
+    }
+  }, [listingId, t]);
+
+  /**
    * Hand over from "no such address" to putting the listing on the map by hand. The map is expanded
    * for it: picking a building out of a 400px panel is not a fair ask.
    *
@@ -566,6 +580,7 @@ export default function ListingDetail() {
                 onRefetch={fetchDetails}
                 refetching={detailsFetching}
                 outcome={detailsOutcome}
+                onTranslate={translateDescription}
               />
             </PhoneCollapse>
           </div>
