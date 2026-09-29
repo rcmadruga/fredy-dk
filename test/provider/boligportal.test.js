@@ -75,3 +75,59 @@ describe('#boligportal provider testsuite()', () => {
     expect(links).not.toContain('5668934');
   });
 });
+
+/**
+ * The advert page's own state is not documented and no real recording of it exists yet, so these use
+ * a page shaped like the search page's state with the advert nested a few levels down. What they pin
+ * down is the behaviour that must survive a redesign: the record is found by its id rather than by a
+ * path, other adverts on the page are never mistaken for it, and a page without it changes nothing.
+ */
+describe('#boligportal detail fetch', () => {
+  const page = (pageProps) =>
+    `<html><body><script id="store" type="application/json">${JSON.stringify({ props: { page_props: pageProps } })}</script></body></html>`;
+
+  const advert = {
+    id: 5671615,
+    description: 'Lys lejlighed.\r\nTæt på stationen.  ',
+    street_name: 'Bakkegade',
+    street_number: '23',
+    postal_code: '3400',
+    city: 'Hillerød',
+    advertised_date: '2026-09-20T10:00:00Z',
+  };
+
+  it('finds the advert wherever the page nests it, and cleans the description', () => {
+    const detail = provider.readAdvertDetail(page({ data: { ad: advert } }), '5671615');
+    expect(detail.description).toBe('Lys lejlighed.\nTæt på stationen.');
+    expect(detail.address).toBe('Bakkegade 23, 3400 Hillerød');
+    expect(detail.publishedAt).toBeGreaterThan(0);
+  });
+
+  it('never mistakes another advert on the page for the one asked about', () => {
+    const html = page({
+      similar_ads: [{ ...advert, id: 5671615, description: 'wrong' }],
+      results: [{ ...advert, id: 5671615, description: 'wrong too' }],
+      ad: { ...advert, id: 999, description: 'somebody else' },
+    });
+    expect(provider.readAdvertDetail(html, '5671615')).toBeNull();
+  });
+
+  it('answers null for a page without state or without the advert', () => {
+    expect(provider.readAdvertDetail(null, '1')).toBeNull();
+    expect(provider.readAdvertDetail('<html></html>', '1')).toBeNull();
+    expect(provider.readAdvertDetail(page({ ad: { id: 2, description: 'x' } }), '1')).toBeNull();
+  });
+
+  it('keeps the search description when the page has none', async () => {
+    const config = provider.createConfig({ url: 'https://www.boligportal.dk/lejeboliger/' }, []);
+    const listing = { id: 'x', link: 'https://www.boligportal.dk/l/a-id-5671615', description: 'from search' };
+    // No browser: nothing can be fetched, so the listing comes back untouched.
+    expect(await config.fetchDetails(listing, null)).toEqual(listing);
+  });
+
+  it('is declared, with a pause between pages', () => {
+    const config = provider.createConfig({ url: 'https://www.boligportal.dk/lejeboliger/' }, []);
+    expect(typeof config.fetchDetails).toBe('function');
+    expect(config.detailFetchDelayMs).toBeGreaterThan(0);
+  });
+});
