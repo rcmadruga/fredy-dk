@@ -51,7 +51,20 @@ echo "== 2. Currently running Fredy container =="
 # traffic, and the grep fallback below would happily pick it as the "old" one too - then step 5
 # stops it and step 6 force-removes it, destroying the live container this run was meant to replace,
 # all before the new one is even built.
-OLD_CONTAINER="$(docker ps -a --filter "ancestor=ghcr.io/orangecoding/fredy:master" --format '{{.Names}}' | grep -vx "$NEW_CONTAINER" | head -n1)"
+#
+# Every pipeline here ends in `|| true`: under `set -e -o pipefail` a grep with no match would
+# otherwise kill the script silently, before it printed anything. OLD_CONTAINER from the
+# environment is honoured, as the message below promises.
+#
+# Both images are tried: upstream's for the first-ever run, and our own $IMAGE_TAG for every run
+# after that, since by then the live container was built from it, not from ghcr.io.
+if [ -z "${OLD_CONTAINER:-}" ]; then
+  OLD_CONTAINER=""
+  for image in "$IMAGE_TAG" "ghcr.io/orangecoding/fredy:master"; do
+    OLD_CONTAINER="$(docker ps -a --filter "ancestor=$image" --format '{{.Names}}' | grep -vx "$NEW_CONTAINER" | head -n1 || true)"
+    [ -n "$OLD_CONTAINER" ] && break
+  done
+fi
 if [ -z "$OLD_CONTAINER" ]; then
   OLD_CONTAINER="$(docker ps -a --format '{{.Names}}' | grep -i fredy | grep -vx "$NEW_CONTAINER" | head -n1 || true)"
 fi
