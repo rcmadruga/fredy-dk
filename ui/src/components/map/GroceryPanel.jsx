@@ -6,6 +6,7 @@
 import { Button, Checkbox, Spin, Switch, Tooltip, Typography } from '@douyinfe/semi-ui-19';
 import { useTranslation } from '../../services/i18n/i18n.jsx';
 import { GROCERY_CHAINS, hasActiveGroceryFilters } from './groceryFilters.js';
+import { LOGO_TILE_BACKGROUND, logoUrlOf } from './groceryIcons.js';
 import './SchoolPanel.less';
 
 const { Text } = Typography;
@@ -98,7 +99,17 @@ export default function GroceryPanel({
                 onChange={(event) => setChain(chain.id, event.target.checked)}
               >
                 <span className="school-panel__kind">
-                  <span className="school-panel__dot" style={{ background: chain.color }} aria-hidden="true" />
+                  {/* The chain's logo where there is one, else the colour of its pins. */}
+                  {logoUrlOf(chain.id) ? (
+                    <img
+                      className="school-panel__logo"
+                      src={logoUrlOf(chain.id)}
+                      alt=""
+                      style={{ borderColor: chain.color, background: LOGO_TILE_BACKGROUND }}
+                    />
+                  ) : (
+                    <span className="school-panel__dot" style={{ background: chain.color }} aria-hidden="true" />
+                  )}
                   {t(`map.groceryChain.${chain.id}`)} ({counts[chain.id]})
                 </span>
               </Checkbox>

@@ -21,7 +21,8 @@
 export const GROCERY_CHAINS = Object.freeze([
   { id: 'netto', color: '#f0c800' },
   { id: 'rema', color: '#d55e00' },
-  { id: 'salling', color: '#cc79a7' },
+  { id: 'foetex', color: '#cc79a7' },
+  { id: 'bilka', color: '#0d47a1' },
   { id: 'coop', color: '#c1121f' },
   { id: 'lidl', color: '#56b4e9' },
   { id: 'aldi', color: '#264653' },

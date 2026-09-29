@@ -716,10 +716,13 @@ export default function Map({
   useEffect(() => {
     if (!mapRef.current) return;
 
+    let stale = false;
     const onStyleData = () => {
       if (!mapRef.current) return;
       const show = groceryLayerValue && isDenmarkScoped && groceryStatus === 'ready';
-      applyGroceryLayer(mapRef.current, show ? filteredStores : null);
+      applyGroceryLayer(mapRef.current, show ? filteredStores : null, { shouldApply: () => !stale }).catch((error) =>
+        console.error('Error drawing the supermarket pins', error),
+      );
     };
 
     if (mapRef.current.isStyleLoaded()) {
@@ -729,6 +732,7 @@ export default function Map({
     mapRef.current.on('styledata', onStyleData);
 
     return () => {
+      stale = true;
       mapRef.current?.off('styledata', onStyleData);
     };
   }, [groceryLayerValue, styleValue, isDenmarkScoped, filteredStores, groceryStatus]);

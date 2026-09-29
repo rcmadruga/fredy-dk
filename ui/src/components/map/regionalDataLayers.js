@@ -14,7 +14,8 @@
  */
 
 import { SCHOOL_CATEGORIES, categoryColor, categoryOf } from './schoolFilters.js';
-import { GROCERY_CHAINS, chainColor, chainOf } from './groceryFilters.js';
+import { chainOf } from './groceryFilters.js';
+import { addGroceryIcons, loadGroceryIcons } from './groceryIcons.js';
 
 export const TAX_SOURCE_ID = 'dk-kommune-tax';
 export const TAX_FILL_LAYER_ID = 'dk-kommune-tax-fill';
@@ -193,21 +194,36 @@ export function groceriesToGeoJson(stores) {
 }
 
 /**
- * Adds or removes the supermarket markers.
+ * Adds or removes the supermarket pins.
  *
- * Smaller than the school markers and drawn underneath them: there are more of them, and where the
- * two layers are on together the schools are what is being looked for.
+ * Drawn as a symbol layer of pins in the chain's colour (see `groceryIcons.js`), under the school
+ * markers when those are already there: there are more of them, and where the two layers are on
+ * together the schools are what is being looked for. The pins are smaller when zoomed out, where two
+ * thousand of them would otherwise be a wall.
+ *
+ * Async because the pins have to be rasterised before the layer can name them; the first call pays
+ * for that and the rest find them ready. Removal stays synchronous.
  *
  * @param {import('maplibre-gl').Map} map
  * @param {Array<Object>|null} stores - Raw store list, or `null`/empty to remove the layer.
+ * @param {Object} [options]
+ * @param {Promise<Map<string, ImageData>>} [options.icons] - Where the pin pixels come from; the
+ *   browser rasterisation by default, replaceable so the layer can be tested without a canvas.
+ * @param {() => boolean} [options.shouldApply] - Asked again once the pins are ready, so a layer
+ *   switched off in the meantime is not added back by a call that was already waiting.
+ * @returns {Promise<void>}
  */
-export function applyGroceryLayer(map, stores) {
+export async function applyGroceryLayer(map, stores, { icons = loadGroceryIcons(), shouldApply = () => true } = {}) {
   if (map == null) return;
 
   if (stores == null || stores.length === 0) {
     removeGroceryLayer(map);
     return;
   }
+
+  const pins = await icons;
+  if (!shouldApply()) return;
+  addGroceryIcons(map, pins);
 
   const data = groceriesToGeoJson(stores);
   const existing = map.getSource(GROCERY_SOURCE_ID);
@@ -221,19 +237,15 @@ export function applyGroceryLayer(map, stores) {
     map.addLayer(
       {
         id: GROCERY_LAYER_ID,
-        type: 'circle',
+        type: 'symbol',
         source: GROCERY_SOURCE_ID,
-        paint: {
-          // From the same table the panel's legend is drawn from, so the two cannot disagree.
-          'circle-color': [
-            'match',
-            ['get', 'chain'],
-            ...GROCERY_CHAINS.filter((chain) => chain.id !== 'other').flatMap((chain) => [chain.id, chain.color]),
-            chainColor('other'),
-          ],
-          'circle-radius': 5,
-          'circle-stroke-color': '#ffffff',
-          'circle-stroke-width': 1,
+        layout: {
+          'icon-image': ['concat', 'dk-grocery-', ['get', 'chain']],
+          // The point of the pin is its tip, and there are enough of them that hiding the ones that
+          // overlap would hide stores.
+          'icon-anchor': 'bottom',
+          'icon-allow-overlap': true,
+          'icon-size': ['interpolate', ['linear'], ['zoom'], 6, 0.4, 10, 0.7, 13, 1],
         },
       },
       // Under the schools when they are already there.

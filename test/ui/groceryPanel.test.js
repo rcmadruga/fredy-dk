@@ -35,7 +35,7 @@ vi.mock('@douyinfe/semi-ui-19', async () => {
   };
 });
 
-const counts = { netto: 3, rema: 2, salling: 0, coop: 1, lidl: 0, aldi: 0, meny: 0, other: 4 };
+const counts = { netto: 3, rema: 2, foetex: 0, bilka: 0, coop: 1, lidl: 0, aldi: 0, meny: 0, other: 4 };
 
 const render = (props = {}) =>
   renderToStaticMarkup(

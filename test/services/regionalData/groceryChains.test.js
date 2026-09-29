@@ -12,9 +12,8 @@ describe('chainOf', () => {
     [{ name: 'Netto Marken' }, 'netto'],
     [{ brand: 'Rema 1000' }, 'rema'],
     [{ name: 'REMA1000' }, 'rema'],
-    [{ brand: 'føtex' }, 'salling'],
-    [{ name: 'Bilka Odense' }, 'salling'],
-    [{ name: 'Salling Stormarked' }, 'salling'],
+    [{ brand: 'føtex' }, 'foetex'],
+    [{ name: 'Bilka Odense' }, 'bilka'],
     [{ brand: 'SuperBrugsen' }, 'coop'],
     [{ name: "Dagli'Brugsen Ravnsborg" }, 'coop'],
     [{ brand: 'Kvickly' }, 'coop'],
@@ -32,6 +31,10 @@ describe('chainOf', () => {
     expect(chainOf({})).toBe('other');
     expect(chainOf(null)).toBe('other');
     expect(chainOf({ brand: 42 })).toBe('other');
+  });
+
+  it('files the Salling department store, which is neither, under other', () => {
+    expect(chainOf({ name: 'Salling Stormarked' })).toBe('other');
   });
 
   it('never answers with an id it does not list', () => {

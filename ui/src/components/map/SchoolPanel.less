@@ -25,6 +25,18 @@
     gap: 8px;
   }
 
+  // A chain's logo in the supermarket legend, with the ring the map badge has. Its white ground is set
+  // where the logos are (`LOGO_TILE_BACKGROUND`): a stylesheet may not carry a colour literal, and a
+  // dark logo has to stay readable in the dark theme.
+  &__logo {
+    width: 30px;
+    height: 18px;
+    padding: 2px 3px;
+    object-fit: contain;
+    border: 2px solid;
+    border-radius: 5px;
+  }
+
   // The legend swatch: the marker's own colour, ringed like the marker. The ring is the theme's
   // surface rather than a literal white, so it follows the light and the dark theme.
   &__dot {
