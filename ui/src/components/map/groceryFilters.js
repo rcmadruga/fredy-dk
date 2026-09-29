@@ -16,10 +16,13 @@
  * fixed so a chain keeps its colour whatever is filtered, and chosen not to collide with the school
  * markers' colours where the two layers are on together.
  *
- * @type {ReadonlyArray<{id: string, color: string}>}
+ * `tile` is what the logo sits on where it should not be white.
+ *
+ * @type {ReadonlyArray<{id: string, color: string, tile?: string}>}
  */
 export const GROCERY_CHAINS = Object.freeze([
-  { id: 'netto', color: '#f0c800' },
+  // The black wordmark is Netto's own; it sits on Netto's yellow (`tile`) rather than on white.
+  { id: 'netto', color: '#f0c800', tile: '#fad85b' },
   { id: 'rema', color: '#d55e00' },
   { id: 'foetex', color: '#cc79a7' },
   { id: 'bilka', color: '#0d47a1' },

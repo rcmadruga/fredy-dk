@@ -25,15 +25,15 @@ import { GROCERY_CHAINS } from './groceryFilters.js';
 export const ICON_PIXEL_RATIO = 2;
 
 /** The badge's size in CSS pixels: the chip, then the pointer under it. */
-export const CHIP_WIDTH = 56;
-export const CHIP_HEIGHT = 36;
-export const POINTER_HEIGHT = 8;
+export const CHIP_WIDTH = 34;
+export const CHIP_HEIGHT = 22;
+export const POINTER_HEIGHT = 5;
 export const ICON_WIDTH = CHIP_WIDTH;
 export const ICON_HEIGHT = CHIP_HEIGHT + POINTER_HEIGHT;
 
-const LOGO_PADDING = 5;
+const LOGO_PADDING = 3;
 
-/** What a logo sits on, in the badge and in the legend: white, whatever the theme. */
+/** What a logo sits on unless its chain says otherwise, in the badge and in the legend: white, whatever the theme. */
 export const LOGO_TILE_BACKGROUND = '#ffffff';
 
 /** The name a chain's badge is registered under on the map. */
@@ -137,7 +137,7 @@ async function loadImage(src) {
  * @returns {Path2D}
  */
 function badgePath() {
-  const r = 8;
+  const r = 5;
   const w = CHIP_WIDTH;
   const h = CHIP_HEIGHT;
   const mid = w / 2;
@@ -147,9 +147,9 @@ function badgePath() {
   path.quadraticCurveTo(w, 0, w, r);
   path.lineTo(w, h - r);
   path.quadraticCurveTo(w, h, w - r, h);
-  path.lineTo(mid + 6, h);
+  path.lineTo(mid + 3.5, h);
   path.lineTo(mid, h + POINTER_HEIGHT);
-  path.lineTo(mid - 6, h);
+  path.lineTo(mid - 3.5, h);
   path.lineTo(r, h);
   path.quadraticCurveTo(0, h, 0, h - r);
   path.lineTo(0, r);
@@ -176,10 +176,10 @@ async function drawBadge(chain) {
 
   // A logo sits on white, so any of them reads whatever its own colours; the ring carries the chain's
   // colour. Without one the whole badge is in the chain's colour and carries a glyph.
-  context.fillStyle = logo == null ? chain.color : LOGO_TILE_BACKGROUND;
+  context.fillStyle = logo == null ? chain.color : (chain.tile ?? LOGO_TILE_BACKGROUND);
   context.fill(outline);
   context.lineJoin = 'round';
-  context.lineWidth = 3;
+  context.lineWidth = 2;
   context.strokeStyle = chain.color;
   context.stroke(outline);
 
@@ -191,7 +191,7 @@ async function drawBadge(chain) {
     const h = image.naturalHeight * scale;
     context.drawImage(image, (CHIP_WIDTH - w) / 2, (CHIP_HEIGHT - h) / 2, w, h);
   } else {
-    const size = 22;
+    const size = 14;
     context.translate((CHIP_WIDTH - size) / 2, (CHIP_HEIGHT - size) / 2);
     context.scale(size / 15, size / 15);
     context.fillStyle = glyphColorOn(chain.color);

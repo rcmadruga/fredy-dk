@@ -245,7 +245,7 @@ export async function applyGroceryLayer(map, stores, { icons = loadGroceryIcons(
           // overlap would hide stores.
           'icon-anchor': 'bottom',
           'icon-allow-overlap': true,
-          'icon-size': ['interpolate', ['linear'], ['zoom'], 6, 0.4, 10, 0.7, 13, 1],
+          'icon-size': ['interpolate', ['linear'], ['zoom'], 6, 0.45, 11, 0.7, 14, 1],
         },
       },
       // Under the schools when they are already there.

@@ -41,12 +41,15 @@ describe('the logo files', () => {
     for (const file of files) expect(readme, `${file} is not credited`).toContain(`\`${file}\``);
   });
 
-  it('do not include the German Netto, which is a different company', () => {
-    // A guard against putting Netto Marken-Discount's logo on Danish stores again.
-    if (hasLogo('netto')) {
-      const svg = fs.readFileSync(path.join(LOGO_DIR, 'netto.svg'), 'utf8');
-      expect(svg).not.toMatch(/Marken-Discount/i);
-    }
+  it('include Netto, and not the German Netto, which is a different company', () => {
+    expect(hasLogo('netto')).toBe(true);
+    const svg = fs.readFileSync(path.join(LOGO_DIR, 'netto.svg'), 'utf8');
+    expect(svg).not.toMatch(/Marken-Discount/i);
+  });
+
+  it('give Netto its own yellow to sit on, and everyone else white', () => {
+    expect(GROCERY_CHAINS.find((chain) => chain.id === 'netto').tile).toMatch(/^#[0-9a-f]{6}$/i);
+    expect(GROCERY_CHAINS.filter((chain) => chain.tile).map((chain) => chain.id)).toEqual(['netto']);
   });
 });
 

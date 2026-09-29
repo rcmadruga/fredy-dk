@@ -105,7 +105,7 @@ export default function GroceryPanel({
                       className="school-panel__logo"
                       src={logoUrlOf(chain.id)}
                       alt=""
-                      style={{ borderColor: chain.color, background: LOGO_TILE_BACKGROUND }}
+                      style={{ borderColor: chain.color, background: chain.tile ?? LOGO_TILE_BACKGROUND }}
                     />
                   ) : (
                     <span className="school-panel__dot" style={{ background: chain.color }} aria-hidden="true" />
