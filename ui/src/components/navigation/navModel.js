@@ -3,6 +3,8 @@
  * Licensed under Apache-2.0 with Commons Clause and Attribution/Naming Clause
  */
 
+import { carryFilters } from '../../services/listings/listingFilters.js';
+
 /**
  * The sidebar's structure, and the rule for deciding which entry the current URL belongs to.
  *
@@ -170,4 +172,25 @@ export function resolveActiveKey(tree, pathname) {
   }
   const [first] = pathname.split('/').filter((segment) => segment.length !== 0);
   return '/' + (first ?? '');
+}
+
+/** The two views that filter listings by the same things, see `FILTER_URL_STATE`. */
+const FILTERED_VIEWS = ['/listings', '/map'];
+
+/**
+ * Where a click on a sidebar entry should go.
+ *
+ * Almost always the entry's own path. The exception is moving between the overview and the map: they
+ * filter by the same things, so what was narrowed on one is still narrowed on the other instead of
+ * being thrown away by the trip.
+ *
+ * @param {{pathname: string, search: string}} location Where the user is now.
+ * @param {string} target The entry's path.
+ * @returns {string}
+ */
+export function destinationFor(location, target) {
+  if (FILTERED_VIEWS.includes(location.pathname) && FILTERED_VIEWS.includes(target) && location.pathname !== target) {
+    return carryFilters(location.search, target);
+  }
+  return target;
 }

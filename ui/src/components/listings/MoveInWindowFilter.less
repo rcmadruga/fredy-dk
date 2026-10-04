@@ -1,0 +1,34 @@
+@import '../../tokens.less';
+
+.moveInWindow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: @space-3;
+
+  &__field {
+    display: flex;
+    flex: 1 1 140px;
+    flex-direction: column;
+    gap: @space-1;
+  }
+
+  &__label {
+    font-size: @text-base;
+    color: @color-muted;
+  }
+
+  &__input {
+    min-height: 32px;
+    padding: 0 @space-2;
+    border: 1px solid @color-border;
+    border-radius: @radius-chip;
+    background: @color-surface;
+    color: @color-text;
+    font: inherit;
+
+    &:focus-visible {
+      outline: 2px solid @color-accent;
+      outline-offset: 1px;
+    }
+  }
+}

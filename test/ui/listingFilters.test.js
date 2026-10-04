@@ -18,6 +18,12 @@ import {
   filterConfiguredProviders,
   toListingsQuery,
   MOBILE_OPERATOR_KEY,
+  MOVE_IN_DATED_KEY,
+  FILTER_URL_STATE,
+  SHARED_FILTER_PARAMS,
+  parseMoveInWindow,
+  formatMoveInWindow,
+  carryFilters,
 } from '../../ui/src/services/listings/listingFilters.js';
 
 /** The URL state as the page opens it. @returns {Object} */
@@ -387,6 +393,148 @@ describe('listingFilters', () => {
     it('handles empty or missing providers list safely', () => {
       expect(filterConfiguredProviders([], [{ id: 'j1' }])).toEqual([]);
       expect(filterConfiguredProviders(null, [{ id: 'j1' }])).toEqual([]);
+    });
+  });
+});
+
+describe('the move-in window', () => {
+  it('reads a closed window and an open end on either side', () => {
+    expect(parseMoveInWindow('2027-01-01..2027-03-31')).toEqual({ from: '2027-01-01', to: '2027-03-31' });
+    expect(parseMoveInWindow('2027-01-01..')).toEqual({ from: '2027-01-01', to: null });
+    expect(parseMoveInWindow('..2027-03-31')).toEqual({ from: null, to: '2027-03-31' });
+  });
+
+  it('is null for anything that holds no usable date, so a mangled bookmark filters nothing', () => {
+    for (const bad of [
+      '..',
+      '',
+      'x',
+      '2027-02-30..',
+      '2027-01-01',
+      '2027-01-01..2027-02-01..2027-03-01',
+      null,
+      undefined,
+      5,
+    ]) {
+      expect(parseMoveInWindow(bad), String(bad)).toBeNull();
+    }
+  });
+
+  it('keeps the good end when the other is not a date', () => {
+    expect(parseMoveInWindow('2027-01-01..soon')).toEqual({ from: '2027-01-01', to: null });
+  });
+
+  it('writes what it reads', () => {
+    expect(formatMoveInWindow({ from: '2027-01-01', to: '2027-03-31' })).toBe('2027-01-01..2027-03-31');
+    expect(formatMoveInWindow({ from: '2027-01-01' })).toBe('2027-01-01..');
+    expect(formatMoveInWindow({ to: '2027-03-31' })).toBe('..2027-03-31');
+    expect(formatMoveInWindow({ from: '', to: null })).toBeNull();
+    expect(formatMoveInWindow({ from: 'junk' })).toBeNull();
+    expect(formatMoveInWindow()).toBeNull();
+  });
+
+  it('counts as one filter only when the window parses', () => {
+    expect(isActiveFilter('movein', { ...defaults(), movein: '2027-01-01..' })).toBe(true);
+    expect(isActiveFilter('movein', { ...defaults(), movein: 'garbage' })).toBe(false);
+    expect(isActiveFilter('movein', defaults())).toBe(false);
+    expect(FILTER_KEYS).toContain('movein');
+    expect(FILTER_KEYS).not.toContain(MOVE_IN_DATED_KEY);
+  });
+
+  it('is not counted twice for the dated-only flag', () => {
+    expect(countActiveFilters({ ...defaults(), movein: '2027-01-01..', mdated: true })).toBe(
+      countActiveFilters({ ...defaults(), movein: '2027-01-01..' }),
+    );
+  });
+
+  it('is cleared together with its flag, and by "clear all"', () => {
+    expect(clearFilter('movein')).toEqual({ movein: null, mdated: null, page: 1 });
+    expect(clearAllFilters()).toMatchObject({ movein: null, mdated: null });
+  });
+
+  describe('what the server is asked', () => {
+    it('sends the dates, and the flag only when it is set', () => {
+      const withFlag = toListingsQuery({ ...defaults(), movein: '2027-01-01..2027-03-31', mdated: true }).filter;
+      const without = toListingsQuery({ ...defaults(), movein: '2027-01-01..2027-03-31' }).filter;
+
+      expect(withFlag).toMatchObject({ moveInFrom: '2027-01-01', moveInTo: '2027-03-31', moveInDatedOnly: true });
+      expect(without).toMatchObject({ moveInFrom: '2027-01-01', moveInTo: '2027-03-31' });
+      expect(without).not.toHaveProperty('moveInDatedOnly');
+    });
+
+    it('sends nothing for an open end, and nothing at all for a flag without a window', () => {
+      const openEnd = toListingsQuery({ ...defaults(), movein: '2027-01-01..' }).filter;
+      expect(openEnd).toHaveProperty('moveInFrom', '2027-01-01');
+      expect(openEnd).not.toHaveProperty('moveInTo');
+
+      const flagOnly = toListingsQuery({ ...defaults(), mdated: true }).filter;
+      expect(flagOnly).not.toHaveProperty('moveInDatedOnly');
+      expect(flagOnly).not.toHaveProperty('moveInFrom');
+    });
+  });
+
+  describe('as a chip', () => {
+    const t = (key, vars) => `${key}(${Object.values(vars ?? {}).join(',')})`;
+    const chip = (movein) =>
+      describeActiveFilters({ ...defaults(), movein }, { t, locale: 'en' }).find((c) => c.key === 'movein');
+
+    it('says both ends, or the one there is, with the dates in the locale', () => {
+      expect(chip('2027-01-01..2027-03-31').label).toBe('listings.filterMoveInChipRange(Jan 1, 2027,Mar 31, 2027)');
+      expect(chip('2027-01-01..').label).toBe('listings.filterMoveInChipFrom(Jan 1, 2027)');
+      expect(chip('..2027-03-31').label).toBe('listings.filterMoveInChipTo(Mar 31, 2027)');
+    });
+
+    it('is absent when the window filters nothing', () => {
+      expect(chip('garbage')).toBeUndefined();
+      expect(chip(null)).toBeUndefined();
+    });
+  });
+});
+
+describe('one set of filters for the overview and the map', () => {
+  it('has a URL entry for every filter, and every entry is a filter', () => {
+    // The two views build their URL state from FILTER_URL_STATE, so this is what keeps a filter from
+    // existing on one page and not the other: it cannot be added to the list of filters without
+    // also being readable from the address bar, nor the reverse.
+    expect(Object.keys(FILTER_URL_STATE).sort()).toEqual(Object.keys(NEUTRAL).sort());
+  });
+
+  it('opens on active listings only, the one default that is a filter', () => {
+    expect(FILTER_URL_STATE.active.defaultValue).toBe(true);
+    for (const key of Object.keys(FILTER_URL_STATE)) {
+      if (key !== 'active') expect(FILTER_URL_STATE[key].defaultValue, key).toBe(NEUTRAL[key]);
+    }
+  });
+
+  describe('carrying the filters from one view to the other', () => {
+    it('takes the filters and leaves the overview-only and map-only parameters behind', () => {
+      const search =
+        '?q=hillerød&page=3&sort=price&dir=asc&job=j1&provider=boligportal&commute=transit:30&movein=2027-01-01..&popup=l9&style=SATELLITE&priceMin=100';
+
+      const target = carryFilters(search, '/map');
+
+      expect(target.startsWith('/map?')).toBe(true);
+      const carried = new URLSearchParams(target.split('?')[1]);
+      expect(Object.fromEntries(carried)).toEqual({
+        job: 'j1',
+        provider: 'boligportal',
+        commute: 'transit:30',
+        movein: '2027-01-01..',
+      });
+    });
+
+    it('is the bare path when there is nothing to carry', () => {
+      expect(carryFilters('', '/listings')).toBe('/listings');
+      expect(carryFilters('?q=a&page=2&popup=x', '/listings')).toBe('/listings');
+    });
+
+    it('carries a filter that is switched off on purpose, such as showing every listing', () => {
+      // `active` defaults to true, so "all" is written into the URL as `active=` and has to survive.
+      expect(carryFilters('?active=null', '/map')).toContain('active=');
+    });
+
+    it('only ever carries parameters that are filters', () => {
+      expect(SHARED_FILTER_PARAMS).not.toEqual(expect.arrayContaining(['q', 'page', 'sort', 'dir', 'popup', 'style']));
     });
   });
 });

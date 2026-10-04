@@ -6,6 +6,7 @@
 import { Radio, RadioGroup, Select } from '@douyinfe/semi-ui-19';
 
 import FilterSelect from './FilterSelect.jsx';
+import MoveInWindowFilter from './MoveInWindowFilter.jsx';
 import FilterDrawer, { FilterGroup, FilterHelp } from '../filters/FilterDrawer.jsx';
 import { COMMUTE_OPTIONS } from '../transit/travelTimeFormat.js';
 import {
@@ -170,6 +171,10 @@ export default function ListingsFilterPanel({
           )}
         </FilterGroup>
       )}
+
+      <FilterGroup title={t('listings.filterGroupMoveIn')}>
+        <MoveInWindowFilter values={values} onChange={onChange} />
+      </FilterGroup>
 
       {/* Only offered while the operator has the enrichment on. With it off nothing is ever
           written to the columns these read, so every one of them would return an empty page. */}
