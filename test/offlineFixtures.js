@@ -242,6 +242,7 @@ export function buildFetchMock() {
   let bieniciList = null;
   let bieniciDetail = null;
   let boligsidenCases = null;
+  let danicaList = null;
   let lejeboligHtml = null;
   let lejeboligDetailHtml = null;
 
@@ -427,6 +428,15 @@ export function buildFetchMock() {
         boligsidenCases = raw ? JSON.parse(raw) : { cases: [] };
       }
       return { ok: true, status: 200, json: () => Promise.resolve(boligsidenCases) };
+    }
+
+    // Danica Ejendomme's own portal answers a POSTed search with the list of vacant homes.
+    if (urlStr.includes('bolig.danicaejendomme.dk/api/admin/Property/list')) {
+      if (danicaList == null) {
+        const raw = await tryReadFile(path.join(FIXTURES_DIR, 'danica_list.json'));
+        danicaList = raw ? JSON.parse(raw) : { Data: { List: [], PageInfo: {} }, IsError: false };
+      }
+      return { ok: true, status: 200, json: () => Promise.resolve(danicaList) };
     }
 
     if (urlStr.includes('www.lejebolig.dk/lejeboliger')) {

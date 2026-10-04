@@ -1503,6 +1503,7 @@
   "listing.detail.rentalLeaseMonths": "{{months}} mesi",
   "listing.detail.rentalLeaseHelp": "Il periodo di locazione indicato dal portale per questo annuncio.",
   "listing.detail.rentalSocialHousing": "Alloggio di un'associazione abitativa - spesso assegnato con lista d'attesa",
+  "listing.detail.rentalPriority": "Offerto prima ai clienti di {{fund}}",
   "listing.detail.rentalDepositOverCap": "Il deposito supera 3 mesi di affitto, il massimo legale per un affitto privato in Danimarca.",
   "listing.detail.rentalPrepaidOverCap": "L'affitto anticipato supera 3 mesi, il massimo legale per un affitto privato in Danimarca.",
   "listing.detail.rentalCombinedOverCap": "Deposito e affitto anticipato insieme superano 6 mesi di affitto, il massimo legale per un affitto privato in Danimarca.",

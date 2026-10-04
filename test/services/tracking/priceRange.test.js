@@ -174,6 +174,9 @@ const NO_RANGE_IN_URL = [
     'imaxx',
     'https://www.imaxx.de/immobilien/?post_type=immomakler_object&radius=1&vermarktungsart%5B0%5D=kauf&typ%5B0%5D=wohnung',
   ],
+  // The portal's search is POSTed to its own API and takes no price range; the job's own filter does the
+  // rest (see lib/provider/danicaejendomme.js).
+  ['danicaejendomme', 'https://bolig.danicaejendomme.dk/hjem/findbolig?search='],
   ['inberlinwohnen', 'https://inberlinwohnen.de/wohnungsfinder/'],
   // Every filter but the city path segment is submitted as a POST and only persists for the
   // session that submitted it - a plain GET, live or fixture-replayed, never reflects one back into

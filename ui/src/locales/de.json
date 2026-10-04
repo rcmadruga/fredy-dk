@@ -1526,6 +1526,7 @@
   "listing.detail.rentalLeaseMonths": "{{months}} Monate",
   "listing.detail.rentalLeaseHelp": "Die Mietdauer, die das Portal für diese Anzeige angibt.",
   "listing.detail.rentalSocialHousing": "Wohnung einer Wohnungsbaugesellschaft - oft per Warteliste vergeben",
+  "listing.detail.rentalPriority": "Zuerst für {{fund}}-Kunden",
   "listing.detail.rentalDepositOverCap": "Die Kaution beträgt mehr als 3 Monatsmieten, das gesetzliche Maximum bei privater Miete in Dänemark.",
   "listing.detail.rentalPrepaidOverCap": "Die vorausgezahlte Miete beträgt mehr als 3 Monatsmieten, das gesetzliche Maximum bei privater Miete in Dänemark.",
   "listing.detail.rentalCombinedOverCap": "Kaution und vorausgezahlte Miete zusammen betragen mehr als 6 Monatsmieten, das gesetzliche Maximum bei privater Miete in Dänemark.",

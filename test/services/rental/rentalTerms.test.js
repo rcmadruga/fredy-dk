@@ -4,7 +4,12 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { buildRentalTerms, parseMoveInTotal, parseRentalTerms } from '../../../lib/services/rental/rentalTerms.js';
+import {
+  buildRentalTerms,
+  parseAvailabilityText,
+  parseMoveInTotal,
+  parseRentalTerms,
+} from '../../../lib/services/rental/rentalTerms.js';
 
 describe('buildRentalTerms', () => {
   it('turns what a Danish advert states into the stored fields', () => {
@@ -216,6 +221,67 @@ describe('normalizeIsoDate', () => {
       5,
     ]) {
       expect(normalizeIsoDate(bad), String(bad)).toBeNull();
+    }
+  });
+});
+
+describe('availability: "as soon as possible" is a state, not a date', () => {
+  it('stores the flag when an advert says the home is free now', () => {
+    expect(buildRentalTerms({ availableImmediately: true }).rental).toEqual({ availableImmediately: true });
+  });
+
+  it('lets a stated date win over the flag, so the two are never stored together', () => {
+    expect(buildRentalTerms({ availableFrom: '2027-01-15', availableImmediately: true }).rental).toEqual({
+      availableFrom: '2027-01-15',
+    });
+  });
+
+  it('is not set by anything but true', () => {
+    for (const value of [false, null, undefined, 'true', 1]) {
+      expect(buildRentalTerms({ availableImmediately: value }).rental, String(value)).toBeUndefined();
+    }
+  });
+
+  it('survives the stored JSON', () => {
+    expect(parseRentalTerms('{"availableImmediately":true}')).toEqual({ availableImmediately: true });
+  });
+
+  describe('parseAvailabilityText', () => {
+    it.each([
+      ['Snarest muligt', { availableImmediately: true }],
+      ['snarest', { availableImmediately: true }],
+      ['Så hurtigt som muligt', { availableImmediately: true }],
+      ['Hurtigst muligt', { availableImmediately: true }],
+      ['Straks', { availableImmediately: true }],
+      ['Omgående', { availableImmediately: true }],
+      ['Ledig nu', { availableImmediately: true }],
+      ['ASAP', { availableImmediately: true }],
+      ['As soon as possible', { availableImmediately: true }],
+      ['2027-01-15', { availableFrom: '2027-01-15' }],
+      ['15-01-2027', { availableFrom: '2027-01-15' }],
+      ['15.01.2027', { availableFrom: '2027-01-15' }],
+      ['1/3/2027', { availableFrom: '2027-03-01' }],
+    ])('reads "%s"', (text, expected) => {
+      expect(parseAvailabilityText(text)).toEqual(expected);
+    });
+
+    it('says nothing for what a filter cannot use', () => {
+      for (const text of ['efter aftale', '1. januar eller senere', '31-02-2027', '', '   ', null, undefined, 5]) {
+        expect(parseAvailabilityText(text), String(text)).toEqual({});
+      }
+    });
+  });
+});
+
+describe('priority', () => {
+  it('keeps who the landlord offers a home to first, trimmed and bounded', () => {
+    expect(buildRentalTerms({ priority: ' Danica Pension ' }).rental).toEqual({ priority: 'Danica Pension' });
+    expect(buildRentalTerms({ priority: 'x'.repeat(200) }).rental.priority).toHaveLength(60);
+  });
+
+  it('is dropped when empty or not text', () => {
+    for (const value of ['', '   ', null, undefined, 5, {}]) {
+      expect(buildRentalTerms({ priority: value }).rental, String(value)).toBeUndefined();
     }
   });
 });

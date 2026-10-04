@@ -130,5 +130,9 @@
   "boligportal": {
     "url": "https://www.boligportal.dk/lejeboliger/hillerød/alle-værelser/?max_monthly_rent=18424",
     "enabled": true
+  },
+  "danicaejendomme": {
+    "url": "https://bolig.danicaejendomme.dk/hjem/findbolig?search=",
+    "enabled": true
   }
 }

@@ -1503,6 +1503,7 @@
   "listing.detail.rentalLeaseMonths": "{{months}} meses",
   "listing.detail.rentalLeaseHelp": "El periodo de alquiler que indica el portal para este anuncio.",
   "listing.detail.rentalSocialHousing": "Vivienda de una cooperativa de vivienda - a menudo se asigna por lista de espera",
+  "listing.detail.rentalPriority": "Se ofrece primero a clientes de {{fund}}",
   "listing.detail.rentalDepositOverCap": "La fianza supera 3 meses de alquiler, el máximo legal en un alquiler privado en Dinamarca.",
   "listing.detail.rentalPrepaidOverCap": "El alquiler por adelantado supera 3 meses, el máximo legal en un alquiler privado en Dinamarca.",
   "listing.detail.rentalCombinedOverCap": "Fianza y alquiler por adelantado juntos superan 6 meses de alquiler, el máximo legal en un alquiler privado en Dinamarca.",

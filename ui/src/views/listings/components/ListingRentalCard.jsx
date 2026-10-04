@@ -29,7 +29,7 @@ export default function ListingRentalCard({ listing }) {
 
   const facts = buildRentalFacts(listing, { t, locale, currency: currencyOf(listing?.provider) });
   if (facts == null) return null;
-  const { availability, rows, moveIn, warnings, socialHousing } = facts;
+  const { availability, rows, moveIn, warnings, socialHousing, priority } = facts;
 
   const help = (text, label) =>
     text ? (
@@ -50,14 +50,24 @@ export default function ListingRentalCard({ listing }) {
         <span className="listing-rental__available-label">{t('listing.detail.rentalAvailableFrom')}</span>
         {availability != null ? (
           <>
-            <span className="listing-rental__available-date">{availability.date}</span>
-            <span className="listing-rental__available-relative">{availability.relative}</span>
+            {/* "As soon as possible" has no date: the state is the headline then. */}
+            {availability.date != null ? (
+              <>
+                <span className="listing-rental__available-date">{availability.date}</span>
+                <span className="listing-rental__available-relative">{availability.relative}</span>
+              </>
+            ) : (
+              <span className="listing-rental__available-date">{availability.relative}</span>
+            )}
           </>
         ) : (
           <span className="listing-rental__available-relative">{t('listing.detail.rentalAvailableUnknown')}</span>
         )}
       </div>
 
+      {priority != null && (
+        <span className="listing-rental__chip">{t('listing.detail.rentalPriority', { fund: priority })}</span>
+      )}
       {socialHousing && <span className="listing-rental__chip">{t('listing.detail.rentalSocialHousing')}</span>}
 
       <dl className="listing-rental__rows">

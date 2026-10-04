@@ -1463,6 +1463,7 @@
   "listing.detail.rentalLeaseMonths": "{{months}} ay",
   "listing.detail.rentalLeaseHelp": "Portalın bu ilan için belirttiği kira süresi.",
   "listing.detail.rentalSocialHousing": "Konut kooperatifi dairesi - genellikle bekleme listesiyle verilir",
+  "listing.detail.rentalPriority": "Önce {{fund}} müşterilerine sunulur",
   "listing.detail.rentalDepositOverCap": "Depozito 3 aylık kiradan fazla; bu, Danimarka'da özel kiralamalar için yasal üst sınırdır.",
   "listing.detail.rentalPrepaidOverCap": "Peşin kira 3 aydan fazla; bu, Danimarka'da özel kiralamalar için yasal üst sınırdır.",
   "listing.detail.rentalCombinedOverCap": "Depozito ve peşin kira birlikte 6 aylık kiradan fazla; bu, Danimarka'da özel kiralamalar için yasal üst sınırdır.",
