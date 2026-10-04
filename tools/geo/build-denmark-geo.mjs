@@ -26,7 +26,8 @@
  *   node tools/geo/build-denmark-geo.mjs --inspect  # print the properties of each source and stop
  *   --snapshot=YYYY-MM-DD   use another DAGI snapshot   --cache=DIR   where downloads are kept
  *
- * Dev dependencies: flatgeobuf (reader), proj4 (EPSG:25832 -> WGS84), @turf/centroid.
+ * Dev dependencies: flatgeobuf (reader) and @turf/centroid. The projection (EPSG:25832 -> WGS84) is
+ * `lib/services/geo/etrs89.js`, shared with the app.
  */
 
 import { createReadStream, existsSync } from 'node:fs';
@@ -38,11 +39,11 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { geojson } from 'flatgeobuf';
-import proj4 from 'proj4';
 import simplify from '@turf/simplify';
 import centroid from '@turf/centroid';
 import booleanPointInPolygon from '@turf/boolean-point-in-polygon';
 import { KOMMUNE_SIMPLIFY_TOLERANCE } from '../../lib/services/regionalData/constants.js';
+import { fromEtrs89 } from '../../lib/services/geo/etrs89.js';
 
 const BUCKET = 'https://datagrundlag.s3.eu-west-1.amazonaws.com/filer/dk/schema=dagi';
 const DEFAULT_SNAPSHOT = '2026-09-27';
@@ -60,8 +61,6 @@ const DECIMALS = 5;
  * density is tried again at the fine one.
  */
 const SAMPLES_PER_AXIS = [12, 48];
-
-proj4.defs('EPSG:25832', '+proj=utm +zone=32 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs');
 
 const args = Object.fromEntries(
   process.argv.slice(2).map((a) => {
@@ -113,7 +112,7 @@ async function loadFeatures(relation) {
 /** Maps a ring/line/polygon coordinate tree from EPSG:25832 to WGS84, rounded. */
 function toWgs84(coords) {
   if (typeof coords[0] === 'number') {
-    const [lng, lat] = proj4('EPSG:25832', 'WGS84', [coords[0], coords[1]]);
+    const { lat, lng } = fromEtrs89(coords[0], coords[1]);
     return [Number(lng.toFixed(DECIMALS)), Number(lat.toFixed(DECIMALS))];
   }
   return coords.map(toWgs84);

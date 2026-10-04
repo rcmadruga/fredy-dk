@@ -62,7 +62,7 @@ describe('getTaxChoropleth', () => {
     expect(choropleth.features.map((f) => f.id)).toEqual(['0101']);
   });
 
-  it('is an empty (not broken) collection when DAWA could not be reached', async () => {
+  it('is an empty (not broken) collection when the bundled boundaries could not be read', async () => {
     fetchKommuner.mockResolvedValue(null);
 
     const choropleth = await getTaxChoropleth();
