@@ -34,6 +34,7 @@ describe('scam signals and overrides in the listings table', () => {
         price REAL,
         charges_included INTEGER,
         charges REAL,
+        rental_terms TEXT,
         size REAL,
         rooms REAL,
         build_year INTEGER,

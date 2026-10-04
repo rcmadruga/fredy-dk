@@ -69,6 +69,7 @@ describe('listings published_at', () => {
         price REAL,
         charges_included INTEGER,
         charges REAL,
+        rental_terms TEXT,
         size REAL,
         rooms REAL,
         build_year INTEGER,

@@ -25,6 +25,7 @@ describe('storeListings, the basis of a rent', () => {
         price REAL,
         charges_included INTEGER,
         charges REAL,
+        rental_terms TEXT,
         size REAL,
         rooms REAL,
         build_year INTEGER,

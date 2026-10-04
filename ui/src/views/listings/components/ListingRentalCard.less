@@ -1,0 +1,93 @@
+@import '../../../tokens.less';
+
+.listing-rental {
+  // The date is the headline: a rental that is free a year too early or too late is the wrong rental,
+  // so it is set the way the price is on the card above, and the state is told by the border and the
+  // label rather than by colour alone.
+  &__available {
+    display: flex;
+    flex-direction: column;
+    gap: @space-1;
+    padding: @space-3;
+    border: 1px solid @color-border;
+    border-left-width: 4px;
+    border-radius: @radius-chip;
+
+    &--now {
+      border-left-color: @color-accent;
+    }
+
+    &--soon {
+      border-left-color: @color-muted;
+    }
+  }
+
+  &__available-label {
+    font-size: @text-base;
+    color: @color-muted;
+  }
+
+  &__available-date {
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+    color: @color-text;
+  }
+
+  &__available-relative {
+    font-size: @text-base;
+    color: @color-muted;
+  }
+
+  &__chip {
+    display: inline-block;
+    margin-top: @space-3;
+    padding: @space-1 @space-3;
+    border: 1px solid @color-border;
+    border-radius: @radius-chip;
+    font-size: @text-base;
+  }
+
+  &__rows {
+    margin: @space-3 0 0;
+  }
+
+  &__row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: @space-3;
+    padding: @space-2 0;
+    border-top: 1px solid @color-border;
+
+    dt {
+      color: @color-muted;
+    }
+
+    dd {
+      margin: 0;
+      font-variant-numeric: tabular-nums;
+      color: @color-text;
+    }
+
+    &--total dt,
+    &--total dd {
+      font-weight: 700;
+      color: @color-text;
+    }
+  }
+
+  &__help {
+    margin-left: @space-1;
+    cursor: help;
+    color: @color-muted;
+  }
+
+  &__warning {
+    margin: @space-3 0 0;
+    font-size: @text-base;
+    color: @color-muted;
+  }
+}
+

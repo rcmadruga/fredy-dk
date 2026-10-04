@@ -359,3 +359,147 @@ export function providerName(provider) {
   if (!provider) return '';
   return provider.charAt(0).toUpperCase() + provider.slice(1);
 }
+
+/** Danish law (lejeloven, private rentals): deposit at most 3 months' rent, prepaid rent at most 3, together at most 6. */
+const DEPOSIT_CAP_MONTHS = 3;
+const PREPAID_CAP_MONTHS = 3;
+const COMBINED_CAP_MONTHS = 6;
+
+/** A date nearer than this is "soon" rather than "later". */
+const SOON_DAYS = 60;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** @param {string} iso `YYYY-MM-DD` @returns {number|null} Midnight UTC of that day, in ms. */
+function dayOf(iso) {
+  const m = typeof iso === 'string' ? iso.match(/^(\d{4})-(\d{2})-(\d{2})/) : null;
+  return m ? Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : null;
+}
+
+/**
+ * When the home can be taken over, said both as a date and in relation to today.
+ *
+ * @param {string|undefined} availableFrom `YYYY-MM-DD`
+ * @param {FactContext & {now?: Date}} ctx
+ * @returns {{date: string, relative: string, state: 'now'|'soon'|'later'}|null}
+ */
+function buildAvailability(availableFrom, ctx) {
+  const target = dayOf(availableFrom);
+  if (target == null) return null;
+  const { t, locale } = ctx;
+  const now = ctx.now ?? new Date();
+  const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  const days = Math.round((target - today) / DAY_MS);
+
+  const date = new Intl.DateTimeFormat(locale, {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    timeZone: 'UTC',
+  }).format(new Date(target));
+  if (days <= 0) return { date, relative: t('listing.detail.rentalAvailableNow'), state: 'now' };
+  if (days < SOON_DAYS) {
+    return { date, relative: t('listing.detail.rentalAvailableInDays', { days }), state: 'soon' };
+  }
+  return {
+    date,
+    relative: t('listing.detail.rentalAvailableInMonths', { months: Math.round(days / 30.4) }),
+    state: 'later',
+  };
+}
+
+/**
+ * What a rental costs beyond the rent and when it can be moved into: the Danish rental terms a
+ * listing carries (`rental_terms`, see `lib/services/rental/rentalTerms.js`), as descriptors.
+ *
+ * The date comes first and on its own: for someone moving at a fixed time, "free from when" decides
+ * whether the rest is worth reading. The cash needed on the day is the figure the advert states
+ * (`indflytningspris`) when it states one, and that figure is trusted as it is: it is the one a
+ * tenant budgets by and may include fees we cannot see, so it is never second-guessed. Only when the
+ * advert gives none is it worked out here, the way Danish portals and tenant advice define it - the
+ * first month's rent (with any running costs on account), plus the deposit, plus the prepaid rent -
+ * and then it is marked as our own calculation and as a floor.
+ *
+ * The legal ceilings apply to the rent itself, not to running costs, so they are only checked when
+ * the listed rent is known to be without them.
+ *
+ * @param {Object|null} listing - A row as the listings API returns it.
+ * @param {FactContext & {now?: Date}} ctx
+ * @returns {{availability: Object|null, rows: ListingFact[], moveIn: {text: string, stated: boolean, helpText: string}|null, warnings: string[], socialHousing: boolean}|null}
+ *   `null` for a sale, and for a rental that states nothing of this.
+ */
+export function buildRentalFacts(listing, ctx) {
+  const row = listing ?? {};
+  if (row.dealType !== 'rent') return null;
+
+  const { t, locale } = ctx;
+  const currency = ctx.currency ?? DEFAULT_CURRENCY;
+  const money = (value) => formatPrice(value, locale, null, currency);
+  const terms = row.rental_terms ?? {};
+  const rent = Number.isFinite(row.price) ? row.price : null;
+  const charges = Number.isFinite(row.charges) && row.charges > 0 ? row.charges : null;
+  const chargesOnTop = charges != null && row.charges_included === 0;
+
+  const availability = buildAvailability(terms.availableFrom, ctx);
+  const rows = [];
+
+  if (chargesOnTop) {
+    rows.push({
+      id: 'extraCosts',
+      label: t('listing.detail.rentalExtraCosts'),
+      value: money(charges),
+      helpText: t('listing.detail.rentalExtraCostsHelp'),
+    });
+    if (rent != null) {
+      rows.push({
+        id: 'totalMonthly',
+        label: t('listing.detail.rentalTotalMonthly'),
+        value: money(rent + charges),
+        helpText: t('listing.detail.rentalTotalMonthlyHelp'),
+      });
+    }
+  }
+  if (terms.deposit != null) {
+    rows.push({ id: 'deposit', label: t('listing.detail.rentalDeposit'), value: money(terms.deposit) });
+  }
+  if (terms.prepaidRent != null) {
+    rows.push({ id: 'prepaidRent', label: t('listing.detail.rentalPrepaid'), value: money(terms.prepaidRent) });
+  }
+  if (terms.leasePeriodMonths != null) {
+    rows.push({
+      id: 'lease',
+      label: t('listing.detail.rentalLease'),
+      value:
+        terms.leasePeriodMonths === 0
+          ? t('listing.detail.rentalLeaseOpen')
+          : t('listing.detail.rentalLeaseMonths', { months: terms.leasePeriodMonths }),
+      helpText: t('listing.detail.rentalLeaseHelp'),
+    });
+  }
+
+  // The first month's rent, with the running costs on account where they are charged on top.
+  const firstMonth = rent != null ? rent + (chargesOnTop ? charges : 0) : null;
+  const estimate =
+    firstMonth != null && (terms.deposit != null || terms.prepaidRent != null)
+      ? firstMonth + (terms.deposit ?? 0) + (terms.prepaidRent ?? 0)
+      : null;
+  let moveIn = null;
+  if (terms.moveInTotal != null) {
+    moveIn = { stated: true, text: money(terms.moveInTotal), helpText: t('listing.detail.rentalMoveInStatedHelp') };
+  } else if (estimate != null) {
+    moveIn = { stated: false, text: money(estimate), helpText: t('listing.detail.rentalMoveInHelp') };
+  }
+
+  // Only against a rent known to be without running costs: the law's base is the rent alone.
+  const warnings = [];
+  if (rent != null && rent > 0 && row.charges_included !== 1) {
+    const deposit = terms.deposit ?? 0;
+    const prepaid = terms.prepaidRent ?? 0;
+    if (deposit > DEPOSIT_CAP_MONTHS * rent) warnings.push(t('listing.detail.rentalDepositOverCap'));
+    if (prepaid > PREPAID_CAP_MONTHS * rent) warnings.push(t('listing.detail.rentalPrepaidOverCap'));
+    if (deposit + prepaid > COMBINED_CAP_MONTHS * rent) warnings.push(t('listing.detail.rentalCombinedOverCap'));
+  }
+
+  const socialHousing = terms.socialHousing === true;
+  if (availability == null && rows.length === 0 && moveIn == null && !socialHousing) return null;
+  return { availability, rows, moveIn, warnings, socialHousing };
+}
