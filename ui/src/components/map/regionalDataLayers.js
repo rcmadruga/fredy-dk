@@ -5,7 +5,7 @@
 
 /**
  * Denmark-only optional overlays: a kommune-level tax choropleth (kommuneskat + grundskyld),
- * school markers coloured by kind of school, and supermarkets coloured by chain. Both are fed by `lib/services/regionalData/`
+ * school markers coloured by kind of school, supermarkets coloured by chain, and jobs (a choropleth of adverts per kommune and a dot per advert). All are fed by `lib/services/regionalData/`
  * through `/api/regional-data/dk/*` and are off by default - see `Map.jsx` for the fetch-on-toggle
  * wiring, `MapControls.jsx` for the tax switch and `SchoolPanel.jsx` for everything about schools.
  *
@@ -26,6 +26,32 @@ export const SCHOOL_LAYER_ID = 'dk-schools-points';
 
 export const GROCERY_SOURCE_ID = 'dk-groceries';
 export const GROCERY_LAYER_ID = 'dk-groceries-points';
+
+export const JOBS_AREA_SOURCE_ID = 'dk-jobs-kommuner';
+export const JOBS_FILL_LAYER_ID = 'dk-jobs-kommuner-fill';
+export const JOBS_OUTLINE_LAYER_ID = 'dk-jobs-kommuner-outline';
+
+export const JOBS_POINT_SOURCE_ID = 'dk-jobs-postings';
+export const JOBS_POINT_LAYER_ID = 'dk-jobs-postings-points';
+
+/**
+ * How many adverts a kommune needs to reach each shade, and the shade. With a few dozen adverts
+ * spread over the country most kommuners have none, one or two, so the steps are fine at the bottom
+ * and open-ended at the top. Fixed, like the tax stops, so a colour means the same count whatever else
+ * loaded with it. `0` is no fill at all: a kommune with no jobs should look empty, not pale.
+ *
+ * Exported for the panel's legend, which has to say the same thing as the map.
+ */
+export const JOB_COUNT_STEPS = Object.freeze([
+  { min: 1, color: '#d9f0d3' },
+  { min: 2, color: '#a6dba0' },
+  { min: 3, color: '#5aae61' },
+  { min: 5, color: '#1b7837' },
+  { min: 10, color: '#00441b' },
+]);
+
+/** The dot of an advert at the workplace's own address, and the outline of one at a postcode's centre. */
+export const JOB_POINT_COLOR = '#1b7837';
 
 /**
  * Kommuneskat stops, in percent. Denmark's 98 municipalities have run roughly 22.5-27.8 % for years;
@@ -261,4 +287,138 @@ export function removeGroceryLayer(map) {
   if (map == null) return;
   if (map.getLayer(GROCERY_LAYER_ID) != null) map.removeLayer(GROCERY_LAYER_ID);
   if (map.getSource(GROCERY_SOURCE_ID) != null) map.removeSource(GROCERY_SOURCE_ID);
+}
+
+/**
+ * Adds or removes the jobs-by-kommune choropleth.
+ *
+ * @param {import('maplibre-gl').Map} map
+ * @param {{type: 'FeatureCollection', features: Array<Object>}|null} data - The server's `choropleth`:
+ *   every kommune with a `count`. `null` (or an empty collection) removes the layer.
+ */
+export function applyJobsAreaLayer(map, data) {
+  if (map == null) return;
+
+  if (data == null || data.features.length === 0) {
+    removeJobsAreaLayer(map);
+    return;
+  }
+
+  const existing = map.getSource(JOBS_AREA_SOURCE_ID);
+  if (existing != null) {
+    existing.setData(data);
+  } else {
+    map.addSource(JOBS_AREA_SOURCE_ID, { type: 'geojson', data });
+  }
+
+  if (map.getLayer(JOBS_FILL_LAYER_ID) == null) {
+    map.addLayer({
+      id: JOBS_FILL_LAYER_ID,
+      type: 'fill',
+      source: JOBS_AREA_SOURCE_ID,
+      paint: {
+        'fill-color': [
+          'step',
+          ['get', 'count'],
+          'rgba(0, 0, 0, 0)',
+          ...JOB_COUNT_STEPS.flatMap((step) => [step.min, step.color]),
+        ],
+        'fill-opacity': 0.65,
+      },
+    });
+  }
+
+  if (map.getLayer(JOBS_OUTLINE_LAYER_ID) == null) {
+    map.addLayer({
+      id: JOBS_OUTLINE_LAYER_ID,
+      type: 'line',
+      source: JOBS_AREA_SOURCE_ID,
+      paint: { 'line-color': '#7a7a7a', 'line-width': 0.75, 'line-opacity': 0.6 },
+    });
+  }
+}
+
+/**
+ * @param {import('maplibre-gl').Map} map
+ */
+export function removeJobsAreaLayer(map) {
+  if (map == null) return;
+  for (const id of [JOBS_FILL_LAYER_ID, JOBS_OUTLINE_LAYER_ID]) {
+    if (map.getLayer(id) != null) map.removeLayer(id);
+  }
+  if (map.getSource(JOBS_AREA_SOURCE_ID) != null) map.removeSource(JOBS_AREA_SOURCE_ID);
+}
+
+/**
+ * @param {Array<import('../../services/regionalData/regionalData.js').JobPosting>} postings
+ * @returns {{type: 'FeatureCollection', features: Array<Object>}}
+ */
+export function jobsToGeoJson(postings) {
+  return {
+    type: 'FeatureCollection',
+    features: postings.map((posting) => ({
+      type: 'Feature',
+      id: posting.id,
+      geometry: { type: 'Point', coordinates: [posting.lng, posting.lat] },
+      properties: {
+        title: posting.title,
+        employer: posting.employer,
+        url: posting.url,
+        lastDate: posting.lastDate,
+        tier: posting.tier,
+        kommuneName: posting.kommuneName,
+        approximate: posting.approximate === true,
+        // MapLibre hands nested values back as JSON strings on a click, so the list is carried as text.
+        alsoIn: (posting.alsoIn ?? []).join(', '),
+      },
+    })),
+  };
+}
+
+/**
+ * Adds or removes the job dots: solid where the position is the workplace's own address, a ring where
+ * it is only the centre of a postcode or a town, so a dot is never taken for more exact than it is.
+ *
+ * @param {import('maplibre-gl').Map} map
+ * @param {Array<Object>|null} postings - The server's `postings`, or `null`/empty to remove the layer.
+ */
+export function applyJobsPointLayer(map, postings) {
+  if (map == null) return;
+
+  if (postings == null || postings.length === 0) {
+    removeJobsPointLayer(map);
+    return;
+  }
+
+  const data = jobsToGeoJson(postings);
+  const existing = map.getSource(JOBS_POINT_SOURCE_ID);
+  if (existing != null) {
+    existing.setData(data);
+  } else {
+    map.addSource(JOBS_POINT_SOURCE_ID, { type: 'geojson', data });
+  }
+
+  if (map.getLayer(JOBS_POINT_LAYER_ID) == null) {
+    map.addLayer({
+      id: JOBS_POINT_LAYER_ID,
+      type: 'circle',
+      source: JOBS_POINT_SOURCE_ID,
+      paint: {
+        'circle-radius': ['interpolate', ['linear'], ['zoom'], 5, 3.5, 10, 6, 14, 8],
+        'circle-color': ['case', ['get', 'approximate'], '#ffffff', JOB_POINT_COLOR],
+        'circle-opacity': ['case', ['get', 'approximate'], 0.55, 0.95],
+        'circle-stroke-color': ['case', ['get', 'approximate'], JOB_POINT_COLOR, '#ffffff'],
+        'circle-stroke-width': ['case', ['get', 'approximate'], 2, 1.5],
+      },
+    });
+  }
+}
+
+/**
+ * @param {import('maplibre-gl').Map} map
+ */
+export function removeJobsPointLayer(map) {
+  if (map == null) return;
+  if (map.getLayer(JOBS_POINT_LAYER_ID) != null) map.removeLayer(JOBS_POINT_LAYER_ID);
+  if (map.getSource(JOBS_POINT_SOURCE_ID) != null) map.removeSource(JOBS_POINT_SOURCE_ID);
 }
