@@ -9,7 +9,7 @@ Status per step. Updated after every step, before anything else. The plan is `li
 - [x] 2 `score.js`: formula, groups, weights, missing, rent re-weighting
 - [x] 3 Money: value, affordable, budget
 - [x] 4 Schools: nearby, special, area
-- [ ] 5 Work: commute, jobs
+- [x] 5 Work: commute, jobs
 - [ ] 6 Home: size, bathrooms, internet, newBuild; heuristics upkeep, parking
 - [ ] 7 Area (grocery, park) and Deal (vsValuation, vsLastSale, priceDrop, onMarket, relisted)
 - [ ] 8 Migration `score_config`, storage, validation
