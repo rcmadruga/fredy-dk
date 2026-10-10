@@ -1,8 +1,10 @@
 # Listing score and radar chart
 
-A 0–100 score per listing in four groups (Money, Schools, Work, Home), each built from metrics the
-user scores against their own targets and weights per job. Drawn as a four-spoke radar chart on the
-listing detail page, with a drill-down into each group's metrics.
+A 0–100 score per listing in groups (Money, Schools, Work, Home, Area, and Deal for purchases),
+each built from metrics the user scores against their own targets and weights per job. Drawn as a
+radar chart on the listing detail page with a drill-down into each group's metrics: a **hexagon for
+a purchase** (six groups), a **pentagon for a rental** (five, no Deal). The shape tells at a glance
+which kind of search a listing belongs to.
 
 The progress ledger is `listing-score.progress.md`. Update it after every step, before anything else.
 
@@ -14,12 +16,14 @@ Decided with the user (2026-10-10):
 
 | Question | Answer |
 |---|---|
-| Structure | 4 groups as radar spokes; each group is the weighted mean of its metrics; drill-down per group |
+| Structure | Groups as radar spokes; each group is the weighted mean of its metrics; drill-down per group |
+| Groups | Money, Schools, Work, Home (the dwelling), Area (where it is), Deal (purchases only) |
+| Shape | Buy: hexagon, 6 spokes. Rent: pentagon, 5 spokes (no Deal) |
 | Scaling | The user's own targets: an ideal and a worst value per metric, linear in between |
 | Weights | Per job: one weight per group, and one per metric inside its group. Equal by default |
 | Missing data | A metric with no value scores a neutral 50 and is drawn as "unknown" |
 | Commute | To the user's company address (a saved travel-time address) |
-| Rent vs buy | Same four groups. Rentals skip the buy-only metrics and re-weight over the rest |
+| Rent vs buy | Rentals drop the Deal group, skip the other buy-only metrics, and re-weight over the rest |
 | New sources | Valuation trend, income/social, safety, green/quiet, commute options: all wanted |
 | Heuristics | Upkeep estimate and parking from advert text: wanted, labelled as estimates |
 | Surfaces | Radar on the listing detail page, a score chip on listing cards, MCP |
@@ -67,26 +71,49 @@ Outside Denmark, and without `UDDANNELSESSTATISTIK_API_KEY`, every school metric
 | `jobs` | Open job posts in the listing's kommune | higher | jobs layer (`getJobsLayer`) | 🔶 currently failing, #11; one occupation only | 20 / 0 |
 | `options` | Distinct transit lines with a stop within 500 m walk | higher | 🆕 Overpass stops + Transitous, see §2.5 | 🆕 | 6 / 0 |
 
-### 1.4 Home
+### 1.4 Home (the dwelling)
 
 | Metric | Raw value | Dir. | Src | Status | Default targets |
 |---|---|---|---|---|---|
 | `size` | m² | higher | listing | ✅ | job min size +40 % / job min size |
 | `bathrooms` | Count | higher | `sale_terms.bathrooms` | 🔶 mostly buy | 2 / 1 |
-| `grocery` | Minutes on foot to the nearest supermarket | lower | travel-time place type `supermarket`; DK supermarket layer as fallback | ✅ | 5 / 20 |
-| `park` | Minutes on foot to the nearest park | lower | travel-time place type `park` | ✅ | 5 / 20 |
 | `internet` | Best fixed download, Mbit/s | higher | connectivity (`tjekditnet` in DK) | ✅ | 1000 / 50 |
 | `newBuild` | Years since built or last renovated | lower | `sale_terms.yearBuilt` / `yearRenovated` | 🔶 Buy | 5 / 60 |
 | `upkeep` | Estimated upkeep, kr/m²/year | lower | 🧮 see §2.6 | 🧮 Buy | 100 / 400 |
 | `parking` | Parking mentioned in the advert (0/1) | higher | 🧮 see §2.7 | 🧮 | 1 / 0 |
-| `social` | Kommune disposable income vs. national median | higher | 🆕 see §2.2 | 🆕 DK | +10 % / −10 % |
-| `safety` | Reported crimes per 1,000 inhabitants in the kommune | lower | 🆕 see §2.3 | 🆕 DK | national −25 % / national +25 % |
+
+### 1.5 Area (where it is)
+
+| Metric | Raw value | Dir. | Src | Status | Default targets |
+|---|---|---|---|---|---|
+| `grocery` | Minutes on foot to the nearest supermarket | lower | travel-time place type `supermarket`; DK supermarket layer as fallback | ✅ | 5 / 20 |
+| `park` | Minutes on foot to the nearest park | lower | travel-time place type `park` | ✅ | 5 / 20 |
 | `green` | Share of green area within 500 m | higher | 🆕 Overpass, see §2.4 | 🆕 | 30 % / 5 % |
 | `quiet` | Distance to the nearest motorway, trunk road or railway | higher | 🆕 Overpass, see §2.4 | 🆕 | 500 m / 50 m |
+| `social` | Kommune disposable income vs. national median | higher | 🆕 see §2.2 | 🆕 DK | +10 % / −10 % |
+| `safety` | Reported crimes per 1,000 inhabitants in the kommune | lower | 🆕 see §2.3 | 🆕 DK | national −25 % / national +25 % |
 
-The user's "neighbourhood" became `social`, `safety`, `green` and `quiet` in the Home group.
+The user's "neighbourhood" became `green`, `quiet`, `social` and `safety`.
 
-### 1.5 Notes
+### 1.6 Deal (purchases only)
+
+How good and how safe the purchase is as a transaction. Every metric reads `sale_terms` (from
+`dk-buying`), so for now the group is Boligsiden-only. Other providers score it missing, i.e. 50.
+
+| Metric | Raw value | Dir. | Src | Status | Default targets |
+|---|---|---|---|---|---|
+| `vsValuation` | Asking price ÷ public valuation | lower | `sale_terms.publicValuation` | ✅ | 1.0 / 1.6 |
+| `vsLastSale` | Asking price ÷ last free-market sale, inflated by the area trend (§2.1) since that date; plain ratio until the trend source exists | lower | `sale_terms.sales` (`type: normal` only) | ✅ | 1.0 / 1.4 |
+| `priceDrop` | Price change since first listed, % | lower | `sale_terms.priceChangePct` | ✅ | −10 % / +0 % |
+| `onMarket` | Total days on market | higher | `sale_terms.daysOnMarket.total` | ✅ | 120 / 7 |
+| `relisted` | Relisted (total minus current days ≥ 60) | higher | `sale_terms.daysOnMarket` | ✅ | 1 / 0 |
+
+`onMarket`, `priceDrop` and `relisted` reward negotiating room: a home that has sat for months, or
+has been relisted or reduced, is one where the buyer has leverage. That is a buyer's view, and the
+tooltip says so. The scam flag stays out: `doc/scam-detection.md` is built for rental fraud, and it
+remains the separate warning badge it already is.
+
+### 1.7 Notes
 
 - **Money metrics must not double-count the price.** `value` is market-relative per m², `budget` is
   against the job's own price cap, `affordable` is the monthly burden against income. Each answers a
@@ -95,7 +122,7 @@ The user's "neighbourhood" became `social`, `safety`, `green` and `quiet` in the
   `commute_filter.limits` (migration 35) has exactly one label, that is the default.
 - **`affordable` for a rental** with `chargesIncluded: false` adds the Nebenkosten surcharge exactly
   as the finance verdict does. Reuse `affordability.js`; never recompute.
-- **Kommune-level metrics** (`area`, `jobs`, `social`, `safety`) give every listing in a kommune the
+- **Kommune-level metrics** (`schools.area`, `work.jobs`, `area.social`, `area.safety`) give every listing in a kommune the
   same value. Their tooltip must say "kommune average", so nobody reads it as street-level data.
 
 ## 2 New sources and heuristics
@@ -121,19 +148,19 @@ Candidates, in order:
 Pick the source that is free at kommune level for both houses and flats. The metric is the 3-year
 change in price per m² for the listing's property type in its kommune (postcode if available).
 
-### 2.2 Income / social (Home, DK)
+### 2.2 Income / social (Area, DK)
 
 Danmarks Statistik, the income tables per kommune (the INDKP family; exact table id to be
 confirmed in the spike). Metric: median disposable income per kommune against the national median.
 Free Statistikbanken, `api.statbank.dk`.
 
-### 2.3 Safety (Home, DK)
+### 2.3 Safety (Area, DK)
 
 Danmarks Statistik **STRAF22** (reported crimes by area and type of offence; kommune level,
 updated 2026-02-19) divided by kommune population. Use property crime and violence. Exclude
 traffic offences, which mostly measure enforcement. Annual; cache for a year.
 
-### 2.4 Green and quiet (Home)
+### 2.4 Green and quiet (Area)
 
 `lib/services/poi/overpassClient.js` already talks to Overpass. Two queries per listing, cached
 per rounded coordinate (≈100 m grid) so neighbours share them:
@@ -181,7 +208,7 @@ an advert's silence says nothing. Pure function, tested with real advert snippet
 
 ```json
 {
-  "groups":  { "money": 1, "schools": 1, "work": 1, "home": 1 },
+  "groups":  { "money": 1, "schools": 1, "work": 1, "home": 1, "area": 1, "deal": 1 },
   "metrics": { "home.parking": 0, "work.jobs": 0.5 },
   "targets": { "work.commute": { "ideal": 20, "worst": 60 } },
   "commute": { "label": "Work" }
@@ -217,20 +244,22 @@ Hook `score` onto the listing read paths that the overview, the detail page and 
 ## 5 UI
 
 - **Radar** (`ListingScoreCard.jsx`): chart.js `radar` through `react-chartjs-2` (both already
-  dependencies), four spokes. Missing groups get a dashed point. The total sits beside it. Below,
+  dependencies). Six spokes for a purchase, five for a rental; fixed order Money, Schools, Work,
+  Home, Area, Deal, so the same corner always means the same thing. A group switched off by a zero
+  weight keeps its spoke, drawn as "off", so the shape never changes within a deal type. Missing groups get a dashed point. The total sits beside it. Below,
   a breakdown with one row per group, expandable to its metrics: raw value with unit, score, and the
   target band ("32 min · ideal 20 · worst 60"). Estimates and kommune averages are labelled.
 - Colours come from `chartTheme.js` getters, since canvas can't read CSS custom properties; the theme
   key on `<Layout>` repaints it (AGENTS.md).
 - **Chip** on listing cards: the total, banded ≥ 70 / 40–69 / < 40 with existing tokens; hover
-  shows the four group scores.
+  shows the group scores.
 - **Job form "Score" card**: group weight sliders. "Advanced" opens per-metric weights and
   ideal/worst inputs, with defaults as placeholders. A commute address picker.
 - i18n in all locales.
 
 ## 6 MCP
 
-`get_listing`: total, a four-row group table, then each group's metrics. `list_listings`: the total
+`get_listing`: total, a group table (six rows for a purchase, five for a rental), then each group's metrics. `list_listings`: the total
 per row.
 
 ## 7 Steps
@@ -244,8 +273,10 @@ One step = one commit = one ledger tick, with tests and JSDoc. `yarn lint`, `yar
 3. Money metrics: `value`, `affordable`, `budget`.
 4. Schools metrics: `nearby`, `special`, `area`.
 5. Work metrics: `commute`, `jobs`.
-6. Home metrics: `size`, `bathrooms`, `grocery`, `park`, `internet`, `newBuild`.
-7. Heuristics: `upkeep.js`, `parkingText.js` and their metrics.
+6. Home metrics: `size`, `bathrooms`, `internet`, `newBuild`; heuristics `upkeep.js`,
+   `parkingText.js` and their metrics.
+7. Area metrics on existing data (`grocery`, `park`) and Deal metrics (`vsValuation`,
+   `vsLastSale`, `priceDrop`, `onMarket`, `relisted`).
 8. Migration `score_config`; job storage; API validation.
 9. `context.js`; `score` on listings from the API.
 
@@ -267,7 +298,7 @@ One step = one commit = one ledger tick, with tests and JSDoc. `yarn lint`, `yar
 
 ## 8 Risks
 
-- **Too many metrics.** 22 metrics in four groups. Equal weights within a group dilute the ones the
+- **Too many metrics.** 27 metrics in six groups. Equal weights within a group dilute the ones the
   user cares about. Ship sensible metric defaults, e.g. `parking` and `jobs` at 0.5.
 - **Kommune granularity.** Four metrics are kommune-wide. Label them, and keep their default weights
   modest.

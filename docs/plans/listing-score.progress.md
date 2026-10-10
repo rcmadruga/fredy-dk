@@ -10,8 +10,8 @@ Status per step. Updated after every step, before anything else. The plan is `li
 - [ ] 3 Money: value, affordable, budget
 - [ ] 4 Schools: nearby, special, area
 - [ ] 5 Work: commute, jobs
-- [ ] 6 Home: size, bathrooms, grocery, park, internet, newBuild
-- [ ] 7 Heuristics: upkeep, parking
+- [ ] 6 Home: size, bathrooms, internet, newBuild; heuristics upkeep, parking
+- [ ] 7 Area (grocery, park) and Deal (vsValuation, vsLastSale, priceDrop, onMarket, relisted)
 - [ ] 8 Migration `score_config`, storage, validation
 - [ ] 9 `context.js`, `score` on listings from the API
 
@@ -35,6 +35,8 @@ Status per step. Updated after every step, before anything else. The plan is `li
 
 ## Notes
 
+- Shape: hexagon for purchases (Money, Schools, Work, Home, Area, Deal), pentagon for rentals (no Deal).
+- Deal reads `sale_terms`, so it needs `feat/dk-buying` merged first.
 - Migration numbers to be settled against `feat/dk-buying` (which takes 51).
 - `work.jobs` depends on the jobs layer, which fails on the deployed instance (#11).
 - `money.affordable` for a Danish purchase uses the Danish model from `dk-buying` step 8; until that
