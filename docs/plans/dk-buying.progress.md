@@ -16,7 +16,7 @@ Status per step. Updated after every step, before anything else. The plan is `dk
 
 ## Phase 3: financing
 
-- [ ] 6 `finance/dk/constants.js`, open figures re-verified
+- [x] 6 `finance/dk/constants.js`, open figures re-verified
 - [ ] 7 `finance/dk/financing.js`
 - [ ] 8 Wired into calculate, financing tab, card, MCP, `doc/financing.md`
 
@@ -29,8 +29,13 @@ Status per step. Updated after every step, before anything else. The plan is `dk
 
 ## Open figures
 
-- Skøde tinglysning variable rate 0.6 %: one source (tax.dk). Needs a second.
-- Ejendomsværdiskat progression limit 2026: 9.2 M kr vs 9,007,000 kr. Needs Skatteforvaltningen.
+Both resolved in step 6 (2026-10-10); each source sits beside its constant in
+`lib/services/finance/dk/constants.js`.
+
+- Skøde tinglysning 1,850 kr + 0.6 %, variable part rounded up to 100 kr: nemadvokat.dk and tax.dk
+  (two sources). Resolved.
+- Ejendomsværdiskat progression limit 2026: 9,007,000 kr of tax base (2025 was 9,200,000):
+  vurderingsportalen.dk and lovguiden.dk. Resolved; the 9.2 M figure in the plan was the 2025 limit.
 
 ## Notes
 - Step 2: `SaleTerms` carries six fields beyond the §4 typedef, because §6 needs them and the card
@@ -56,3 +61,7 @@ Status per step. Updated after every step, before anything else. The plan is `dk
   uses the sale's own area and is blank where the register has none. The public valuation is shown
   under the table (or alone, for a home never sold), with a help text saying it is not a market price.
   The table scrolls inside its box on a narrow rail instead of widening the page.
+- Step 6: the figures were supplied as verified by the task, not re-fetched (this sandbox cannot
+  reach those sites); the comments record source and date. The rest of plan section 5 ships as
+  editable defaults labelled "Default" in the file. The loan rates (4.0 % realkredit, 6.0 % bank) and
+  the bidrag bands (0.5 / 0.7 / 1.0 %) are rounded placeholders of mine, not quotes from any lender.
