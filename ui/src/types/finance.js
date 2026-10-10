@@ -41,10 +41,58 @@
  * @property {number} equity Eigenkapital in EUR.
  * @property {string} bundesland Two-letter code driving the Grunderwerbsteuer default.
  * @property {number} [grunderwerbsteuerPct] Explicit override in percent.
+ * @property {'de'|'dk'} [market] Which purchase model the buying tab shows; absent means German.
+ * @property {Partial<DanishFinancingParams>} [dk] The Danish model's editable inputs, only what was changed.
  * @property {number} [notaryPct] Notar + Grundbuch in percent.
  * @property {number} [maklerPct] Buyer's share of the agent commission in percent.
  * @property {number} [purchasePriceThreshold] Below this a listing is treated as a rental.
  * @property {RateScenario[]} scenarios
+ */
+
+/**
+ * The editable inputs of the Danish purchase model. Under `FinancingParams.dk` a profile stores only
+ * what the user changed; the server fills the rest from `lib/services/finance/dk/constants.js`.
+ * Percent values are percent, amounts are kroner.
+ *
+ * @typedef {Object} DanishFinancingParams
+ * @property {number} purchasePrice Kaufpreis in DKK.
+ * @property {number|null} publicValuation Latest public valuation, for the skoede and the property tax.
+ * @property {number|null} cashAvailable Cash on hand, to report a shortfall against.
+ * @property {number} downPaymentPct Udbetaling as a percent of the price.
+ * @property {{pct: number, rate: number, termYears: number, interestOnlyYears: number, kurs: number,
+ *   bidragBands: Array<{upToLtvPct: number, bidragPct: number}>}} realkredit
+ * @property {{rate: number, termYears: number, interestOnlyYears: number}} bank
+ * @property {number} lenderFees
+ * @property {number} advisorFee
+ * @property {number} ownerChangeInsurance
+ * @property {number|null} ownerCostMonthly Ejerudgift from the advert; replaces the tax estimate.
+ * @property {number|null} landValue Land part of the valuation, for grundskyld.
+ * @property {number|null} landTaxPerMille Grundskyld promille of the kommune.
+ * @property {number} persons How many people share the rentefradrag threshold.
+ * @property {number} deductionPct Rentefradrag percent up to the threshold.
+ * @property {number} deductionHighPct Rentefradrag percent above it.
+ * @property {number} atYears The year the "debt left" figure is quoted at.
+ */
+
+/**
+ * @typedef {Object} DanishFinancingResult
+ * @property {'DKK'} currency
+ * @property {DanishFinancingParams} params The inputs after defaults were applied.
+ * @property {number} purchasePrice
+ * @property {{downPayment: number, realkreditCash: number, realkreditNominal: number, bankLoan: number,
+ *   ltvPct: number, bidragPct: number, totalNominal: number}} funding
+ * @property {{skoede: {fixed: number, variable: number, total: number, basis: number}, pantRealkredit: number,
+ *   pantBank: number, lenderFees: number, advisorFee: number, ownerChangeInsurance: number, total: number}} oneOff
+ * @property {number} cashNeeded Udbetaling plus the one-off costs.
+ * @property {number|null} cashShortfall Null when no cash on hand was given.
+ * @property {{realkredit: Object, bank: Object}} loans Per loan: nominal, grossMonthly, netMonthly, schedule.
+ * @property {{annual: number, monthly: number, firstYearInterest: number}} deduction
+ * @property {{gross: number, net: number, grossAfterInterestOnly: number}} payment Loans only, month 1.
+ * @property {{ownerCostMonthly: number|null, source: 'advert'|'estimate'|'unknown',
+ *   ejendomsvaerdiskatMonthly: number|null, grundskyldMonthly: number|null, estimateComplete: boolean}} running
+ * @property {{gross: number, net: number, ownerCostKnown: boolean}} totalMonthly Loans plus ejerudgift.
+ * @property {{afterInterestOnly: number, atYears: number, atYearsBalance: number, totalInterest: number}} debt
+ * @property {number|null} payoffMonths
  */
 
 /**

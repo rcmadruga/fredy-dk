@@ -17,7 +17,7 @@ Status per step. Updated after every step, before anything else. The plan is `dk
 ## Phase 3: financing
 
 - [x] 6 `finance/dk/constants.js`, open figures re-verified
-- [ ] 7 `finance/dk/financing.js`
+- [x] 7 `finance/dk/financing.js`
 - [ ] 8 Wired into calculate, financing tab, card, MCP, `doc/financing.md`
 
 ## Phase 4: Boliga and the rest
@@ -65,3 +65,13 @@ Both resolved in step 6 (2026-10-10); each source sits beside its constant in
   reach those sites); the comments record source and date. The rest of plan section 5 ships as
   editable defaults labelled "Default" in the file. The loan rates (4.0 % realkredit, 6.0 % bank) and
   the bidrag bands (0.5 / 0.7 / 1.0 %) are rounded placeholders of mine, not quotes from any lender.
+- Step 7: `finance/dk/financing.js` simplifies in four stated ways (header of the file): monthly
+  annuities for both loans; the bidrag is folded into the rate (a margin on the remaining debt) and
+  counted as deductible interest together with the rente; the rentefradrag is computed on year-1
+  interest and applied to every month's net figure; kurs only enlarges the nominal debt (it is not a
+  market feed). The 35 % rule is held against the NET total monthly cost (loans after rentefradrag
+  plus ejerudgift), and the highest price (`maxDanishPrice`) is found by bisection because the tiered
+  deduction and the bidrag bands have no closed form. Grundskyld is `null` unless a land value is
+  supplied (Boligsiden gives only the promille). The user's own choices live in `financing.dk` of the
+  profile (step 8). `municipalTaxPct` is not used: the deduction rates stay the editable 33/25 %
+  defaults.
