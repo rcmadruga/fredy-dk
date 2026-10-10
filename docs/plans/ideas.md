@@ -87,7 +87,24 @@ machine's GPU/VRAM decides whether they are practical.
 - **Health check for owners' associations (ejerforening):** the LLM reads the association's accounts (a PDF upload)
   for debt, reserves and planned major works.
 - **What's coming nearby:** Danish local plans (Plandata.dk) for new construction, roads and metro
-  near the listing.
+  near the listing. Notes from a later discussion:
+  - **Example, Odense (illustrative, plan numbers invented):** a card "within 1 km" listing a local
+    plan proposal for 120 flats 180 m away with its consultation deadline, an adopted school extension
+    650 m away, and a business-zoned framework 900 m away. Each row is turned into "what it means for
+    you" (shade, traffic, construction years).
+  - **Example, Nordsjælland, 3400 Hillerød (illustrative, unverified):** a large district-plan
+    proposal ~400 m away (homes, school, shops), the hospital and station already built nearby, and a
+    state road project (Hillerød motorway extension) in planning. The point: here the card is about
+    what is coming soon, and it needs state infrastructure projects as a second source next to the
+    kommune plans.
+  - **Volume:** Plandata held over 35,000 local plans and about 50,000 municipal plan frameworks as
+    of 2021. Only current proposals and recent adoptions matter.
+  - **Caching:** as a map layer, scoped to the kommuner the user's jobs search (Nordsjælland is about
+    10 kommuner, a few thousand polygons), filtered and simplified, stored as FlatGeobuf (already a
+    dependency, spatially indexed) under `/db` with the other regional caches. One cache feeds both the
+    map layer and the per-listing "near this point" card. Refreshed weekly by date through Plandata's
+    WFS/REST service; the weekly diff enables "new proposal near a watched listing" alerts.
+  - **To verify first:** Plandata's endpoint, rate limits and licence.
 - **Back-testing filters:** replay a job's history to show what given settings would have caught and
   what became of those homes.
 
