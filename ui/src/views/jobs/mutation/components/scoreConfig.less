@@ -1,0 +1,132 @@
+/*
+ * Copyright (c) 2026 by Christian Kellner.
+ * Licensed under Apache-2.0 with Commons Clause and Attribution/Naming Clause
+ */
+
+@import '../../../../tokens.less';
+
+.scoreConfig {
+  display: flex;
+  flex-direction: column;
+  gap: @space-3;
+
+  &__intro,
+  &__hint {
+    margin: 0;
+    max-width: 62ch;
+    font-size: @text-sm;
+    color: @color-muted;
+  }
+
+  &__groups {
+    display: flex;
+    flex-direction: column;
+    gap: @space-2;
+  }
+
+  // Name, slider and the weight it stands for on one line; on a phone the slider takes the line
+  // under the name.
+  &__group {
+    display: grid;
+    grid-template-columns: 110px minmax(0, 1fr) 48px;
+    align-items: center;
+    gap: @space-3;
+
+    @media (max-width: 520px) {
+      grid-template-columns: minmax(0, 1fr) 48px;
+
+      .scoreConfig__slider {
+        grid-column: 1 / -1;
+        grid-row: 2;
+      }
+    }
+  }
+
+  &__groupName {
+    font-weight: 600;
+    color: @color-text;
+  }
+
+  &__weight {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    color: @color-text;
+
+    &--off {
+      color: @color-muted;
+    }
+  }
+
+  &__commute {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: @space-1;
+    padding-top: @space-3;
+    border-top: 1px solid @color-border;
+  }
+
+  &__commuteLabel {
+    font-size: @text-sm;
+    font-weight: 500;
+    color: @color-text;
+  }
+
+  &__commuteSelect {
+    width: 100%;
+    max-width: 320px;
+  }
+
+  &__advancedToggle {
+    align-self: flex-start;
+  }
+
+  &__advanced {
+    display: flex;
+    flex-direction: column;
+    gap: @space-3;
+  }
+
+  &__fieldset {
+    margin: 0;
+    padding: @space-3;
+    border: 1px solid @color-border;
+    border-radius: @radius-chip;
+
+    legend {
+      padding: 0 @space-2;
+      font-size: @text-sm;
+      font-weight: 600;
+      color: @color-muted;
+    }
+  }
+
+  // One metric per row: name, then weight, ideal and worst. They wrap below the name on a phone.
+  &__metric {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: @space-2;
+    padding: @space-1 0;
+  }
+
+  &__metricName {
+    flex: 1 1 200px;
+    font-size: @text-base;
+    color: @color-text;
+  }
+
+  &__weightInput {
+    width: 64px;
+  }
+
+  &__targetInput {
+    width: 130px;
+  }
+
+  &__error {
+    flex-basis: 100%;
+    font-size: @text-sm;
+    color: @color-error;
+  }
+}

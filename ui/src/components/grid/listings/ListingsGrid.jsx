@@ -11,6 +11,7 @@ import { useCurrencyOf } from '../../../hooks/useCurrencyOf.js';
 import * as timeService from '../../../services/time/timeService.js';
 import StatusControl from '../../listings/StatusControl.jsx';
 import AffordabilityChip from '../../listings/AffordabilityChip.jsx';
+import ListingScoreChip from '../../listings/ListingScoreChip.jsx';
 import { rentIncludesCharges } from '../../../services/finance/rentBasis.js';
 import PriceChangeBadge from '../../listings/PriceChangeBadge.jsx';
 import PricePerSqmBadge from '../../listings/PricePerSqmBadge.jsx';
@@ -92,6 +93,7 @@ const ListingsGrid = ({
                 {/* Next to the price rather than on a line of its own: it is the same figure said
                     a second way, and reading the two together is the whole point. */}
                 <PricePerSqmBadge listing={item} />
+                <ListingScoreChip score={item.score} />
                 <AffordabilityChip
                   verdict={item.affordabilityVerdict}
                   dealType={item.dealType}

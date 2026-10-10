@@ -1,0 +1,239 @@
+@import '../../../tokens.less';
+
+.listing-score {
+  &__top {
+    display: flex;
+    align-items: center;
+    gap: @space-4;
+  }
+
+  &__chart {
+    position: relative;
+    flex: 1 1 auto;
+    min-width: 0;
+    height: 260px;
+  }
+
+  &__total {
+    display: flex;
+    flex: 0 0 auto;
+    flex-direction: column;
+    align-items: center;
+    gap: @space-1;
+    min-width: 72px;
+
+    &--good {
+      color: @color-success;
+    }
+
+    &--fair {
+      color: @color-warning;
+    }
+
+    &--poor {
+      color: @color-error;
+    }
+
+    &--off {
+      color: @color-muted;
+    }
+  }
+
+  &__total-value {
+    font-size: @text-xl;
+    font-weight: 700;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__total-of {
+    font-size: @text-sm;
+    color: @color-muted;
+  }
+
+  &__groups,
+  &__metrics {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  &__groups {
+    margin-top: @space-4;
+  }
+
+  &__group {
+    border-top: 1px solid @color-border;
+  }
+
+  &__group-head {
+    display: flex;
+    align-items: center;
+    gap: @space-2;
+    width: 100%;
+    min-height: 44px;
+    padding: @space-2 0;
+    border: 0;
+    background: transparent;
+    font: inherit;
+    font-size: @text-base;
+    color: @color-text;
+    text-align: left;
+    cursor: pointer;
+
+    &:hover {
+      background: @color-hover;
+    }
+
+    &:focus-visible {
+      outline: 2px solid @color-accent;
+      outline-offset: 2px;
+    }
+  }
+
+  &__group-name {
+    flex: 0 0 auto;
+    font-weight: 600;
+  }
+
+  &__help {
+    cursor: help;
+    color: @color-muted;
+  }
+
+  &__bar {
+    flex: 1 1 auto;
+    height: 6px;
+    min-width: @space-6;
+    border-radius: @radius-pill;
+    background: @color-fill-1;
+    overflow: hidden;
+  }
+
+  &__bar-fill {
+    display: block;
+    height: 100%;
+    border-radius: @radius-pill;
+    background: @color-muted;
+
+    &--good {
+      background: @color-success;
+    }
+
+    &--fair {
+      background: @color-warning;
+    }
+
+    &--poor {
+      background: @color-error;
+    }
+  }
+
+  &__group-score,
+  &__metric-score {
+    flex: 0 0 auto;
+    font-size: @text-base;
+    min-width: 40px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+
+    &--good {
+      color: @color-success;
+    }
+
+    &--fair {
+      color: @color-warning;
+    }
+
+    &--poor {
+      color: @color-error;
+    }
+
+    &--unknown,
+    &--off {
+      font-weight: 400;
+      color: @color-muted;
+    }
+  }
+
+  &__metrics {
+    padding: 0 0 @space-3 @space-6;
+    // Said outright: a list inherits whatever the page last set, and in the light theme that was a
+    // near-white that made every metric name vanish.
+    color: @color-text;
+  }
+
+  &__metric {
+    padding: @space-2 0;
+    border-top: 1px solid @color-border;
+
+    &:first-child {
+      border-top: 0;
+    }
+
+    &--off,
+    &--off .listing-score__metric-label {
+      color: @color-muted;
+    }
+  }
+
+  &__metric-head,
+  &__metric-detail {
+    display: flex;
+    align-items: baseline;
+    gap: @space-2;
+  }
+
+  &__metric-head {
+    // One line even when the label is long: the label wraps inside its own box instead of pushing
+    // the score onto a line of its own.
+    flex-wrap: nowrap;
+  }
+
+  &__metric-detail {
+    flex-wrap: wrap;
+  }
+
+  &__metric-label {
+    flex: 1 1 0;
+    min-width: 0;
+    font-size: @text-base;
+    color: @color-text;
+  }
+
+  &__qualifier {
+    padding: 1px @space-2;
+    border: 1px solid @color-border-bright;
+    border-radius: @radius-chip;
+    font-size: @text-xs;
+    color: @color-muted;
+    cursor: help;
+    white-space: nowrap;
+  }
+
+  &__metric-detail {
+    margin-top: @space-1;
+    font-size: @text-sm;
+    color: @color-muted;
+  }
+
+  &__metric-value {
+    font-variant-numeric: tabular-nums;
+    color: @color-text;
+  }
+
+  &__metric-target {
+    font-variant-numeric: tabular-nums;
+  }
+
+  @media (max-width: 480px) {
+    &__top {
+      flex-direction: column;
+    }
+
+    &__chart {
+      width: 100%;
+    }
+  }
+}
