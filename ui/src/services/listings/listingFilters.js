@@ -4,6 +4,7 @@
  */
 
 import { parseCommuteFilter } from '../../components/transit/travelTimeFormat.js';
+import { parseString, parseNumber, parseNullableBoolean } from '../../hooks/useSearchParamState.js';
 
 /**
  * What the listings overview is filtered by, and how to say it out loud.
@@ -38,7 +39,45 @@ export const NEUTRAL = {
   fiber: null,
   mtech: null,
   mop: null,
+  movein: null,
+  mdated: null,
   hidden: false,
+};
+
+/**
+ * The URL state of every filter, for the two views that offer them: the overview and the map.
+ *
+ * Defined once so the two cannot disagree about a key, a codec or a default - they used to keep
+ * their own lists, and the map's had three of the overview's twelve. Each view adds its own
+ * non-filter keys (page and sort here, the basemap and overlays there) around this.
+ *
+ * `active` defaults to `true`: both pages open on active listings only. `mdated` rides along with
+ * `movein` and `mop` with `mtech`, see {@link FILTER_KEYS}.
+ *
+ * @type {Record<string, {defaultValue: unknown, codec: Object}>}
+ */
+export const FILTER_URL_STATE = {
+  watch: { defaultValue: null, codec: parseNullableBoolean },
+  job: { defaultValue: null, codec: parseString },
+  active: { defaultValue: true, codec: parseNullableBoolean },
+  provider: { defaultValue: null, codec: parseString },
+  status: { defaultValue: null, codec: parseString },
+  afford: { defaultValue: null, codec: parseString },
+  // Mode and ceiling in one key, as `transit:30`. Two keys would let a bookmarked URL carry half a
+  // filter, which the server would then have to guess the other half of.
+  commute: { defaultValue: null, codec: parseString },
+  down: { defaultValue: null, codec: parseNumber },
+  fiber: { defaultValue: null, codec: parseNullableBoolean },
+  // Technology and operator are two keys rather than one packed value, unlike the commute filter
+  // above: the operator is optional here, so half of it is a complete filter on its own.
+  mtech: { defaultValue: null, codec: parseString },
+  mop: { defaultValue: null, codec: parseString },
+  // The window the home may be free in, as `2027-01-01..2027-03-31`; either end may be left open.
+  // One packed key like the commute, so a bookmark cannot carry half of it.
+  movein: { defaultValue: null, codec: parseString },
+  // Leave out listings that state no date. Meaningless without `movein`, and cleared with it.
+  mdated: { defaultValue: null, codec: parseNullableBoolean },
+  hidden: { defaultValue: false, codec: parseNullableBoolean },
 };
 
 /**
@@ -57,6 +96,7 @@ export const FILTER_KEYS = [
   'watch',
   'status',
   'afford',
+  'movein',
   'commute',
   'down',
   'fiber',
@@ -64,6 +104,14 @@ export const FILTER_KEYS = [
   'provider',
   'job',
 ];
+
+/**
+ * The "only listings that state a date" flag is not in `FILTER_KEYS` either: it only narrows a window
+ * that is already set, so it would count as a second filter, and clearing the window has to take it
+ * along.
+ * @type {string}
+ */
+export const MOVE_IN_DATED_KEY = 'mdated';
 
 /**
  * The mobile operator is not in `FILTER_KEYS` on purpose.
@@ -87,6 +135,10 @@ export function isActiveFilter(key, values) {
   // `active` is forced to null and must not be counted as a second filter.
   if (key === 'active' && values.hidden === true) {
     return false;
+  }
+  // A window that holds no usable date filters nothing, so it does not count.
+  if (key === 'movein') {
+    return parseMoveInWindow(values.movein) != null;
   }
   return values[key] !== NEUTRAL[key];
 }
@@ -146,6 +198,10 @@ export function clearFilter(key) {
   if (key === 'mtech') {
     return { mtech: NEUTRAL.mtech, [MOBILE_OPERATOR_KEY]: NEUTRAL[MOBILE_OPERATOR_KEY], page: 1 };
   }
+  // The same for the dated-only flag: it means nothing without the window it narrows.
+  if (key === 'movein') {
+    return { movein: NEUTRAL.movein, [MOVE_IN_DATED_KEY]: NEUTRAL[MOVE_IN_DATED_KEY], page: 1 };
+  }
   return { [key]: NEUTRAL[key], page: 1 };
 }
 
@@ -157,6 +213,44 @@ export function clearFilter(key) {
  */
 export function clearAllFilters() {
   return { ...NEUTRAL, page: 1 };
+}
+
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+/** @param {string} value @returns {boolean} Whether it is a real calendar date, `YYYY-MM-DD`. */
+function isRealDate(value) {
+  if (!ISO_DATE.test(value)) return false;
+  const [y, m, d] = value.split('-').map(Number);
+  const date = new Date(Date.UTC(y, m - 1, d));
+  return date.getUTCFullYear() === y && date.getUTCMonth() === m - 1 && date.getUTCDate() === d;
+}
+
+/**
+ * Reads the packed move-in value, `2027-01-01..2027-03-31`, `2027-01-01..` or `..2027-03-31`.
+ *
+ * @param {string|null|undefined} value
+ * @returns {{from: string|null, to: string|null}|null} `null` when it holds no usable date, so a
+ *   mangled bookmark filters nothing and counts for nothing - like a commute value that does not parse.
+ */
+export function parseMoveInWindow(value) {
+  if (typeof value !== 'string') return null;
+  const [rawFrom = '', rawTo = '', ...rest] = value.split('..');
+  if (rest.length > 0 || !value.includes('..')) return null;
+  const from = isRealDate(rawFrom) ? rawFrom : null;
+  const to = isRealDate(rawTo) ? rawTo : null;
+  return from == null && to == null ? null : { from, to };
+}
+
+/**
+ * The packed value for a window.
+ *
+ * @param {{from?: string|null, to?: string|null}} window
+ * @returns {string|null} `null` when neither end is a real date, which is what clears the filter.
+ */
+export function formatMoveInWindow({ from = null, to = null } = {}) {
+  const f = from != null && isRealDate(from) ? from : '';
+  const t = to != null && isRealDate(to) ? to : '';
+  return f === '' && t === '' ? null : `${f}..${t}`;
 }
 
 /**
@@ -199,6 +293,7 @@ export function toListingsQuery(values) {
       // Only listings that have actually been routed can satisfy this, which is why the control
       // is offered as an extra filter rather than as the default way to sort the page.
       ...(toTravelTimeQuery(values.commute) ?? {}),
+      ...moveInQuery(values),
       connectivityMinDown: values.down,
       connectivityFiber: values.fiber,
       connectivityMobileTech: values.mtech,
@@ -211,6 +306,23 @@ export function toListingsQuery(values) {
 }
 
 /**
+ * The move-in window as the API takes it. Nothing at all unless the window parses: the flag alone
+ * would be a filter that answers a question nobody asked.
+ *
+ * @param {Object} values The full URL state.
+ * @returns {{moveInFrom?: string, moveInTo?: string, moveInDatedOnly?: boolean}}
+ */
+function moveInQuery(values) {
+  const window = parseMoveInWindow(values.movein);
+  if (window == null) return {};
+  return {
+    ...(window.from != null ? { moveInFrom: window.from } : {}),
+    ...(window.to != null ? { moveInTo: window.to } : {}),
+    ...(values[MOVE_IN_DATED_KEY] === true ? { moveInDatedOnly: true } : {}),
+  };
+}
+
+/**
  * A named list of the filters currently on, ready to render as chips.
  *
  * @param {Object} values The full URL state.
@@ -218,9 +330,10 @@ export function toListingsQuery(values) {
  * @param {(key: string, vars?: Object) => string} context.t
  * @param {{id: string, name: string}[]} [context.jobs]
  * @param {{id: string, name: string}[]} [context.providers]
+ * @param {string} [context.locale] For the dates of the move-in window.
  * @returns {{key: string, label: string}[]}
  */
-export function describeActiveFilters(values, { t, jobs = [], providers = [] }) {
+export function describeActiveFilters(values, { t, jobs = [], providers = [], locale = 'en' }) {
   const named = (list, id) => list.find((entry) => entry.id === id)?.name ?? id;
 
   const labels = {
@@ -248,6 +361,18 @@ export function describeActiveFilters(values, { t, jobs = [], providers = [] }) 
             mode: t(`travelTime.mode.${parsed.mode}`),
             minutes: parsed.maxMinutes,
           });
+    },
+    movein: () => {
+      const window = parseMoveInWindow(values.movein);
+      const day = (iso) =>
+        new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeZone: 'UTC' }).format(new Date(`${iso}T00:00:00Z`));
+      if (window == null) return values.movein;
+      if (window.from != null && window.to != null) {
+        return t('listings.filterMoveInChipRange', { from: day(window.from), to: day(window.to) });
+      }
+      return window.from != null
+        ? t('listings.filterMoveInChipFrom', { from: day(window.from) })
+        : t('listings.filterMoveInChipTo', { to: day(window.to) });
     },
     down: () => t('listings.filterDownstreamOption', { mbit: values.down }),
     fiber: () => t('listings.filterFiberOnly'),
@@ -335,4 +460,35 @@ export function filterConfiguredProviders(
   return providers.filter(
     (provider) => configuredProviderIds.has(provider.id) || (currentProviderId && provider.id === currentProviderId),
   );
+}
+
+/**
+ * The URL parameters that make up the filters, which both views share.
+ *
+ * Not the search text, the page or the sort (the overview's own), nor the popup or basemap (the
+ * map's): only what a person would expect to still be on after switching between the two.
+ *
+ * @type {string[]}
+ */
+export const SHARED_FILTER_PARAMS = [...Object.keys(FILTER_URL_STATE)];
+
+/**
+ * The address to open the other view at, with the filters of this one.
+ *
+ * The overview and the map filter by the same things now, so switching between them should not
+ * throw away what was narrowed. Only the filter parameters travel (see {@link SHARED_FILTER_PARAMS}),
+ * and only between these two views.
+ *
+ * @param {string} search The current query string, with or without the `?`.
+ * @param {string} target The destination path.
+ * @returns {string} The path, with `?...` when there is anything to carry.
+ */
+export function carryFilters(search, target) {
+  const from = new URLSearchParams(search);
+  const carried = new URLSearchParams();
+  for (const key of SHARED_FILTER_PARAMS) {
+    if (from.has(key)) carried.set(key, from.get(key));
+  }
+  const text = carried.toString();
+  return text === '' ? target : `${target}?${text}`;
 }

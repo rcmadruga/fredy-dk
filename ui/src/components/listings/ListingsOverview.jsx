@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { useUrlState, parseNumber, parseString, parseNullableBoolean } from '../../hooks/useSearchParamState.js';
+import { useUrlState, parseNumber, parseString } from '../../hooks/useSearchParamState.js';
 import { Button, Pagination, Toast, Input, Select, Empty, Tooltip, Banner } from '@douyinfe/semi-ui-19';
 import {
   IconSearch,
@@ -21,9 +21,9 @@ import ListingDeletionModal from '../ListingDeletionModal.jsx';
 import ApplicationModal from '../../views/listings/components/ApplicationModal.jsx';
 import { xhrDelete, xhrPost, errorMessage } from '../../services/xhr.js';
 import { useActions, useSelector } from '../../services/state/store.js';
-import { debounce, measuredPlaces } from '../../utils';
+import { debounce } from '../../utils';
 import FilterSelect from './FilterSelect.jsx';
-import ListingsFilterPanel from './ListingsFilterPanel.jsx';
+import ListingFiltersDrawer from './ListingFiltersDrawer.jsx';
 import ActiveFilterChips from '../filters/ActiveFilterChips.jsx';
 import FilterButton from '../filters/FilterButton.jsx';
 import {
@@ -32,6 +32,7 @@ import {
   clearFilter,
   clearAllFilters,
   toListingsQuery,
+  FILTER_URL_STATE,
 } from '../../services/listings/listingFilters.js';
 import ListingsGrid from '../grid/listings/ListingsGrid.jsx';
 import ListingsTable from '../table/ListingsTable.jsx';
@@ -39,10 +40,7 @@ import { IllustrationNoResult, IllustrationNoResultDark } from '@douyinfe/semi-i
 
 import './ListingsOverview.less';
 import { useTranslation, useLocale } from '../../services/i18n/i18n.jsx';
-import { useFinanceProfile } from '../../hooks/useFinanceProfile.js';
 import { useScrollRestoration } from '../../hooks/useScrollRestoration.js';
-import { formatEuro } from '../cards/chartTheme.js';
-import { affordabilityFilterHelp } from '../../services/finance/rentBasis.js';
 
 /**
  * Listings fetched per page. Large enough that the grid fills a desktop screen without paging,
@@ -61,22 +59,8 @@ const LISTINGS_URL_STATE = {
   sort: { defaultValue: 'published_at', codec: parseString },
   dir: { defaultValue: 'desc', codec: parseString },
   q: { defaultValue: null, codec: parseString },
-  watch: { defaultValue: null, codec: parseNullableBoolean },
-  job: { defaultValue: null, codec: parseString },
-  active: { defaultValue: true, codec: parseNullableBoolean },
-  provider: { defaultValue: null, codec: parseString },
-  status: { defaultValue: null, codec: parseString },
-  afford: { defaultValue: null, codec: parseString },
-  // Mode and ceiling in one key, as `transit:30`. Two keys would let a bookmarked URL carry half a
-  // filter, which the server would then have to guess the other half of.
-  commute: { defaultValue: null, codec: parseString },
-  down: { defaultValue: null, codec: parseNumber },
-  fiber: { defaultValue: null, codec: parseNullableBoolean },
-  // Technology and operator are two keys rather than one packed value, unlike the commute filter
-  // above: the operator is optional here, so half of it is a complete filter on its own.
-  mtech: { defaultValue: null, codec: parseString },
-  mop: { defaultValue: null, codec: parseString },
-  hidden: { defaultValue: false, codec: parseNullableBoolean },
+  // The filters are shared with the map, which keeps the same ones - see `FILTER_URL_STATE`.
+  ...FILTER_URL_STATE,
 };
 
 const ListingsOverview = () => {
@@ -84,14 +68,11 @@ const ListingsOverview = () => {
   const locale = useLocale();
   const listingsData = useSelector((state) => state.listingsData);
   const providers = useSelector((state) => state.provider);
-  const pois = useSelector((state) => state.tracking.pois);
   const jobs = useSelector((state) => state.jobsData.jobs);
   const userSettings = useSelector((state) => state.userSettings.settings);
-  const generalSettings = useSelector((state) => state.generalSettings.settings);
   const actions = useActions();
   const navigate = useNavigate();
   const sp = useSearchParams();
-  const { anyComplete: financeComplete, thresholds: financeThresholds } = useFinanceProfile();
 
   const viewMode = userSettings?.listings_view_mode ?? 'grid';
   const listingDeletionPref = userSettings?.listing_deletion_preference;
@@ -104,20 +85,7 @@ const ListingsOverview = () => {
   // One piece of state for every filter. Each control here changes two params at once (its own,
   // plus the page reset), and separate per-key setters would race each other into the URL.
   const { values, setValue, setValues } = useUrlState(sp, LISTINGS_URL_STATE);
-  const {
-    page,
-    sort: sortField,
-    dir: sortDir,
-    q: freeTextFilter,
-    watch: watchListFilter,
-    job: jobNameFilter,
-    active: activityFilter,
-    provider: providerFilter,
-    status: statusFilter,
-    afford: affordabilityFilter,
-    commute: commuteFilter,
-    hidden: hiddenOnly,
-  } = values;
+  const { page, sort: sortField, dir: sortDir, q: freeTextFilter, watch: watchListFilter, hidden: hiddenOnly } = values;
   const setPage = (value) => setValue('page', value);
   const setSortField = (value) => setValue('sort', value);
   const setSortDir = (value) => setValue('dir', value);
@@ -132,26 +100,16 @@ const ListingsOverview = () => {
 
   const isHiddenView = hiddenOnly === true;
 
-  // A commute filter without a reference address would return an empty page and look broken, so the
-  // control is not offered at all until there is something to measure from.
-  // Place types count: somebody whose only entry is "a supermarket" still has travel times to
-  // filter by, and hiding the control from them would be hiding their own data.
-  const hasAddresses = measuredPlaces(userSettings).length > 0;
-
   const activeFilterCount = countActiveFilters(values);
-
-  // The filter says nothing about *why* a listing lands in a band, so its tooltip names the
-  // ceilings it is measured against - both halves when the user set up both, because a mixed
-  // listings page is judged by two different yardsticks at once, and for rents the warm ceiling
-  // beside the cold one, which is what a rent quoted with the charges in it is held against.
-  const affordabilityHelp = useMemo(
-    () => affordabilityFilterHelp(financeThresholds, { t, locale, formatEuro }),
-    [financeThresholds, locale, t],
-  );
 
   // The one payload the page is described by. The bulk delete sends the same object, which is the
   // only reason the button can honestly claim to remove what is on screen.
   const listingsQuery = toListingsQuery(values);
+  // What the page is asking for, as one value. The effect that reloads the page used to list the
+  // filters it knew about one by one, and the connectivity filters were not among them, so changing
+  // one of those while on the first page loaded nothing. Keyed on the query itself, a filter added
+  // later cannot be forgotten.
+  const queryKey = JSON.stringify([page, sortField, sortDir, listingsQuery]);
 
   const loadData = () => {
     actions.listingsData.getListingsData({
@@ -166,20 +124,7 @@ const ListingsOverview = () => {
   useEffect(() => {
     loadData();
     setNewAvailableCount(0);
-  }, [
-    page,
-    sortField,
-    sortDir,
-    freeTextFilter,
-    providerFilter,
-    activityFilter,
-    jobNameFilter,
-    watchListFilter,
-    statusFilter,
-    affordabilityFilter,
-    commuteFilter,
-    hiddenOnly,
-  ]);
+  }, [queryKey]);
 
   const loadDataRef = useRef(loadData);
   useEffect(() => {
@@ -451,33 +396,17 @@ const ListingsOverview = () => {
       </div>
 
       <ActiveFilterChips
-        chips={describeActiveFilters(values, { t, jobs, providers })}
+        chips={describeActiveFilters(values, { t, jobs, providers, locale })}
         onRemove={(key) => setValues(clearFilter(key))}
         onClearAll={() => setValues(clearAllFilters())}
       />
 
-      <ListingsFilterPanel
+      <ListingFiltersDrawer
         visible={filtersOpen}
         onClose={() => setFiltersOpen(false)}
         values={values}
         onChange={setValues}
-        jobs={jobs}
-        providers={providers}
         availableProviders={listingsData?.availableProviders}
-        financeComplete={financeComplete}
-        affordabilityHelp={affordabilityHelp}
-        hasAddresses={hasAddresses}
-        connectivityEnabled={generalSettings?.connectivityEnabled === true}
-        onAffordabilityUsed={() => actions.tracking.trackPoi(pois.FINANCE_AFFORDABILITY_FILTER_USED)}
-        onConnectivityFilterUsed={(kind) =>
-          actions.tracking.trackPoi(
-            {
-              downstream: pois.CONNECTIVITY_FILTER_DOWNSTREAM,
-              fiber: pois.CONNECTIVITY_FILTER_FIBER,
-              mobile: pois.CONNECTIVITY_FILTER_MOBILE,
-            }[kind],
-          )
-        }
       />
 
       {newAvailableCount > 0 && (

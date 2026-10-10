@@ -33,7 +33,7 @@ import { useTranslation } from '../../services/i18n/i18n.jsx';
 // A pure function that already answers exactly this question for the dashboard's own rows. A copy
 // here would be a second set of rounding rules for the same clock.
 import { relativeTime } from '../../services/time/relativeTime.js';
-import { navTreeFor, resolveActiveKey, sectionScope, startsSection } from './navModel.js';
+import { destinationFor, navTreeFor, resolveActiveKey, sectionScope, startsSection } from './navModel.js';
 
 /** How long after a promised run the status is asked for again: the run itself takes a moment. */
 const STATUS_REFRESH_GRACE_MS = 60 * 1000;
@@ -99,6 +99,8 @@ export default function Navigation({ isAdmin }) {
   const t = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
+  // Between the overview and the map the filters travel with the user; see `destinationFor`.
+  const go = (key) => navigate(destinationFor(location, key));
 
   const width = useScreenWidth();
   const [collapsed, setCollapsed] = useState(width <= 850);
@@ -165,7 +167,7 @@ export default function Navigation({ isAdmin }) {
           className={`navigate-flyout__item${child.key === activeKey ? ' navigate-flyout__item--active' : ''}`}
           data-tour={child.key}
           aria-current={child.key === activeKey ? 'page' : undefined}
-          onClick={() => navigate(child.key)}
+          onClick={() => go(child.key)}
         >
           {t(child.labelKey)}
         </button>
@@ -242,7 +244,7 @@ export default function Navigation({ isAdmin }) {
                   }
                   return;
                 }
-                navigate(node.key);
+                go(node.key);
               }}
             >
               {isActive && <span className="navigate__marker" />}
@@ -307,7 +309,7 @@ export default function Navigation({ isAdmin }) {
                         className={`navigate__child${childIsActive ? ' navigate__child--active' : ''}`}
                         data-tour={child.key}
                         aria-current={childIsActive ? 'page' : undefined}
-                        onClick={() => navigate(child.key)}
+                        onClick={() => go(child.key)}
                       >
                         {/* The selection of a child is the rail lighting up beside it, not a second
                             marker of its own. */}

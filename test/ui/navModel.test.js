@@ -15,6 +15,7 @@ import {
   resolveActiveKey,
   sectionScope,
   startsSection,
+  destinationFor,
 } from '../../ui/src/components/navigation/navModel.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -146,5 +147,31 @@ describe('navModel', () => {
     ];
     expect(resolveActiveKey(tree, '/listings/saved')).toBe('/listings/saved');
     expect(resolveActiveKey(tree, '/listings/listing/1')).toBe('/listings');
+  });
+});
+
+describe('destinationFor', () => {
+  it('carries the filters from the overview to the map, and back', () => {
+    const there = destinationFor({ pathname: '/listings', search: '?q=hus&page=2&job=j1&movein=2027-01-01..' }, '/map');
+    expect(there).toBe('/map?job=j1&movein=2027-01-01..');
+
+    const back = destinationFor({ pathname: '/map', search: '?job=j1&popup=l9&style=SATELLITE' }, '/listings');
+    expect(back).toBe('/listings?job=j1');
+  });
+
+  it('goes to the bare path when nothing is filtered', () => {
+    expect(destinationFor({ pathname: '/listings', search: '' }, '/map')).toBe('/map');
+  });
+
+  it('leaves every other move alone, whatever is in the address', () => {
+    const here = { pathname: '/listings', search: '?job=j1' };
+
+    expect(destinationFor(here, '/dashboard')).toBe('/dashboard');
+    expect(destinationFor(here, '/finance')).toBe('/finance');
+    expect(destinationFor({ pathname: '/jobs', search: '?job=j1' }, '/map')).toBe('/map');
+  });
+
+  it('does not rewrite the address of the page the user is already on', () => {
+    expect(destinationFor({ pathname: '/map', search: '?job=j1' }, '/map')).toBe('/map');
   });
 });

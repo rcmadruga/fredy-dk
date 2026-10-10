@@ -423,14 +423,18 @@ export const useFredyState = create(
               throw Exception;
             }
           },
-          async getListingsForMap({ jobId, minPrice, maxPrice } = {}) {
+          /**
+           * The listings with a position, filtered by the same object the overview sends.
+           *
+           * `activityFilter` is always sent: the server shows active listings only when it is absent,
+           * and the "all" option (a null here) has to be said out loud - `skipNull` would otherwise drop it.
+           *
+           * @param {{filter?: Object}} [options]
+           */
+          async getListingsForMap({ filter = {} } = {}) {
             try {
               const qryString = queryString.stringify(
-                {
-                  jobId,
-                  minPrice,
-                  maxPrice,
-                },
+                { ...filter, activityFilter: filter.activityFilter ?? 'all' },
                 { skipNull: true, skipEmptyString: true },
               );
               const response = await xhrGet(`/api/listings/map?${qryString}`);

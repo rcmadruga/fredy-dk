@@ -251,8 +251,10 @@ describe('the page', () => {
   it('counts the filters a folded panel hides, so an emptier map explains itself', () => {
     expect(viewJsx).toMatch(/activeCount=\{activeFilterCount\}/);
     expect(viewJsx).toMatch(
-      /const activeFilterCount = countActiveMapFilters\(\{\s*jobId,\s*commute: commuteFilter,\s*priceMin: urlPriceMin,\s*priceMax: urlPriceMax,?\s*\}\);/,
+      /const activeFilterCount = countActiveMapFilters\(\{\s*filterCount: sharedFilterCount,\s*priceMin: urlPriceMin,\s*priceMax: urlPriceMax,?\s*\}\);/,
     );
+    // The shared filters are counted the way the overview counts them, so a filter means the same on both.
+    expect(viewJsx).toMatch(/const sharedFilterCount = countActiveFilters\(urlState\);/);
   });
 
   it('says why a filter is locked instead of banning a strip across the map', () => {
@@ -377,7 +379,7 @@ describe('the view state survives a trip to a detail page and back', () => {
     // The open id is read through a ref on purpose: as a dependency it would tear down the popup
     // that had just been opened.
     expect(viewJsx).toMatch(/openListingIdRef/);
-    const deps = viewJsx.match(/\}, \[listings, priceRange, homeAddresses, distanceFilter, commuteFilter, isDark\]\);/);
+    const deps = viewJsx.match(/\}, \[listings, priceRange, homeAddresses, distanceFilter, isDark\]\);/);
     expect(deps, 'the marker effect keeps its dependency list').not.toBeNull();
   });
 
@@ -474,5 +476,34 @@ describe('spacing comes from the scale', () => {
   it('holds for the two stylesheets this plan adds', () => {
     expect(offenders(legendLess)).toEqual([]);
     expect(offenders(actionsLess)).toEqual([]);
+  });
+});
+
+describe('the map and the overview share their filters', () => {
+  it('builds its URL state from the same filter definitions as the overview', () => {
+    const overview = fs.readFileSync(
+      path.join(path.dirname(fileURLToPath(import.meta.url)), '../../ui/src/components/listings/ListingsOverview.jsx'),
+      'utf-8',
+    );
+
+    expect(viewJsx).toMatch(/\.\.\.FILTER_URL_STATE/);
+    expect(overview).toMatch(/\.\.\.FILTER_URL_STATE/);
+  });
+
+  it('asks the server with the query the overview sends, instead of filtering a few things in the browser', () => {
+    expect(viewJsx).toMatch(/toListingsQuery\(urlState\)/);
+    expect(viewJsx).toMatch(/getListingsForMap\(\{ filter: listingsQuery\.filter \}\)/);
+    expect(viewJsx).not.toMatch(/withinCommute/);
+  });
+
+  it("offers the overview's own drawer, not a second set of controls", () => {
+    expect(viewJsx).toMatch(/<ListingFiltersDrawer/);
+    expect(viewJsx).toMatch(/<FilterButton/);
+    expect(viewJsx).not.toMatch(/map\.filterJobLabel/);
+    expect(viewJsx).not.toMatch(/map\.filterCommuteLabel/);
+  });
+
+  it('does not drop a listing for having no price while the slider is untouched', () => {
+    expect(viewJsx).toMatch(/narrowed \? listing\.price/);
   });
 });

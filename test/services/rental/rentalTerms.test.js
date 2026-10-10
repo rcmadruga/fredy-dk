@@ -193,3 +193,29 @@ describe('parseMoveInTotal', () => {
     for (const text of ['', null, undefined, 42, 'Ingen priser her']) expect(parseMoveInTotal(text)).toBeUndefined();
   });
 });
+
+describe('normalizeIsoDate', () => {
+  it('accepts a date and a timestamp, and returns the date', async () => {
+    const { normalizeIsoDate } = await import('../../../lib/services/rental/rentalTerms.js');
+
+    expect(normalizeIsoDate('2027-01-15')).toBe('2027-01-15');
+    expect(normalizeIsoDate('2027-01-15T10:30:00Z')).toBe('2027-01-15');
+    expect(normalizeIsoDate('2027-01-15 10:30')).toBe('2027-01-15');
+  });
+
+  it('refuses what is not a date, and a date with anything else after it', async () => {
+    const { normalizeIsoDate } = await import('../../../lib/services/rental/rentalTerms.js');
+
+    for (const bad of [
+      '2027-02-30',
+      '15-01-2027',
+      "2027-01-01'; DROP TABLE x;--",
+      '2027-01-01 or later',
+      '',
+      null,
+      5,
+    ]) {
+      expect(normalizeIsoDate(bad), String(bad)).toBeNull();
+    }
+  });
+});
