@@ -1,0 +1,182 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+:root{--base:#14110f;--surface:#1b1714;--elevated:#221d19;--border:#2b2420;--border-b:#3a322d;--accent:#c64a37;--accent-text:#d9664f;--accent-glow:rgb(198 74 55/10%);--text:#f2ede8;--muted:#9c918a;--faint:#5b524c;--success:#6fbf95;--error:#ce7268;--warning:#d2a055;--fill:rgb(255 244 235/6%);--fill2:rgb(255 244 235/10%);--blue:#7ba4cd;--purple:#9d8cc2;--orange:#d4925e;--orange-bg:rgb(212 146 94/8%);--orange-b:#7c5132;--green-bg:rgb(108 177 147/8%);--shadow:0 18px 44px -12px rgb(10 7 5/70%)}
+body[data-theme=light]{--base:#f2efea;--surface:#fbf9f6;--elevated:#fff;--border:#e3ddd5;--border-b:#c9c1b7;--accent:#b0442f;--accent-text:#b0442f;--accent-glow:rgb(176 68 47/8%);--text:#1d1916;--muted:#645d56;--faint:#958c83;--success:#2e7a5a;--error:#ae3b41;--warning:#96690f;--fill:rgb(38 28 22/4%);--fill2:rgb(38 28 22/8%);--blue:#3c6a9a;--purple:#655898;--orange:#9a5d26;--orange-bg:rgb(154 93 38/8%);--orange-b:#d9b48f;--green-bg:rgb(46 122 90/8%);--shadow:0 18px 44px -16px rgb(60 40 20/25%)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--base);color:var(--text);font:400 14px/1.45 Outfit,Inter,system-ui,sans-serif}
+.app{display:grid;grid-template-columns:220px 1fr;min-height:100vh}
+.side{border-right:1px solid var(--border);padding:20px 14px;background:var(--surface)}
+.logo{font-weight:700;font-size:20px;margin:0 6px 26px}.logo b{color:var(--accent)}
+.nav a{display:flex;justify-content:space-between;align-items:center;padding:9px 10px;border-radius:8px;color:var(--muted);text-decoration:none;font-size:13.5px;margin-bottom:2px}
+.nav a.on{background:var(--fill2);color:var(--text)}
+.badge{background:var(--accent);color:#fff;border-radius:999px;font-size:11px;padding:1px 7px;font-weight:600}
+main{padding:28px 36px;max-width:1180px}
+.top{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:18px;gap:12px;flex-wrap:wrap}
+h1{font-size:26px;margin:0;font-weight:600}
+.sub{color:var(--muted);font-size:13px;margin-top:4px}
+.seg{display:flex;background:var(--fill);border:1px solid var(--border);border-radius:9px;padding:3px}
+.seg span{padding:6px 12px;border-radius:7px;font-size:13px;color:var(--muted)}
+.seg span.on{background:var(--elevated);color:var(--text);box-shadow:0 1px 3px rgb(0 0 0/20%)}
+.card{display:grid;grid-template-columns:1.05fr 1fr;background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden;box-shadow:var(--shadow)}
+.photo{position:relative;min-height:560px;background:#333 url(../../../ui/src/assets/city_background.jpg) center/cover}
+.photo .shade{position:absolute;inset:0;background:linear-gradient(180deg,rgb(0 0 0/0) 45%,rgb(0 0 0/72%))}
+.photo .cap{position:absolute;left:22px;right:22px;bottom:20px;color:#fff}
+.photo .cap .price{font-size:30px;font-weight:600}
+.photo .cap .addr{opacity:.85;font-size:14px}
+.pill{display:inline-flex;gap:6px;align-items:center;font-size:12px;padding:4px 10px;border-radius:999px;font-weight:500}
+.pill.explore{position:absolute;top:16px;left:16px;background:rgb(20 17 15/75%);color:#f0c38f;border:1px solid #7c5132;backdrop-filter:blur(4px)}
+.pill.counter{position:absolute;top:16px;right:16px;background:rgb(20 17 15/70%);color:#eee}
+.dots{position:absolute;bottom:88px;left:0;right:0;display:flex;justify-content:center;gap:6px}.dots i{width:6px;height:6px;border-radius:50%;background:#fff;opacity:.45}.dots i:first-child{opacity:1}
+.info{padding:22px 24px;display:flex;flex-direction:column;gap:16px}
+.title{font-size:18px;font-weight:600;line-height:1.3}
+.facts{display:flex;gap:8px;flex-wrap:wrap}
+.fact{background:var(--fill);border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:12.5px;color:var(--muted)}.fact b{color:var(--text);font-weight:600}
+.scorebox{display:grid;grid-template-columns:230px 1fr;gap:14px;align-items:center;background:var(--fill);border:1px solid var(--border);border-radius:12px;padding:12px 14px}
+.total{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.big{font-size:40px;font-weight:600;line-height:1;margin:4px 0 6px}.big small{font-size:15px;color:var(--muted);font-weight:400}
+.who{display:flex;flex-direction:column;gap:6px;font-size:13px}
+.who div{display:flex;align-items:center;gap:8px}.sw{width:10px;height:10px;border-radius:3px}
+.disagree{color:var(--warning);font-size:12px;margin-top:6px}
+.verdicts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn{border-radius:10px;padding:13px 10px;text-align:center;font-weight:600;font-size:15px;border:1px solid var(--border-b);display:flex;justify-content:center;gap:8px;align-items:center}
+.btn.no{color:var(--text);background:var(--fill)}
+.btn.yes{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn kbd{font:500 11px 'JetBrains Mono',monospace;opacity:.7;border:1px solid currentColor;border-radius:4px;padding:0 4px}
+.lbl{font-size:12px;color:var(--muted);margin-bottom:8px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--border-b);border-radius:999px;padding:6px 12px;font-size:13px;color:var(--muted);display:flex;gap:6px;align-items:center}
+.chip.on{border-color:var(--accent);color:var(--accent-text);background:var(--accent-glow)}
+.chip kbd{font:500 10px 'JetBrains Mono',monospace;color:var(--faint)}
+.note{border:1px solid var(--border-b);background:var(--fill);border-radius:9px;padding:10px 12px;color:var(--faint);font-size:13px}
+.foot{display:flex;justify-content:space-between;color:var(--faint);font-size:12px;margin-top:14px}
+/* suggestions */
+.sugs{display:grid;gap:14px}
+.sug{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px 20px;display:grid;grid-template-columns:1fr auto;gap:16px}
+.sug h3{margin:0 0 4px;font-size:16px;font-weight:600}
+.src{font-size:11.5px;color:var(--muted);display:flex;gap:8px;align-items:center;margin-bottom:10px}
+.tag{border:1px solid var(--border-b);border-radius:6px;padding:1px 7px;font-size:11px}
+.diff{font:500 13px 'JetBrains Mono',monospace;background:var(--fill);border:1px solid var(--border);border-radius:8px;padding:10px 12px;display:grid;gap:4px}
+.diff .k{color:var(--muted)}.diff .old{color:var(--error);text-decoration:line-through}.diff .new{color:var(--success)}
+.ev{margin-top:10px;color:var(--muted);font-size:13px}.ev b{color:var(--text);font-weight:500}
+.acts{display:flex;flex-direction:column;gap:8px;min-width:130px}
+.acts .btn{padding:9px 12px;font-size:13.5px}
+.mini{display:flex;gap:6px;margin-top:10px}.mini span{width:46px;height:34px;border-radius:6px;background:#444 url(../../../ui/src/assets/city_background.jpg) center/cover;opacity:.9}
+/* phone */
+@media (max-width:600px){
+ .app{grid-template-columns:1fr}.side{display:none}
+ main{padding:14px 16px}
+ h1{font-size:21px}.top .seg{display:none}
+ .card{grid-template-columns:1fr;border-radius:14px}
+ .photo{min-height:300px}.photo .cap .price{font-size:24px}.dots{bottom:72px}
+ .info{padding:16px;gap:14px}
+ .scorebox{grid-template-columns:1fr;justify-items:center;text-align:center}
+ .who{align-items:center}
+ .chip kbd,.btn kbd{display:none}
+ .mobilenav{display:flex!important}
+ .sug{grid-template-columns:1fr;padding:14px}.acts{flex-direction:row;min-width:0}.acts .btn{flex:1}
+ .diff{font-size:12px;overflow-wrap:anywhere}.diff .k{display:block}
+}
+.mobilenav{display:none;position:static;justify-content:space-around;background:var(--surface);border-top:1px solid var(--border);padding:10px 0;color:var(--muted);font-size:12px;margin:18px -16px -14px}
+.mobilenav .on{color:var(--accent-text);font-weight:600}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="logo">Fredy<b>♥</b></div>
+    <nav class="nav">
+      <a>Dashboard</a><a>Jobs</a><a>Listings</a>
+      <a class="on">Roulette</a>
+      <a>Suggestions <span class="badge">3</span></a>
+      <a>Disagreements <span class="badge" style="background:var(--warning)">2</span></a>
+      <a>Financing</a><a>Settings</a>
+    </nav>
+  </aside>
+  <main id="main"></main>
+</div>
+<script>
+const params=new URLSearchParams(location.search);
+document.body.dataset.theme=params.get('theme')||'dark';
+const view=params.get('view')||'card';
+const css=n=>getComputedStyle(document.body).getPropertyValue(n).trim();
+
+function radar(size){
+  const axes=['Money','Schools','Work','Home','Area','Deal'];
+  const you=[62,78,84,70,55,72], partner=[40,80,76,82,58,64];
+  const cx=size/2,cy=size/2+4,R=size*0.34;
+  const pt=(i,v)=>{const a=-Math.PI/2+i*2*Math.PI/6;return [cx+Math.cos(a)*R*v/100,cy+Math.sin(a)*R*v/100]};
+  let g='';
+  for(const r of [25,50,75,100]){g+=`<polygon points="${axes.map((_,i)=>pt(i,r).join(',')).join(' ')}" fill="none" stroke="${css('--border-b')}" stroke-width="1"/>`}
+  axes.forEach((a,i)=>{const [x,y]=pt(i,100);g+=`<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="${css('--border-b')}"/>`;
+    const [lx,ly]=pt(i,128);g+=`<text x="${lx}" y="${ly}" fill="${css('--muted')}" font-size="11" text-anchor="middle" dominant-baseline="middle" font-family="Outfit,Inter">${a}</text>`});
+  const poly=(v,c,fo)=>`<polygon points="${v.map((x,i)=>pt(i,x).join(',')).join(' ')}" fill="${c}" fill-opacity="${fo}" stroke="${c}" stroke-width="2"/>`;
+  g+=poly(partner,css('--blue'),.12)+poly(you,css('--accent-text'),.18);
+  you.forEach((v,i)=>{const [x,y]=pt(i,v);g+=`<circle cx="${x}" cy="${y}" r="3" fill="${css('--accent-text')}"/>`});
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">${g}</svg>`;
+}
+
+function cardView(){
+  return `
+  <div class="top"><div><h1>Roulette</h1><div class="sub">Odense villas · buying · 14 left to rate today</div></div>
+    <div class="seg"><span class="on">All jobs</span><span>Odense villas</span><span>Aarhus rentals</span></div></div>
+  <section class="card">
+    <div class="photo"><div class="shade"></div>
+      <span class="pill explore">◇ Outside your filters · 12 % over max price</span>
+      <span class="pill counter">1 / 9 photos</span>
+      <div class="dots"><i></i><i></i><i></i><i></i><i></i></div>
+      <div class="cap"><div class="price">6.495.000 kr.</div><div class="addr">Åløkkevænget 2C, 5000 Odense C · Boligsiden</div></div>
+    </div>
+    <div class="info">
+      <div class="title">Flere etager med eftertragtet beliggenhed!</div>
+      <div class="facts"><span class="fact"><b>229</b> m²</span><span class="fact"><b>9</b> rooms</span><span class="fact"><b>26.322</b> kr./m²</span><span class="fact">Ejerudgift <b>3.900</b> kr.</span><span class="fact">Energy <b>B</b></span><span class="fact">Work <b>24 min</b> 🚆</span></div>
+      <div class="scorebox">
+        ${radar(230)}
+        <div>
+          <div class="total">Household score</div>
+          <div class="big">70 <small>/ 100</small></div>
+          <div class="who"><div><span class="sw" style="background:var(--accent-text)"></span>You · 72</div><div><span class="sw" style="background:var(--blue)"></span>Partner · 67</div></div>
+          <div class="disagree">▲ You differ most on Money (62 vs 40)</div>
+        </div>
+      </div>
+      <div class="verdicts"><div class="btn no">✕ Not interested <kbd>←</kbd></div><div class="btn yes">★ Worth exploring <kbd>→</kbd></div></div>
+      <div>
+        <div class="lbl">Why? Pick any, it teaches the agent what to change</div>
+        <div class="chips"><span class="chip on">Too expensive <kbd>1</kbd></span><span class="chip">Too small <kbd>2</kbd></span><span class="chip">Too far <kbd>3</kbd></span><span class="chip">Bad area <kbd>4</kbd></span><span class="chip">Not fun <kbd>5</kbd></span><span class="chip">Too much work <kbd>6</kbd></span></div>
+      </div>
+      <div class="note">Add a note (optional), e.g. “basement feels dark”</div>
+    </div>
+  </section>
+  <div class="foot"><span>23 rated by you · 19 by partner</span><span>Skip ↓ · Undo ⌫</span></div>
+  <div class="mobilenav"><span>Listings</span><span class="on">Roulette</span><span>Suggestions ·3</span><span>More</span></div>`;
+}
+
+function sugView(){
+  const s=(t,src,tags,diff,ev,minis)=>`<div class="sug"><div>
+     <div class="src">${tags.map(x=>`<span class="tag">${x}</span>`).join('')}<span>${src}</span></div>
+     <h3>${t}</h3><div class="diff">${diff}</div><div class="ev">${ev}</div>${minis?'<div class="mini"><span></span><span></span><span></span><span></span></div>':''}</div>
+     <div class="acts"><div class="btn yes">Accept</div><div class="btn no">Dismiss</div></div></div>`;
+  return `<div class="top"><div><h1>Agent suggestions</h1><div class="sub">3 pending · nothing changes until one of you accepts</div></div>
+    <div class="seg"><span class="on">Pending</span><span>Accepted</span><span>Dismissed</span></div></div>
+  <div class="sugs">
+  ${s('Tighten your commute limit','from your ratings · rules',['Work','Odense villas'],
+    `<div><span class="k">score · work.commute · worst</span>&nbsp; <span class="old">60 min</span> → <span class="new">42 min</span></div>`,
+    'You marked <b>4 of your last 6</b> “Too far”, all over 42 min. Listings beyond that would score 0 on commute instead of 30–45.',true)}
+  ${s('Raise the max price for Odense villas','from exploration cards · shared filter',['Money','Filter'],
+    `<div><span class="k">job · max price</span>&nbsp; <span class="old">5.800.000 kr.</span> → <span class="new">6.500.000 kr.</span></div>`,
+    'Both of you said <b>Worth exploring</b> to <b>3 listings over your max price</b> (+7 %, +9 %, +12 %). Raising it brings them into notifications.',true)}
+  ${s('Weigh Area higher for you','from 26 verdicts · regression',['Area','Weights'],
+    `<div><span class="k">your weights · area</span>&nbsp; <span class="old">1.0</span> → <span class="new">1.6</span></div><div><span class="k">your weights · deal</span>&nbsp; <span class="old">1.0</span> → <span class="new">0.7</span></div>`,
+    'You said yes to <b>9 of 10</b> listings with Area above 70, and the Deal score barely changed your answers. Applies to your score only.',false)}
+  </div>
+  <div class="mobilenav"><span>Listings</span><span>Roulette</span><span class="on">Suggestions ·3</span><span>More</span></div>`;
+}
+document.getElementById('main').innerHTML=view==='sug'?sugView():cardView();
+document.querySelectorAll('.nav a').forEach(a=>a.classList.toggle('on',(view==='sug'&&a.textContent.startsWith('Suggestions'))||(view!=='sug'&&a.textContent==='Roulette')));
+</script>
+</body>
+</html>

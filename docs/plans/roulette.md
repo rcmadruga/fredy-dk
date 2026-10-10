@@ -49,6 +49,12 @@ storage functions the job form uses.
 **Disagreements**: listings one of us marked "worth exploring" and the other "not interested" get
 a list of their own. Those are the ones worth talking about.
 
+### 1.1 Approved layout
+
+The layout was approved by the user on 2026-10-10. The reference is in `roulette-mockup/`:
+`mockup.html` (open it with `?view=card` or `?view=sug`, plus `&theme=light`) and three
+screenshots. The mockup's colours are copies of `themes.less`; the real build uses the tokens.
+
 ## 2 What gets learned
 
 The model is the score config from `listing-score` (group weights, metric weights, ideal/worst
