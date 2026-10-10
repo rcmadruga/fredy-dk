@@ -2,6 +2,10 @@
 
 <!-- One or two sentences. What changes, and why. -->
 
+## News
+
+<!-- Fredy DK only: for a PR labelled `release`, this becomes the entry in the "What's new" dialog. Plain sentences, `- ` bullets, **bold**, *italic* and [links](https://example.com) work. Delete this section for a release without news. -->
+
 ## Related issue
 
 <!-- e.g. Closes #123. Write "none" if there is no issue. -->

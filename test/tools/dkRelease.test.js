@@ -336,3 +336,36 @@ describe('the command line', () => {
     expect(() => main(['nope'], { cwd: dir, write })).toThrow(/Unknown command/);
   });
 });
+
+describe('the release setup in the repository', () => {
+  const read = (file) => fs.readFileSync(file, 'utf8');
+
+  it('leaves the PR template News section empty as far as the release is concerned', () => {
+    const template = read('.github/PULL_REQUEST_TEMPLATE.md');
+    expect(template).toMatch(/^## News$/m);
+    expect(extractNewsSection(template)).toBeNull();
+  });
+
+  it('runs the release only for a merged PR with the release label, one at a time', () => {
+    const workflow = read('.github/workflows/release-dk.yml');
+    expect(workflow).toContain('github.event.pull_request.merged == true');
+    expect(workflow).toContain("contains(github.event.pull_request.labels.*.name, 'release')");
+    expect(workflow).toContain('group: release-dk');
+    expect(workflow).toMatch(/cancel-in-progress: false/);
+    expect(workflow).toMatch(/contents: write/);
+    expect(workflow).toMatch(/packages: write/);
+  });
+
+  it('builds the image from the release job, passing the version through its outputs', () => {
+    const workflow = read('.github/workflows/release-dk.yml');
+    expect(workflow).toContain('uses: ./.github/workflows/docker-build.yml');
+    expect(workflow).toContain('type=raw,value=${{ needs.release.outputs.version }}');
+    expect(workflow).toContain('type=raw,value=latest');
+    expect(workflow).toContain('version: ${{ steps.version.outputs.version }}');
+  });
+
+  it('never puts PR text on a command line', () => {
+    const workflow = read('.github/workflows/release-dk.yml');
+    expect(workflow).not.toMatch(/\$\{\{\s*github\.event\.pull_request\.(title|body)/);
+  });
+});
