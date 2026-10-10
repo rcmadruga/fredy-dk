@@ -27,6 +27,7 @@ import IconEuro from '../../components/icons/IconEuro.jsx';
 import ScamPanel from './components/ScamPanel.jsx';
 import ListingFinanceCard from './components/ListingFinanceCard.jsx';
 import ListingRentalCard from './components/ListingRentalCard.jsx';
+import ListingSaleCard from './components/ListingSaleCard.jsx';
 import ListingScoreCard from './components/ListingScoreCard.jsx';
 import NearbyStops from '../../components/transit/NearbyStops.jsx';
 import ConnectivityCard from '../../components/connectivity/ConnectivityCard.jsx';
@@ -40,6 +41,8 @@ import ListingDescriptionCard from './components/ListingDescriptionCard.jsx';
 import './ListingDetail.less';
 import { useTranslation } from '../../services/i18n/i18n.jsx';
 import { useFinanceProfile } from '../../hooks/useFinanceProfile.js';
+import { useListingFinance } from '../../hooks/useListingFinance.js';
+import { useCurrencyOf } from '../../hooks/useCurrencyOf.js';
 
 const { Text } = Typography;
 
@@ -94,6 +97,9 @@ export default function ListingDetail() {
   const actions = useActions();
   const { isComplete: buyComplete, rentComplete, thresholds: financeThresholds } = useFinanceProfile();
   const listing = useSelector((state) => state.listingsData.currentListing);
+  // One request for the financing card and the sale card, which both read it.
+  const finance = useListingFinance(listing);
+  const currencyOf = useCurrencyOf();
   const userSettings = useSelector((state) => state.userSettings.settings);
   const connectivityEnabled = useSelector((state) => state.generalSettings.settings?.connectivityEnabled === true);
   const pois = useSelector((state) => state.tracking.pois);
@@ -643,12 +649,17 @@ export default function ListingDetail() {
             <ListingRentalCard listing={listing} />
           </div>
 
+          {/* Renders nothing for a rental, or for a purchase whose portal states none of it. */}
+          <div className="listing-detail__sec--sale">
+            <ListingSaleCard listing={listing} finance={finance} />
+          </div>
+
           <div className="listing-detail__sec--origin">
             <ListingOrigin listing={listing} />
           </div>
 
           <div className="listing-detail__sec--finance">
-            <ListingFinanceCard listing={listing} />
+            <ListingFinanceCard listing={listing} finance={finance} />
 
             {/* Without the matching half of the profile there is nothing to compute, so offer the
                 way to create it instead of hiding the feature completely. */}
@@ -664,7 +675,9 @@ export default function ListingDetail() {
                     size="small"
                     onClick={() =>
                       navigate(
-                        isRental ? '/finance' : `/finance?dealType=buy&price=${listing.price}&listingId=${listing.id}`,
+                        isRental
+                          ? '/finance'
+                          : `/finance?dealType=buy${currencyOf(listing.provider) === 'DKK' ? '&market=dk' : ''}&price=${listing.price}&listingId=${listing.id}`,
                       )
                     }
                   >

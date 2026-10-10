@@ -4,7 +4,18 @@
  */
 
 import React from 'react';
-import { Button, Col, Collapse, Popconfirm, Row, Tabs, Toast, Typography } from '@douyinfe/semi-ui-19';
+import {
+  Button,
+  Col,
+  Collapse,
+  Popconfirm,
+  Radio,
+  RadioGroup,
+  Row,
+  Tabs,
+  Toast,
+  Typography,
+} from '@douyinfe/semi-ui-19';
 import { IconHome, IconKey, IconDelete } from '@douyinfe/semi-icons';
 import { useSearchParams } from 'react-router';
 
@@ -14,6 +25,7 @@ import SettingsSaveBar from '../../components/settingsShell/SettingsSaveBar.jsx'
 import ProfileForm from './components/ProfileForm.jsx';
 import HouseholdHeadline from './components/HouseholdHeadline.jsx';
 import PropertyForm from './components/PropertyForm.jsx';
+import DanishBuying from './components/DanishBuying.jsx';
 import RentPanel from './components/RentPanel.jsx';
 import ScenarioForm from './components/ScenarioForm.jsx';
 import ResultSummary from './components/ResultSummary.jsx';
@@ -31,6 +43,7 @@ import { summariseHousehold } from '../../services/finance/householdSummary.js';
 import { discardSection, financeDirtyState, isSectionDirty } from '../../services/finance/financeDirty.js';
 import { useUnsavedWarning } from '../../hooks/useUnsavedWarning.js';
 import { useTranslation } from '../../services/i18n/i18n.jsx';
+import { DEFAULT_CURRENCY } from '../../services/price/priceService.js';
 
 import './FinanceCalculator.less';
 
@@ -126,14 +139,24 @@ export default function FinanceCalculator() {
   /** Set as soon as the user changes a field, so the re-seed below stops competing with them. */
   const edited = React.useRef(false);
 
-  // Prefill the price when arriving from a listing ("Calculate financing").
+  // Prefill the price when arriving from a listing ("Calculate financing"). A home priced in kroner
+  // arrives with `market=dk`, which switches the buying tab to the Danish model.
   const prefillPrice = searchParams.get('price');
+  const prefillMarket = searchParams.get('market') === 'dk' ? 'dk' : null;
+  const prefillFinancing = (financing) => {
+    const price = Number(prefillPrice);
+    return {
+      ...financing,
+      ...(Number.isFinite(price) && price > 0 ? { purchasePrice: price } : {}),
+      ...(prefillMarket ? { market: prefillMarket } : {}),
+    };
+  };
   React.useEffect(() => {
     const price = Number(prefillPrice);
-    if (Number.isFinite(price) && price > 0) {
-      setDraft((current) => ({ ...current, financing: { ...current.financing, purchasePrice: price } }));
+    if ((Number.isFinite(price) && price > 0) || prefillMarket) {
+      setDraft((current) => ({ ...current, financing: prefillFinancing(current.financing) }));
     }
-  }, [prefillPrice]);
+  }, [prefillPrice, prefillMarket]);
 
   // Re-seed when the saved profile changes identity. The draft is seeded once at mount, so a
   // profile that only lands afterwards - the settings request still in flight, or a reload
@@ -143,10 +166,9 @@ export default function FinanceCalculator() {
     if (edited.current || storedProfile == null) {
       return;
     }
-    const price = Number(prefillPrice);
     setDraft(
-      Number.isFinite(price) && price > 0
-        ? { ...storedProfile, financing: { ...storedProfile.financing, purchasePrice: price } }
+      (Number.isFinite(Number(prefillPrice)) && Number(prefillPrice) > 0) || prefillMarket
+        ? { ...storedProfile, financing: prefillFinancing(storedProfile.financing) }
         : storedProfile,
     );
     // Deliberately keyed on the stored profile alone: the prefill has its own effect, and
@@ -254,6 +276,10 @@ export default function FinanceCalculator() {
   const rentSaved = stored?.renting != null;
   const buySaved = stored?.financing != null;
   const primary = result?.financing?.primary;
+  // The German result only: a stale Danish answer has no `financing` and must not reach the German panels.
+  const deResult = result?.model === 'dk' ? null : result;
+  // Which purchase model the buying tab shows. Anything but an explicit Denmark is the German one.
+  const market = draft.financing?.market === 'dk' ? 'dk' : 'de';
 
   // Renting is the default, because it is the common case. The only thing that overrides it is
   // arriving from a purchase listing, where the user is plainly here on a buying errand.
@@ -262,6 +288,10 @@ export default function FinanceCalculator() {
   // Tracked because the shared household block sits outside the tabs: when one of its fields is
   // left, the autosave has to know which half it belongs to.
   const [activeTab, setActiveTab] = React.useState(defaultTab);
+  // Denmark mode: the buying tab is on the Danish model. The shared household block and the footer follow
+  // it, so incomes read in kroner and the disclaimer talks about Danish costs, not German ones.
+  const danishMode = activeTab === 'buy' && market === 'dk';
+  const householdCurrency = danishMode ? 'DKK' : DEFAULT_CURRENCY;
   /** Whether the optional half of the household is folded open. */
   const [householdOpen, setHouseholdOpen] = React.useState(false);
 
@@ -321,6 +351,7 @@ export default function FinanceCalculator() {
             housingBudget={result?.recommendation?.recommendedRate ?? null}
             onChange={patchProfile}
             onPersonChange={(patch) => patchProfile({ personA: { ...draft.personA, ...patch } })}
+            currency={householdCurrency}
           />
 
           <Collapse
@@ -341,7 +372,7 @@ export default function FinanceCalculator() {
                 </span>
               }
             >
-              <ProfileForm profile={draft} onChange={patchProfile} />
+              <ProfileForm profile={draft} onChange={patchProfile} currency={householdCurrency} />
             </Collapse.Panel>
           </Collapse>
         </div>
@@ -393,62 +424,87 @@ export default function FinanceCalculator() {
             {t('finance.area.buyLead')}
           </Text>
 
-          {/* Inputs on the left, the answer on the right. The charts that justify the answer
-              rather than give it live in the disclosure below, so the default view is one
-              screen of figures instead of five charts the user has to triage. */}
-          <Row gutter={[16, 16]} className="finance__split">
-            <Col xs={24} lg={10} xl={9}>
-              <PropertyForm
-                financing={draft.financing ?? EMPTY_DRAFT.financing}
-                costs={result?.financing?.closingCosts ?? null}
-                totalCost={result?.financing?.totalCost ?? null}
-                loanAmount={result?.financing?.loanAmount ?? null}
-                onChange={patchFinancing}
-              />
-              <ScenarioForm
-                scenarios={draft.financing?.scenarios ?? []}
-                computed={result?.financing?.scenarios ?? []}
-                onChange={(scenarios) => patchFinancing({ scenarios })}
-              />
-            </Col>
+          {/* One tab, two markets. The switch is stored with the draft (`financing.market`), so the
+              page reopens on the model last used; a home priced in kroner always gets the Danish model
+              on its own detail page whatever this says. */}
+          <RadioGroup
+            className="finance__market"
+            type="button"
+            buttonSize="small"
+            aria-label={t('finance.market.label')}
+            value={market}
+            onChange={(event) => patchFinancing({ market: event.target.value })}
+          >
+            <Radio value="de">{t('finance.market.de')}</Radio>
+            <Radio value="dk">{t('finance.market.dk')}</Radio>
+          </RadioGroup>
 
-            <Col xs={24} lg={14} xl={15}>
-              <ResultSummary result={result} />
-
-              <SegmentPart name={t('finance.section.trajectory')} helpText={t('finance.section.trajectoryHelp')}>
-                <DebtTrajectoryChart
-                  scenarios={result?.financing?.scenarios ?? []}
-                  currentAge={draft.personA?.age ?? null}
-                />
-              </SegmentPart>
-
-              <SegmentPart name={t('finance.section.budget')} helpText={t('finance.section.budgetHelp')}>
-                <BudgetChart budget={result?.budget} monthlyRate={primary?.monthlyPayment ?? 0} />
-              </SegmentPart>
-            </Col>
-          </Row>
-
-          {/* keepDOM={false}: closed, these three chart.js canvases are never created at all. */}
-          <Collapse className="finance__more" keepDOM={false}>
-            <Collapse.Panel itemKey="detail" header={t('finance.section.moreDetail')}>
-              <Row gutter={[16, 16]}>
-                <Col xs={24} lg={12}>
-                  <SegmentPart name={t('finance.section.split')} helpText={t('finance.section.splitHelp')}>
-                    <InterestPrincipalChart scenario={primary} />
-                  </SegmentPart>
+          {market === 'dk' ? (
+            <DanishBuying
+              financing={draft.financing ?? EMPTY_DRAFT.financing}
+              result={result}
+              onChange={patchFinancing}
+            />
+          ) : (
+            <>
+              {/* Inputs on the left, the answer on the right. The charts that justify the answer
+                rather than give it live in the disclosure below, so the default view is one
+                screen of figures instead of five charts the user has to triage. */}
+              <Row gutter={[16, 16]} className="finance__split">
+                <Col xs={24} lg={10} xl={9}>
+                  <PropertyForm
+                    financing={draft.financing ?? EMPTY_DRAFT.financing}
+                    costs={result?.financing?.closingCosts ?? null}
+                    totalCost={result?.financing?.totalCost ?? null}
+                    loanAmount={result?.financing?.loanAmount ?? null}
+                    onChange={patchFinancing}
+                  />
+                  <ScenarioForm
+                    scenarios={draft.financing?.scenarios ?? []}
+                    computed={result?.financing?.scenarios ?? []}
+                    onChange={(scenarios) => patchFinancing({ scenarios })}
+                  />
                 </Col>
-                <Col xs={24} lg={12}>
-                  <SegmentPart name={t('finance.section.costs')} helpText={t('finance.section.costsHelp')}>
-                    <CostBreakdownChart financing={result?.financing} />
+
+                <Col xs={24} lg={14} xl={15}>
+                  <ResultSummary result={deResult} />
+
+                  <SegmentPart name={t('finance.section.trajectory')} helpText={t('finance.section.trajectoryHelp')}>
+                    <DebtTrajectoryChart
+                      scenarios={result?.financing?.scenarios ?? []}
+                      currentAge={draft.personA?.age ?? null}
+                    />
+                  </SegmentPart>
+
+                  <SegmentPart name={t('finance.section.budget')} helpText={t('finance.section.budgetHelp')}>
+                    <BudgetChart budget={result?.budget} monthlyRate={primary?.monthlyPayment ?? 0} />
                   </SegmentPart>
                 </Col>
               </Row>
 
-              <SegmentPart name={t('finance.section.milestones')} helpText={t('finance.section.milestonesHelp')}>
-                <MilestoneTimeline result={result} />
-              </SegmentPart>
-            </Collapse.Panel>
-          </Collapse>
+              {/* keepDOM={false}: closed, these three chart.js canvases are never created at all. */}
+              <Collapse className="finance__more" keepDOM={false}>
+                <Collapse.Panel itemKey="detail" header={t('finance.section.moreDetail')}>
+                  <Row gutter={[16, 16]}>
+                    <Col xs={24} lg={12}>
+                      <SegmentPart name={t('finance.section.split')} helpText={t('finance.section.splitHelp')}>
+                        <InterestPrincipalChart scenario={primary} />
+                      </SegmentPart>
+                    </Col>
+                    <Col xs={24} lg={12}>
+                      <SegmentPart name={t('finance.section.costs')} helpText={t('finance.section.costsHelp')}>
+                        <CostBreakdownChart financing={result?.financing} />
+                      </SegmentPart>
+                    </Col>
+                  </Row>
+
+                  <SegmentPart name={t('finance.section.milestones')} helpText={t('finance.section.milestonesHelp')}>
+                    <MilestoneTimeline result={deResult} />
+                  </SegmentPart>
+                </Collapse.Panel>
+              </Collapse>
+            </>
+          )}
 
           <SectionDelete
             section="buy"
@@ -470,7 +526,7 @@ export default function FinanceCalculator() {
         </SegmentPart>
       )}
 
-      <Text className="finance__disclaimer">{t('finance.disclaimer')}</Text>
+      <Text className="finance__disclaimer">{t(danishMode ? 'finance.disclaimerDk' : 'finance.disclaimer')}</Text>
 
       {/* One bar for the whole page, sticky, and only while there is something to save - the same
           one every settings page carries. It saves the tab you are on, because that is the half the

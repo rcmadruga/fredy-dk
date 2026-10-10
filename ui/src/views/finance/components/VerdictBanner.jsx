@@ -4,6 +4,7 @@
  */
 
 import { VERDICT_COLORS, formatEuro, withAlpha } from '../../../components/cards/chartTheme.js';
+import { formatPrice } from '../../../services/price/priceService.js';
 import { useTranslation, useLocale } from '../../../services/i18n/i18n.jsx';
 
 import './VerdictBanner.less';
@@ -23,6 +24,7 @@ import './VerdictBanner.less';
  * @param {string|null} [props.advice] Replaces the purchase-specific advice line - renting has
  *   no purchase price to quote, but the same budget ceiling is still worth naming.
  * @param {boolean} [props.compact] Tighter layout for the listing detail card.
+ * @param {string} [props.currency] ISO 4217 code the amounts are written in; euros unless it says otherwise.
  */
 export default function VerdictBanner({
   verdict,
@@ -32,9 +34,13 @@ export default function VerdictBanner({
   maxPrice,
   advice: customAdvice,
   compact = false,
+  currency,
 }) {
   const t = useTranslation();
   const locale = useLocale();
+  // Whole units: a verdict line is read, not reconciled.
+  const money = (value) =>
+    currency ? formatPrice(Math.round(Number(value)), locale, null, currency) : formatEuro(value, locale);
 
   const color = VERDICT_COLORS[verdict] ?? VERDICT_COLORS.unaffordable;
   const percent = share == null ? null : (share * 100).toFixed(0);
@@ -42,7 +48,7 @@ export default function VerdictBanner({
   const headline =
     percent == null
       ? t(`finance.verdict.${verdict}`)
-      : t(`finance.verdict.${verdict}Detail`, { percent, rate: formatEuro(monthlyRate, locale) });
+      : t(`finance.verdict.${verdict}Detail`, { percent, rate: money(monthlyRate) });
 
   // Only say something useful when it is actually useful: an affordable purchase does not
   // need to be told what it could have spent.
@@ -53,8 +59,8 @@ export default function VerdictBanner({
         ? null
         : recommendedRate > 0
           ? t('finance.verdict.advice', {
-              rate: formatEuro(recommendedRate, locale),
-              price: formatEuro(maxPrice, locale),
+              rate: money(recommendedRate),
+              price: money(maxPrice),
             })
           : t('finance.verdict.adviceNoRoom');
 

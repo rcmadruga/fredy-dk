@@ -9,7 +9,8 @@ import { IconHelpCircle } from '@douyinfe/semi-icons';
 
 import { SegmentPart } from '../../../components/segment/SegmentPart.jsx';
 import AdminField from '../../admin/components/AdminField.jsx';
-import { useTranslation } from '../../../services/i18n/i18n.jsx';
+import { useTranslation, useLocale } from '../../../services/i18n/i18n.jsx';
+import { currencyUnit, DEFAULT_CURRENCY } from '../../../services/price/priceService.js';
 
 import './FinanceForms.less';
 
@@ -118,9 +119,12 @@ export function NumberField({
  * @param {Object} props
  * @param {import('../../../types/finance.js').FinanceProfile} props.profile
  * @param {(patch: Object) => void} props.onChange Shallow-merged into the profile.
+ * @param {string} [props.currency='EUR'] What the amounts are in: kroner while the buying tab is on Denmark.
  */
-export default function ProfileForm({ profile, onChange }) {
+export default function ProfileForm({ profile, onChange, currency = DEFAULT_CURRENCY }) {
   const t = useTranslation();
+  const locale = useLocale();
+  const unit = currencyUnit(currency, locale);
 
   const setPerson = (key, patch) => onChange({ [key]: { ...profile[key], ...patch } });
 
@@ -144,7 +148,7 @@ export default function ProfileForm({ profile, onChange }) {
               label={t('finance.form.secondaryIncome')}
               value={profile.personA.secondaryIncome}
               step={50}
-              suffix="€"
+              suffix={unit}
               help={t('finance.form.secondaryIncomeHelp')}
               onChange={(secondaryIncome) => setPerson('personA', { secondaryIncome })}
             />
@@ -177,7 +181,7 @@ export default function ProfileForm({ profile, onChange }) {
                 label={t('finance.form.primaryIncome')}
                 value={profile.personB.primaryIncome}
                 step={50}
-                suffix="€"
+                suffix={unit}
                 help={t('finance.form.primaryIncomeHelp')}
                 onChange={(primaryIncome) => setPerson('personB', { primaryIncome })}
               />
@@ -185,7 +189,7 @@ export default function ProfileForm({ profile, onChange }) {
                 label={t('finance.form.secondaryIncome')}
                 value={profile.personB.secondaryIncome}
                 step={50}
-                suffix="€"
+                suffix={unit}
                 help={t('finance.form.secondaryIncomeHelp')}
                 onChange={(secondaryIncome) => setPerson('personB', { secondaryIncome })}
               />
@@ -204,7 +208,7 @@ export default function ProfileForm({ profile, onChange }) {
             label={t('finance.form.existingDebt')}
             value={profile.existingDebt}
             step={500}
-            suffix="€"
+            suffix={unit}
             help={t('finance.form.existingDebtAmountHelp')}
             onChange={(existingDebt) => onChange({ existingDebt })}
           />
@@ -212,7 +216,7 @@ export default function ProfileForm({ profile, onChange }) {
             label={t('finance.form.existingDebtRate')}
             value={profile.existingDebtRate}
             step={25}
-            suffix="€"
+            suffix={unit}
             help={t('finance.form.existingDebtRateHelp')}
             onChange={(existingDebtRate) => onChange({ existingDebtRate })}
           />

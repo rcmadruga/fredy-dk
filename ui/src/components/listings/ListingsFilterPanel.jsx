@@ -3,7 +3,7 @@
  * Licensed under Apache-2.0 with Commons Clause and Attribution/Naming Clause
  */
 
-import { Radio, RadioGroup, Select } from '@douyinfe/semi-ui-19';
+import { Checkbox, Radio, RadioGroup, Select } from '@douyinfe/semi-ui-19';
 
 import FilterSelect from './FilterSelect.jsx';
 import MoveInWindowFilter from './MoveInWindowFilter.jsx';
@@ -20,8 +20,11 @@ import {
   clearAllFilters,
   countActiveFilters,
   filterConfiguredProviders,
+  ENERGY_LABELS,
+  OWNER_COST_STEPS,
 } from '../../services/listings/listingFilters.js';
-import { useTranslation } from '../../services/i18n/i18n.jsx';
+import { formatPrice } from '../../services/price/priceService.js';
+import { useTranslation, useLocale } from '../../services/i18n/i18n.jsx';
 
 /**
  * Every listings filter, in one drawer.
@@ -67,6 +70,7 @@ export default function ListingsFilterPanel({
   onConnectivityFilterUsed,
 }) {
   const t = useTranslation();
+  const locale = useLocale();
   const activeCount = countActiveFilters(values);
   const visibleProviders = filterConfiguredProviders(providers, jobs, values.job, values.provider, availableProviders);
 
@@ -174,6 +178,57 @@ export default function ListingsFilterPanel({
 
       <FilterGroup title={t('listings.filterGroupMoveIn')}>
         <MoveInWindowFilter values={values} onChange={onChange} />
+      </FilterGroup>
+
+      {/* What a for-sale advert states. Always offered, like the move-in window above: they narrow the
+          search to homes whose advert can answer, and a rental or a portal that sends none of it is
+          never among them. */}
+      <FilterGroup title={t('listings.filterGroupSale')}>
+        <FilterSelect
+          help={t('listings.filterOwnerCostHelp')}
+          placeholder={t('listings.filterOwnerCostPlaceholder')}
+          showClear
+          onChange={(val) => onChange({ ejmax: val ?? null, page: 1 })}
+          value={values.ejmax}
+          style={{ width: '100%' }}
+        >
+          {OWNER_COST_STEPS.map((amount) => (
+            <Select.Option key={amount} value={amount}>
+              {t('listings.filterOwnerCostOption', { amount: formatPrice(amount, locale, null, 'DKK') })}
+            </Select.Option>
+          ))}
+        </FilterSelect>
+
+        <FilterSelect
+          help={t('listings.filterEnergyHelp')}
+          placeholder={t('listings.filterEnergyPlaceholder')}
+          showClear
+          onChange={(val) => onChange({ energy: val ?? null, page: 1 })}
+          value={values.energy}
+          style={{ width: '100%' }}
+        >
+          {ENERGY_LABELS.map((label) => (
+            <Select.Option key={label} value={label}>
+              {t('listings.filterEnergyOption', { label })}
+            </Select.Option>
+          ))}
+        </FilterSelect>
+
+        <FilterHelp>{t('listings.filterRelistedHelp')}</FilterHelp>
+        <Checkbox
+          checked={values.relisted === true}
+          onChange={(event) => onChange({ relisted: event.target.checked ? true : null, page: 1 })}
+        >
+          {t('listings.filterRelistedOnly')}
+        </Checkbox>
+
+        <FilterHelp>{t('listings.filterReducedHelp')}</FilterHelp>
+        <Checkbox
+          checked={values.reduced === true}
+          onChange={(event) => onChange({ reduced: event.target.checked ? true : null, page: 1 })}
+        >
+          {t('listings.filterReducedOnly')}
+        </Checkbox>
       </FilterGroup>
 
       {/* Only offered while the operator has the enrichment on. With it off nothing is ever

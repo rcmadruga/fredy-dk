@@ -98,6 +98,14 @@
                                                 </td>
                                             </tr>
                                             {{/if}}
+                                            {{#if this.saleCosts}}
+                                            <tr><td class="sp-8"></td><td class="sp-8"></td></tr>
+                                            <tr>
+                                                <td colspan="2">
+                                                    <p class="meta"><strong>Costs</strong><br/>{{this.saleCosts}}</p>
+                                                </td>
+                                            </tr>
+                                            {{/if}}
                                         </table>
                                     </td>
                                 </tr>
