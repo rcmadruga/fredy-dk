@@ -13,6 +13,7 @@ import {
   LineElement,
   LinearScale,
   PointElement,
+  RadialLinearScale,
   Title as ChartTitle,
   Tooltip,
 } from 'chart.js';
@@ -96,7 +97,7 @@ export const VERDICT_COLORS = {
  *
  * Getters, for the same reason as {@link VERDICT_COLORS}.
  *
- * @type {Record<'ACCENT'|'GRID'|'GRID_BRIGHT'|'MUTED'|'TEXT'|'ELEVATED'|'BLUE'|'GREEN'|'PURPLE'|'ORANGE'|'WARNING'|'SUCCESS'|'ERROR'|'FONT_UI'|'FONT_MONO', string>}
+ * @type {Record<'ACCENT'|'GRID'|'GRID_BRIGHT'|'MUTED'|'FAINT'|'TEXT'|'ELEVATED'|'BLUE'|'GREEN'|'PURPLE'|'ORANGE'|'WARNING'|'SUCCESS'|'ERROR'|'FONT_UI'|'FONT_MONO', string>}
  */
 export const CHART_COLORS = {
   get ACCENT() {
@@ -110,6 +111,9 @@ export const CHART_COLORS = {
   },
   get MUTED() {
     return token('--f-muted', '#909090');
+  },
+  get FAINT() {
+    return token('--f-faint', '#5b524c');
   },
   get TEXT() {
     return token('--f-text', '#efefef');
@@ -169,6 +173,21 @@ export function registerFinanceCharts() {
     ChartTitle,
   );
   registered = true;
+}
+
+let scoreRegistered = false;
+
+/**
+ * Register the chart.js pieces the listing score's radar needs, on top of the shared ones.
+ *
+ * @returns {void}
+ */
+export function registerScoreChart() {
+  if (scoreRegistered) {
+    return;
+  }
+  ChartJS.register(RadialLinearScale, PointElement, LineElement, Filler, Tooltip);
+  scoreRegistered = true;
 }
 
 /**

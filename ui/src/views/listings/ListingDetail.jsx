@@ -27,6 +27,7 @@ import IconEuro from '../../components/icons/IconEuro.jsx';
 import ScamPanel from './components/ScamPanel.jsx';
 import ListingFinanceCard from './components/ListingFinanceCard.jsx';
 import ListingRentalCard from './components/ListingRentalCard.jsx';
+import ListingScoreCard from './components/ListingScoreCard.jsx';
 import NearbyStops from '../../components/transit/NearbyStops.jsx';
 import ConnectivityCard from '../../components/connectivity/ConnectivityCard.jsx';
 import ListingActionBar from './components/ListingActionBar.jsx';
@@ -672,6 +673,11 @@ export default function ListingDetail() {
                 </Space>
               </section>
             )}
+          </div>
+
+          {/* The score and its radar. Renders nothing for a listing without one. */}
+          <div className="listing-detail__sec--score">
+            <ListingScoreCard listing={listing} />
           </div>
 
           {/* A narrow list of departures, which is why it belongs beside the map rather than under

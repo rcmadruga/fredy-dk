@@ -17,7 +17,7 @@ Status per step. Updated after every step, before anything else. The plan is `li
 
 ## Phase B: UI and MCP
 
-- [ ] 10 `ListingScoreCard`: radar and breakdown
+- [x] 10 `ListingScoreCard`: radar and breakdown
 - [ ] 11 Score chip on listing cards
 - [ ] 12 Job form "Score" card
 - [ ] 13 MCP
@@ -62,3 +62,7 @@ Status per step. Updated after every step, before anything else. The plan is `li
   a 1.5 s deadline and count as unavailable (metrics unknown) while a cold fetch finishes in the
   background. Overview rows carry a compact score (total and group scores); the detail page carries every
   metric.
+- Step 10: a group with no data is drawn as a hollow diamond marker and tooltip text "no data" instead of a dashed
+  point: chart.js has no per-point dash for the radar marker. Off groups get a cross marker at the centre.
+  The card sits in the detail rail after the finance card. The radar registers its own chart.js pieces via
+  `registerScoreChart()` in chartTheme.js; colours come from the CHART_COLORS getters (a `FAINT` getter was added).
