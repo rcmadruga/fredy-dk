@@ -12,7 +12,7 @@ Status per step. Updated after every step, before anything else. The plan is `li
 - [x] 5 Work: commute, jobs
 - [x] 6 Home: size, bathrooms, internet, newBuild; heuristics upkeep, parking
 - [x] 7 Area (grocery, park) and Deal (vsValuation, vsLastSale, priceDrop, onMarket, relisted)
-- [ ] 8 Migration `score_config`, storage, validation
+- [x] 8 Migration `score_config`, storage, validation
 - [ ] 9 `context.js`, `score` on listings from the API
 
 ## Phase B: UI and MCP
@@ -51,3 +51,8 @@ Status per step. Updated after every step, before anything else. The plan is `li
 - `sale_terms` is read defensively (`listing.sale_terms`, parsed or JSON text); absent means missing.
   The branch is not merged here.
 - Phase A and B are done in this order; Phase C and step 18 are deliberately not part of this run.
+- Step 8: `scoreConfig` is left alone on an update that does not mention it (`undefined`) and cleared by
+  `null`, unlike `commuteFilter`, which an omitted value clears. The score card is edited separately, and
+  an older client or the MCP job draft must not reset a job's weights. Three existing tests hand-build a
+  `jobs` table (`jobStorageHydration`, `jobRouterTourGuard`, `jobChannelAuthorization`); each got a
+  `score_config TEXT` column, because `jobStorage` now selects it.
