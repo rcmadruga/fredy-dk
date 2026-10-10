@@ -112,12 +112,14 @@ Response: markdown table with columns ID, Name, Enabled, Active Listings. Includ
 - `sortField` (string, optional) - Sort by: created_at, price, size, provider, title, is_active
 - `sortDir` (string, optional) - Sort direction: asc or desc
 
-Response: markdown table with columns ID, Title, Address, Price, Size, Provider, Active, Created, Job. Includes summary and pagination info. Use `get_listing` for full details.
+Response: markdown table with columns ID, Title, Address, Price, Deal, Size, Score, Provider, Internet, Active, Status, Listed, Found, Job. The Score column is the listing's total out of 100. Includes summary and pagination info. Use `get_listing` for full details.
 
 > **Note:** All timestamps are **unix timestamps in milliseconds** (e.g. `1772008362564`), not seconds.
 
 #### get_listing
 - `listingId` (string, required) - The listing ID to retrieve
+
+Response: the listing's details, then a **Score** section: the total out of 100, a table of the groups (six for a purchase: Money, Schools, Work, Home, Area, Deal; five for a rental, without Deal) with score, weight and a note ("off" for a group the job switched off, "no data" when nothing in it could be measured), and each group's metrics with the measured value, its score and the job's ideal and worst values. A metric with no value is marked unknown and counted as a neutral 50; kommune averages and estimates are labelled.
 
 #### calculate_financing
 Prices up a property as a German Annuitätendarlehen and judges it against the 35 % rule.

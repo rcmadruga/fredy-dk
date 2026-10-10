@@ -20,7 +20,7 @@ Status per step. Updated after every step, before anything else. The plan is `li
 - [x] 10 `ListingScoreCard`: radar and breakdown
 - [x] 11 Score chip on listing cards
 - [x] 12 Job form "Score" card
-- [ ] 13 MCP
+- [x] 13 MCP
 
 ## Phase C: new sources
 
@@ -71,3 +71,6 @@ Status per step. Updated after every step, before anything else. The plan is `li
   `lib/`; `test/ui/scoreMetricCatalog.test.js` fails if it drifts from the server descriptors. Group weights use Semi
   sliders in steps of 0.5 up to 3 (the API allows up to 100 for scripted use). The commute picker offers named
   addresses only, not place types.
+- Step 13: English group and metric names for the MCP text live in `lib/services/score/labels.js`, a copy of the
+  English locale guarded by `test/services/score/labels.test.js`. `list_listings` scores the page in one batch; a
+  score that cannot be built leaves the tool answering with a dash instead of failing.
