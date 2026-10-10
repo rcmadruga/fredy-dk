@@ -37,7 +37,7 @@ describe('fetchKommuneTaxRates', () => {
     expect(dataUrl).toContain('Tid=2026');
   });
 
-  it('keys results by the DAWA-style zero-padded code', async () => {
+  it('keys results by the zero-padded kommunekode', async () => {
     fetch.mockResolvedValueOnce(tableInfoAnswer([2026]));
     fetch.mockResolvedValueOnce(csvAnswer('OMRÅDE;SKATPCT;TID;INDHOLD\n101;KOM;2026;23.39\n101;GRUND;2026;5.10\n'));
 

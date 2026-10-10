@@ -76,6 +76,8 @@ const MAP_URL_STATE = {
   taxLayer: { defaultValue: false, codec: parseBoolean },
   schoolLayer: { defaultValue: false, codec: parseBoolean },
   groceryLayer: { defaultValue: false, codec: parseBoolean },
+  jobsLayer: { defaultValue: false, codec: parseBoolean },
+  jobsPoints: { defaultValue: false, codec: parseBoolean },
   // The listing filters are the overview's own, defined once so the two views cannot drift apart.
   ...FILTER_URL_STATE,
 };
@@ -133,6 +135,8 @@ export default function MapView() {
     taxLayer,
     schoolLayer,
     groceryLayer,
+    jobsLayer,
+    jobsPoints,
   } = urlState;
   // Read the same way `components/map/Map.jsx` reads it, so the ring drawn on top of the basemap
   // and the basemap itself can never disagree about how dark the map is.
@@ -295,7 +299,7 @@ export default function MapView() {
    * `setValues` drops any value equal to its declared default, so a pristine view keeps a clean
    * address, and the map already clears the 3D buildings flag when the basemap goes to satellite.
    *
-   * @param {{style?: string, show3dBuildings?: boolean, showTransit?: boolean, taxLayer?: boolean, schoolLayer?: boolean, groceryLayer?: boolean}} patch
+   * @param {{style?: string, show3dBuildings?: boolean, showTransit?: boolean, taxLayer?: boolean, schoolLayer?: boolean, groceryLayer?: boolean, jobsLayer?: boolean, jobsPoints?: boolean}} patch
    */
   const handleControlsChange = (patch) => {
     setValues({
@@ -305,6 +309,8 @@ export default function MapView() {
       ...('taxLayer' in patch ? { taxLayer: patch.taxLayer } : {}),
       ...('schoolLayer' in patch ? { schoolLayer: patch.schoolLayer } : {}),
       ...('groceryLayer' in patch ? { groceryLayer: patch.groceryLayer } : {}),
+      ...('jobsLayer' in patch ? { jobsLayer: patch.jobsLayer } : {}),
+      ...('jobsPoints' in patch ? { jobsPoints: patch.jobsPoints } : {}),
     });
   };
 
@@ -650,6 +656,8 @@ export default function MapView() {
             taxLayer={taxLayer}
             schoolLayer={schoolLayer}
             groceryLayer={groceryLayer}
+            jobsLayer={jobsLayer}
+            jobsPoints={jobsPoints}
             onControlsChange={handleControlsChange}
             controlsMode="always"
             // This is the map where an address search earns its place: the pins are spread over
