@@ -1,0 +1,96 @@
+@import '../../../tokens.less';
+
+.listing-sale {
+  &__section + &__section,
+  &__section + &__links {
+    margin-top: @space-4;
+  }
+
+  // A small heading inside the card. The card's own label is the h2; these are the h3s under it.
+  &__heading {
+    display: flex;
+    align-items: center;
+    gap: @space-2;
+    margin: 0;
+    font-size: @text-base;
+    font-weight: 600;
+    color: @color-text;
+  }
+
+  &__rows {
+    margin: @space-2 0 0;
+  }
+
+  &__row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: @space-3;
+    padding: @space-2 0;
+    border-top: 1px solid @color-border;
+
+    dt {
+      color: @color-muted;
+    }
+
+    dd {
+      margin: 0;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      color: @color-text;
+    }
+
+    // The asking price is what every other line is read against.
+    &--lead dt,
+    &--lead dd {
+      font-weight: 700;
+      color: @color-text;
+    }
+  }
+
+  &__help {
+    margin-left: @space-1;
+    cursor: help;
+    color: @color-muted;
+  }
+
+  // Told by the border and the word, not by colour alone.
+  &__badge {
+    padding: 0 @space-2;
+    border: 1px solid @color-warning;
+    border-radius: @radius-chip;
+    font-size: @text-sm;
+    font-weight: 600;
+    color: @color-text;
+    cursor: help;
+  }
+
+  &__note {
+    margin: @space-2 0 0;
+    font-size: @text-base;
+    color: @color-muted;
+  }
+
+  // Folded by default: the building is reference, not the decision.
+  &__building > summary {
+    cursor: pointer;
+    // A flex summary loses its disclosure marker, so it is a list item again here.
+    display: list-item;
+    list-style-position: inside;
+  }
+
+  &__links {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: @space-2;
+    font-size: @text-base;
+
+    a {
+      color: @color-accent-text;
+      text-decoration: underline;
+    }
+  }
+}

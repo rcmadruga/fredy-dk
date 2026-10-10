@@ -27,6 +27,7 @@ import IconEuro from '../../components/icons/IconEuro.jsx';
 import ScamPanel from './components/ScamPanel.jsx';
 import ListingFinanceCard from './components/ListingFinanceCard.jsx';
 import ListingRentalCard from './components/ListingRentalCard.jsx';
+import ListingSaleCard from './components/ListingSaleCard.jsx';
 import NearbyStops from '../../components/transit/NearbyStops.jsx';
 import ConnectivityCard from '../../components/connectivity/ConnectivityCard.jsx';
 import ListingActionBar from './components/ListingActionBar.jsx';
@@ -640,6 +641,11 @@ export default function ListingDetail() {
               because "free from when" decides whether the rest of the page is worth reading. */}
           <div className="listing-detail__sec--rental">
             <ListingRentalCard listing={listing} />
+          </div>
+
+          {/* Renders nothing for a rental, or for a purchase whose portal states none of it. */}
+          <div className="listing-detail__sec--sale">
+            <ListingSaleCard listing={listing} />
           </div>
 
           <div className="listing-detail__sec--origin">

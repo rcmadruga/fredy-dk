@@ -11,7 +11,7 @@ Status per step. Updated after every step, before anything else. The plan is `dk
 
 ## Phase 2: the card
 
-- [ ] 4 `ListingSaleCard`: price and monthly costs, time on market, building, links
+- [x] 4 `ListingSaleCard`: price and monthly costs, time on market, building, links
 - [ ] 5 Earlier-sales table
 
 ## Phase 3: financing
@@ -44,3 +44,8 @@ Status per step. Updated after every step, before anything else. The plan is `dk
   the address (a garage's year is not the home's). `daysOnMarket.current` falls back to the case-level
   `daysOnMarket` only when `timeOnMarket` is missing. `municipalTaxPct` is `councilTaxPercentage`
   (kommuneskat); the church tax is not stored.
+- Step 4: the card is built from `buildSaleFacts` in `ui/src/views/listings/listingFacts.js` (pure,
+  tested without a DOM, like `buildRentalFacts`). The asking price is the first cost row only when
+  at least one other cost figure exists. A price change of exactly 0 is not shown. An open house in the
+  past is dropped; its time is shown in Danish time. "Your" financing figure beside the realtor's
+  example (§6.1) waits for step 8. The building section is a `<details>`, closed by default.

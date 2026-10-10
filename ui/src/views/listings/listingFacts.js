@@ -5,7 +5,7 @@
 
 import { formatPrice, DEFAULT_CURRENCY } from '../../services/price/priceService.js';
 import { formatDecimal } from '../../services/number/numberService.js';
-import { formatPricePerSqm, readMarketBenchmark } from '../../services/listings/marketBenchmark.js';
+import { formatDeviation, formatPricePerSqm, readMarketBenchmark } from '../../services/listings/marketBenchmark.js';
 import { rentIncludesCharges, verdictExplanation } from '../../services/finance/rentBasis.js';
 import * as timeService from '../../services/time/timeService.js';
 
@@ -509,4 +509,177 @@ export function buildRentalFacts(listing, ctx) {
   const priority = typeof terms.priority === 'string' && terms.priority !== '' ? terms.priority : null;
   if (availability == null && rows.length === 0 && moveIn == null && !socialHousing && priority == null) return null;
   return { availability, rows, moveIn, warnings, socialHousing, priority };
+}
+
+/** A home offered this many days longer in total than with its current realtor has been relisted. */
+export const RELISTED_GAP_DAYS = 60;
+
+/** The provider's property types that have a translated name; any other is shown as the portal wrote it. */
+const PROPERTY_TYPE_KEYS = {
+  villa: 'listing.detail.saleTypeVilla',
+  'terraced house': 'listing.detail.saleTypeTerracedHouse',
+  condo: 'listing.detail.saleTypeCondo',
+  'double house': 'listing.detail.saleTypeDoubleHouse',
+  'villa apartment': 'listing.detail.saleTypeVillaApartment',
+};
+
+/**
+ * What a for-sale advert states beside the price - the owner's monthly costs, how long the home has
+ * been on the market, the building, a floor plan and the next open house - as descriptors for the sale
+ * card. The listing's `sale_terms` (see `lib/services/sale/saleTerms.js`) are the source.
+ *
+ * A field the advert did not state is left out, never shown as zero or "N/A": a card full of dashes
+ * reads as a fault in Fredy rather than a silent portal. A section with nothing in it is empty or `null`.
+ *
+ * @param {Object|null} listing - A row as the listings API returns it.
+ * @param {FactContext & {now?: Date}} ctx
+ * @returns {{costs: ListingFact[], market: {current: string|null, total: string|null, relisted: boolean, gapDays: number|null, previousRealtors: string[]}|null, building: ListingFact[], floorPlanUrl: string|null, openHouse: {text: string, signUpUrl: string|null}|null}|null}
+ *   `null` for a rental, and for a purchase that states none of it.
+ */
+export function buildSaleFacts(listing, ctx) {
+  const row = listing ?? {};
+  const terms = row.sale_terms;
+  if (row.dealType !== 'buy' || terms == null || typeof terms !== 'object') return null;
+
+  const { t, locale } = ctx;
+  const currency = ctx.currency ?? DEFAULT_CURRENCY;
+  const money = (value) => formatPrice(value, locale, null, currency);
+  const area = (value) => `${formatDecimal(value, locale)} m²`;
+  const has = (value) => value != null;
+
+  const costs = [];
+  if (has(terms.ownerCostMonthly)) {
+    costs.push({
+      id: 'ownerCost',
+      label: t('listing.detail.saleOwnerCost'),
+      value: money(terms.ownerCostMonthly),
+      helpText: t('listing.detail.saleOwnerCostHelp'),
+    });
+  }
+  if (has(terms.pricePerM2)) {
+    costs.push({
+      id: 'pricePerM2',
+      label: t('listing.detail.salePricePerM2'),
+      value: formatPricePerSqm(terms.pricePerM2, locale, currency),
+    });
+  }
+  if (has(terms.downPayment)) {
+    costs.push({
+      id: 'downPayment',
+      label: t('listing.detail.saleDownPayment'),
+      value: money(terms.downPayment),
+      helpText: t('listing.detail.saleRealtorExampleHelp'),
+    });
+  }
+  if (has(terms.grossPaymentMonthly)) {
+    costs.push({
+      id: 'grossPayment',
+      label: t('listing.detail.saleGrossPayment'),
+      value: money(terms.grossPaymentMonthly),
+      helpText: t('listing.detail.saleRealtorExampleHelp'),
+    });
+  }
+  if (has(terms.netPaymentMonthly)) {
+    costs.push({
+      id: 'netPayment',
+      label: t('listing.detail.saleNetPayment'),
+      value: money(terms.netPaymentMonthly),
+      helpText: t('listing.detail.saleRealtorExampleHelp'),
+    });
+  }
+  // Zero is "never reduced", which is the usual case and not worth a line.
+  if (has(terms.priceChangePct) && terms.priceChangePct !== 0) {
+    costs.push({
+      id: 'priceChange',
+      label: t('listing.detail.salePriceChange'),
+      value: formatDeviation(terms.priceChangePct, locale),
+      helpText: t('listing.detail.salePriceChangeHelp'),
+    });
+  }
+  // The asking price leads, but only when there is something to put beside it.
+  if (costs.length > 0 && has(row.price)) {
+    costs.unshift({ id: 'price', label: t('listing.detail.salePrice'), value: money(row.price) });
+  }
+
+  const current = terms.daysOnMarket?.current ?? null;
+  const total = terms.daysOnMarket?.total ?? null;
+  const gapDays = current != null && total != null ? total - current : null;
+  const days = (n) => t('listing.detail.saleDays', { days: formatDecimal(n, locale) });
+  const market =
+    current == null && total == null
+      ? null
+      : {
+          current: current != null ? days(current) : null,
+          total: total != null ? days(total) : null,
+          relisted: gapDays != null && gapDays >= RELISTED_GAP_DAYS,
+          gapDays,
+          previousRealtors: Array.isArray(terms.previousRealtors) ? terms.previousRealtors : [],
+        };
+
+  const building = [];
+  if (has(terms.propertyType)) {
+    const key = PROPERTY_TYPE_KEYS[terms.propertyType];
+    building.push({
+      id: 'propertyType',
+      label: t('listing.detail.saleType'),
+      value: key ? t(key) : terms.propertyType,
+    });
+  }
+  if (has(terms.yearBuilt)) {
+    building.push({ id: 'yearBuilt', label: t('listing.detail.saleYearBuilt'), value: String(terms.yearBuilt) });
+  }
+  if (has(terms.yearRenovated)) {
+    building.push({
+      id: 'yearRenovated',
+      label: t('listing.detail.saleYearRenovated'),
+      value: String(terms.yearRenovated),
+    });
+  }
+  if (has(terms.energyLabel)) {
+    building.push({ id: 'energyLabel', label: t('listing.detail.saleEnergyLabel'), value: terms.energyLabel });
+  }
+  if (has(terms.heating)) {
+    building.push({ id: 'heating', label: t('listing.detail.saleHeating'), value: terms.heating });
+  }
+  if (has(terms.lotArea)) {
+    building.push({ id: 'lotArea', label: t('listing.detail.saleLotArea'), value: area(terms.lotArea) });
+  }
+  if (has(terms.basementArea)) {
+    building.push({ id: 'basementArea', label: t('listing.detail.saleBasementArea'), value: area(terms.basementArea) });
+  }
+  if (has(terms.bathrooms)) {
+    building.push({ id: 'bathrooms', label: t('listing.detail.saleBathrooms'), value: String(terms.bathrooms) });
+  }
+  if (has(terms.landTaxPerMille)) {
+    building.push({
+      id: 'landTax',
+      label: t('listing.detail.saleLandTax'),
+      value: `${formatDecimal(terms.landTaxPerMille, locale)} ‰`,
+      helpText: t('listing.detail.saleLandTaxHelp'),
+    });
+  }
+
+  const floorPlanUrl = terms.floorPlanUrl ?? null;
+
+  // An open house that has already happened is not worth a link.
+  let openHouse = null;
+  const when = terms.nextOpenHouse?.date != null ? new Date(terms.nextOpenHouse.date) : null;
+  if (when != null && !Number.isNaN(when.getTime()) && when.getTime() >= (ctx.now ?? new Date()).getTime()) {
+    openHouse = {
+      text: new Intl.DateTimeFormat(locale, {
+        weekday: 'short',
+        day: 'numeric',
+        month: 'long',
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZone: 'Europe/Copenhagen',
+      }).format(when),
+      signUpUrl: terms.nextOpenHouse.signUpUrl ?? null,
+    };
+  }
+
+  if (costs.length === 0 && market == null && building.length === 0 && floorPlanUrl == null && openHouse == null) {
+    return null;
+  }
+  return { costs, market, building, floorPlanUrl, openHouse };
 }
