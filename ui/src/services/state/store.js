@@ -579,6 +579,26 @@ export const useFredyState = create(
               throw Exception;
             }
           },
+          /**
+           * Remember the newest Fredy DK release this user has been shown the news for.
+           *
+           * @param {string} version
+           * @returns {Promise<void>}
+           */
+          async setNewsDkLastSeenVersion(version) {
+            try {
+              await xhrPost('/api/user/settings/news-dk-last-seen-version', { news_dk_last_seen_version: version });
+              set((state) => ({
+                userSettings: {
+                  ...state.userSettings,
+                  settings: { ...state.userSettings.settings, news_dk_last_seen_version: version },
+                },
+              }));
+            } catch (Exception) {
+              console.error('Error while trying to update the last seen DK news version. Error:', Exception);
+              throw Exception;
+            }
+          },
           async setHomeAddresses(addresses) {
             try {
               const response = await xhrPost('/api/user/settings/home-address', { home_addresses: addresses });

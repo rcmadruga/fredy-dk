@@ -69,12 +69,15 @@ NewsEntryBody.displayName = 'NewsEntryBody';
  * @param {Object} props
  * @param {import('../../services/news/newsSelection.js').NewsEntry} props.entry
  * @param {string} props.version
+ * @param {string} [props.label] Which part of What's new it belongs to ("Fredy" or "Fredy DK"),
+ *   shown when two parts share one dialog.
  * @returns {React.ReactElement}
  */
-export function NewsEntryTitle({ entry, version }) {
+export function NewsEntryTitle({ entry, version, label }) {
   return (
     <div className="news__title">
       <img src={heart} width="30" alt="" className="news__title-mark" />
+      {label && <span className="news__section">{label}</span>}
       <b>{entry.title}</b>
       <span className="news__version">v{version}</span>
     </div>
@@ -90,12 +93,13 @@ NewsEntryTitle.displayName = 'NewsEntryTitle';
  * be three screens, not one wall.
  *
  * @param {import('../../services/news/newsSelection.js').NewsRelease[]} releases
+ * @param {string} [label] The section the releases belong to, shown on each step.
  * @returns {{title: React.ReactNode, description: React.ReactNode}[]}
  */
-export function toSteps(releases) {
+export function toSteps(releases, label) {
   return releases.flatMap((release) =>
     release.entries.map((entry) => ({
-      title: <NewsEntryTitle entry={entry} version={release.version} />,
+      title: <NewsEntryTitle entry={entry} version={release.version} label={label} />,
       description: <NewsEntryBody entry={entry} />,
     })),
   );

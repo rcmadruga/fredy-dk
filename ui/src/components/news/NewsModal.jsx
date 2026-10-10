@@ -8,7 +8,13 @@ import { UserGuide, SideSheet, Button } from '@douyinfe/semi-ui-19';
 
 import { useScreenWidth } from '../../hooks/screenWidth';
 import newsConfig from '../../assets/news/news.json';
-import { newestVersion, selectUnseenReleases } from '../../services/news/newsSelection.js';
+import newsDkConfig from '../../assets/news/news.dk.json';
+import {
+  newestDkVersion,
+  newestVersion,
+  selectUnseenDkReleases,
+  selectUnseenReleases,
+} from '../../services/news/newsSelection.js';
 import { useActions, useSelector } from '../../services/state/store';
 import { useTranslation } from '../../services/i18n/i18n.jsx';
 import { NewsEntryBody, NewsEntryTitle, toSteps } from './newsContent.jsx';
@@ -16,7 +22,10 @@ import { NewsEntryBody, NewsEntryTitle, toSteps } from './newsContent.jsx';
 import './NewsModal.less';
 
 /**
- * What arrived since this user last looked.
+ * What arrived since this user last looked, in two parts: Fredy (upstream) and Fredy DK (this fork).
+ *
+ * Each part has its own file and its own per-user marker, and only a part with unseen releases is
+ * shown. Dismissing the dialog records the newest version of the parts that were shown.
  *
  * Two things changed here. It is keyed by release version rather than by a hash of the current
  * payload, so somebody who skipped two releases is told about both instead of neither. And it no
@@ -29,6 +38,7 @@ const NewsModal = () => {
   const t = useTranslation();
   const screenWidth = useScreenWidth();
   const lastSeen = useSelector((state) => state.userSettings.settings.news_last_seen_version);
+  const lastSeenDk = useSelector((state) => state.userSettings.settings.news_dk_last_seen_version);
   const userSettingsLoaded = useSelector((state) => state.userSettings.loaded);
   const pois = useSelector((state) => state.tracking.pois);
   const actions = useActions();
@@ -40,10 +50,13 @@ const NewsModal = () => {
   const [dismissed, setDismissed] = useState(false);
 
   const newest = useMemo(() => newestVersion(newsConfig), []);
+  const newestDk = useMemo(() => newestDkVersion(newsDkConfig), []);
   const unseen = useMemo(() => selectUnseenReleases(newsConfig, lastSeen), [lastSeen]);
+  const unseenDk = useMemo(() => selectUnseenDkReleases(newsDkConfig, lastSeenDk), [lastSeenDk]);
 
   // Somebody who has no marker at all is new here. Rather than greeting them with the history of a
-  // product they have not used yet, record where they came in and say nothing.
+  // product they have not used yet, record where they came in and say nothing. Each part does this
+  // on its own: an account that predates the DK news has an upstream marker but no DK one yet.
   useEffect(() => {
     if (!userSettingsLoaded || newest == null) {
       return;
@@ -55,7 +68,31 @@ const NewsModal = () => {
     }
   }, [userSettingsLoaded, lastSeen, newest, actions.userSettings]);
 
-  const steps = useMemo(() => toSteps(unseen), [unseen]);
+  useEffect(() => {
+    if (!userSettingsLoaded || newestDk == null) {
+      return;
+    }
+    if (lastSeenDk == null || String(lastSeenDk).length === 0) {
+      actions.userSettings.setNewsDkLastSeenVersion(newestDk).catch((error) => {
+        console.warn('Could not record the DK news starting point for this user.', error);
+      });
+    }
+  }, [userSettingsLoaded, lastSeenDk, newestDk, actions.userSettings]);
+
+  const labelFredy = t('news.sectionFredy');
+  const labelDk = t('news.sectionDk');
+  const sections = useMemo(
+    () =>
+      [
+        { label: labelFredy, releases: unseen },
+        { label: labelDk, releases: unseenDk },
+      ].filter((section) => section.releases.length > 0),
+    [unseen, unseenDk, labelFredy, labelDk],
+  );
+  const steps = useMemo(
+    () => sections.flatMap((section) => toSteps(section.releases, sections.length > 1 ? section.label : undefined)),
+    [sections],
+  );
   const visible = !dismissed && userSettingsLoaded && steps.length > 0;
 
   const handleClose = (poi) => {
@@ -63,9 +100,16 @@ const NewsModal = () => {
     // Best effort: if the marker cannot be stored the news simply comes back on the next visit,
     // which beats an error toast in front of someone who just closed a welcome dialog. The catch
     // is what keeps it from surfacing as an unhandled rejection.
-    actions.userSettings.setNewsLastSeenVersion(newest).catch((error) => {
-      console.warn('Could not remember that the news were read.', error);
-    });
+    if (unseen.length > 0) {
+      actions.userSettings.setNewsLastSeenVersion(newest).catch((error) => {
+        console.warn('Could not remember that the news were read.', error);
+      });
+    }
+    if (unseenDk.length > 0) {
+      actions.userSettings.setNewsDkLastSeenVersion(newestDk).catch((error) => {
+        console.warn('Could not remember that the DK news were read.', error);
+      });
+    }
     if (poi) {
       actions.tracking.trackPoi(poi);
     }
@@ -87,13 +131,19 @@ const NewsModal = () => {
         onCancel={() => handleClose(pois.WELCOME_SKIPPED)}
         className="news__sheet"
       >
-        {unseen.map((release) =>
-          release.entries.map((entry, index) => (
-            <div key={`${release.version}-${index}`} className="news__sheet-entry">
-              <NewsEntryTitle entry={entry} version={release.version} />
-              <NewsEntryBody entry={entry} />
-            </div>
-          )),
+        {sections.map((section) =>
+          section.releases.map((release) =>
+            release.entries.map((entry, index) => (
+              <div key={`${section.label}-${release.version}-${index}`} className="news__sheet-entry">
+                <NewsEntryTitle
+                  entry={entry}
+                  version={release.version}
+                  label={sections.length > 1 ? section.label : undefined}
+                />
+                <NewsEntryBody entry={entry} />
+              </div>
+            )),
+          ),
         )}
         <Button theme="solid" type="primary" block onClick={() => handleClose(pois.WELCOME_FINISHED)}>
           {t('news.sheetDone')}

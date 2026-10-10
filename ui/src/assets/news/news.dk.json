@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "releases": [
+    {
+      "version": "29.2.1-dk.1",
+      "date": "2026-10-10",
+      "entries": [
+        {
+          "title": "Fredy DK: Fredy speaks Danish property",
+          "text": "This fork of Fredy adds Denmark. Four new providers: <b>Boligsiden</b>, <b>BoligPortal</b>, <b>Lejebolig</b> and <b>Danica Ejendomme</b>. Paste a search URL from any of them like you would for any other portal.<br/><br/>Prices are shown in <b>kroner</b>, and the financing page speaks kroner and carries a Danish disclaimer when you are in Denmark mode."
+        },
+        {
+          "title": "Danish map layers",
+          "text": "The map has a Denmark box with layers built on Danish data:<ul><li><b>Tax</b> by kommune</li><li><b>Schools</b>, with a score range and colours by type</li><li><b>Supermarkets</b>, with the chains' logos</li><li><b>Jobs</b> within reach</li><li><b>Broadband</b> speeds by address</li></ul>"
+        },
+        {
+          "title": "Renting in Denmark",
+          "text": "Listings now carry the Danish <b>rental terms</b> (deposit, prepaid rent and the like) on the listing detail card, and a rental can be marked <i>available now</i>.<br/><br/>New filter: <b>move-in date</b>. The map has the overview's filters too."
+        },
+        {
+          "title": "Buying in Denmark",
+          "text": "Danish sales get their own <b>sale card</b> with the monthly costs, time on market, building facts and links.<br/><br/>Also new for buyers:<ul><li>An <b>earlier sales</b> table for the same address</li><li>A <b>Danish financing model</b>: funding stack, bidrag, kurs, costs and rentefradrag, used wherever Fredy judges affordability</li><li>New filters: <b>ejerudgift</b>, <b>energy label</b>, <b>relisted</b> and <b>price reduced</b></li><li>The price per m2 in the at-a-glance box</li></ul>"
+        }
+      ]
+    }
+  ]
+}
