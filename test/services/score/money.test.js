@@ -175,6 +175,29 @@ describe('money.affordable', () => {
     expect(affordabilityRatio(quoted, rentProfile())).toBeCloseTo(1000 / 1400, 6);
   });
 
+  it('judges a purchase priced in kroner with the Danish model, as the verdict chip does', () => {
+    // 40,000 kr net, 12,000 kr living costs, 300,000 kr cash: the profile of listingVerdict.test.js.
+    const dkProfile = {
+      personA: { label: 'A', enabled: true, age: 35, primaryIncome: 40000, secondaryIncome: 0 },
+      livingCosts: 12000,
+      financing: {
+        equity: 300000,
+        market: 'dk',
+        bundesland: 'NW',
+        scenarios: [{ id: 'mid', annualRate: 3.8, tilgung: 2, fixedYears: 10 }],
+      },
+    };
+    const affordableHome = { dealType: 'buy', price: 2000000 };
+    const outOfReach = { dealType: 'buy', price: 4000000 };
+    // The German model reads the price as euros with German loans and costs: a different answer.
+    const german = affordabilityRatio(affordableHome, dkProfile);
+    const danish = affordabilityRatio(affordableHome, dkProfile, { danish: true });
+    expect(danish).not.toBeCloseTo(german, 2);
+    expect(affordabilityRatio(affordableHome, dkProfile, { danish: true })).toBeLessThan(1);
+    expect(affordabilityRatio(outOfReach, dkProfile, { danish: true })).toBeGreaterThan(1);
+    expect(affordable.raw(affordableHome, { financeProfile: dkProfile, danish: true })).toBeLessThan(1);
+  });
+
   it('reports the worst ratio for a household with no room at all', () => {
     const broke = rentProfile({ livingCosts: 4000 });
     expect(affordabilityRatio({ dealType: 'rent', price: 500 }, broke)).toBe(2);
