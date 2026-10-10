@@ -8,6 +8,8 @@ import { useState } from 'react';
 import './FredyFooter.less';
 import { useSelector } from '../../services/state/store.js';
 import { useTranslation } from '../../services/i18n/i18n.jsx';
+import newsDkConfig from '../../assets/news/news.dk.json';
+import { footerVersion } from '../../services/news/newsSelection.js';
 import VersionModal from '../version/VersionModal.jsx';
 
 /**
@@ -71,7 +73,9 @@ export default function FredyFooter() {
   return (
     <footer className="fredyFooter" aria-label={t('footer.landmark')}>
       <div className="fredyFooter__left">
-        <span className="fredyFooter__version">Fredy v{versionUpdate?.localFredyVersion || t('common.na')}</span>
+        <span className="fredyFooter__version">
+          Fredy v{footerVersion(versionUpdate?.localFredyVersion, newsDkConfig) || t('common.na')}
+        </span>
         {hasUpdate && (
           <button type="button" className="fredyFooter__update" onClick={() => setNotesVisible(true)}>
             <span className="fredyFooter__updateDot" />

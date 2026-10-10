@@ -1,0 +1,143 @@
+name: Release Fredy DK
+
+# Cuts a Fredy DK release when a pull request labelled `release` is merged into master:
+#   <upstream version>-dk.<n>  ->  news commit (if the PR has a "## News" section), tag,
+#   GitHub Release, Docker image. See doc/releasing-dk.md.
+#
+# The Docker build is called from here because a tag pushed with GITHUB_TOKEN does not trigger
+# docker.yml.
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - master
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'Optional: the pull request whose title and News section to use. Empty releases master as it is.'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  packages: write
+  # Only to read a pull request's title and body for a manual run.
+  pull-requests: read
+
+jobs:
+  release:
+    if: >-
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/master') ||
+      (github.event_name == 'pull_request' && github.event.pull_request.merged == true &&
+      contains(github.event.pull_request.labels.*.name, 'release'))
+    runs-on: ubuntu-latest
+    # On the job rather than the workflow, so a merge without the label never queues behind (or
+    # replaces) a real release. Two releases cannot run at once, so they cannot claim one number.
+    concurrency:
+      group: release-dk
+      cancel-in-progress: false
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+
+    steps:
+      - name: Checkout master at the merge commit
+        uses: actions/checkout@v7
+        with:
+          # A manual run has no merge commit and releases master as it stands.
+          ref: ${{ github.event.pull_request.merge_commit_sha || 'master' }}
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Load the pull request
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ inputs.pr_number }}
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
+            jq '.pull_request | {title, body, url: .html_url, number}' "$GITHUB_EVENT_PATH" > "$RUNNER_TEMP/pr.json"
+          elif [ -n "$PR_NUMBER" ]; then
+            gh pr view "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --json title,body,url,number > "$RUNNER_TEMP/pr.json"
+          else
+            echo '{"title":"Manual release","body":"","url":"","number":null}' > "$RUNNER_TEMP/pr.json"
+          fi
+          echo "PR_JSON=$RUNNER_TEMP/pr.json" >> "$GITHUB_ENV"
+
+      - name: Compute the next version
+        id: version
+        run: |
+          version="$(node tools/release/dkRelease.js version)"
+          echo "Releasing $version"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Add the News section to news.dk.json
+        id: news
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          result="$(node tools/release/dkRelease.js news)"
+          echo "News: $result"
+          echo "result=$result" >> "$GITHUB_OUTPUT"
+
+      - name: Commit the news to master
+        if: steps.news.outputs.result == 'changed'
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet -- ui/src/assets/news/news.dk.json; then
+            echo "news.dk.json already holds this release, nothing to commit."
+            exit 0
+          fi
+          git add ui/src/assets/news/news.dk.json
+          git commit -m "chore(release): $VERSION [skip ci]"
+          # Master may have moved since the merge; the news file is only ever touched here, so a
+          # rebase onto it is safe.
+          pushed=false
+          for attempt in 1 2 3; do
+            if git push origin HEAD:master; then
+              pushed=true
+              break
+            fi
+            git fetch origin master
+            git rebase origin/master
+          done
+          if [ "$pushed" != "true" ]; then
+            echo "::error::Could not push the news commit to master."
+            exit 1
+          fi
+
+      - name: Tag the release
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          git tag "$VERSION"
+          git push origin "refs/tags/$VERSION"
+
+      - name: Create the GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          node tools/release/dkRelease.js notes > "$RUNNER_TEMP/notes.md"
+          gh release create "$VERSION" --title "$VERSION" --notes-file "$RUNNER_TEMP/notes.md" --verify-tag
+
+  docker:
+    needs: release
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/docker-build.yml
+    with:
+      image_name: ${{ github.repository }}
+      # The tag, so the image holds the news commit and nothing newer.
+      ref: refs/tags/${{ needs.release.outputs.version }}
+      tags: |
+        type=raw,value=${{ needs.release.outputs.version }}
+        type=raw,value=latest

@@ -15,6 +15,11 @@ on:
         description: 'tags input passed through to docker/metadata-action'
         required: true
         type: string
+      ref:
+        description: 'Git ref to build. Empty means the ref the calling workflow ran on'
+        required: false
+        type: string
+        default: ''
 
 env:
   REGISTRY: ghcr.io
@@ -33,6 +38,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v4
@@ -65,7 +72,9 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
-          cache-to: type=gha,mode=max
+          # A cache write can collide with another build of the same commit (docker.yml and
+          # release-dk.yml both build a release merge). Losing the cache must never cancel the push.
+          cache-to: type=gha,mode=max,ignore-error=true
 
       # Test container health with docker compose
       - name: Test container with docker compose
