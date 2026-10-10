@@ -570,6 +570,88 @@ function changeToToday(then, now, locale, money) {
 }
 
 /**
+ * The rows of the Danish financing card: the monthly cost after rentefradrag first, then the cash it
+ * takes, what is still owed after a while, and when the household is debt-free.
+ *
+ * The monthly cost says so when it is the loans alone (no ejerudgift known), and a tax estimate says
+ * what it leaves out, because a figure that looks complete and is not is worse than a missing one.
+ *
+ * @param {Object} result The Danish result, `model: 'dk'` (see `lib/services/finance/dk/result.js`).
+ * @param {{t: (key: string, params?: Object) => string, locale: string}} ctx
+ * @returns {{facts: Array<{id: string, label: string, value: string, emphasis: boolean, note?: string}>, footnote: string}}
+ */
+export function buildDanishFinanceFacts(result, ctx) {
+  const { t, locale } = ctx;
+  const dk = result.dk;
+  const money = (value) => (value == null ? '-' : formatPrice(Math.round(value), locale, null, 'DKK'));
+  const debtFree = (result.debtFreeAges ?? [])
+    .filter((person) => person.ageWhenDebtFree != null)
+    .map((person) => `${person.label} ${person.ageWhenDebtFree}`)
+    .join(' · ');
+
+  const ownerCost = dk.running.ownerCostMonthly;
+  const ownerNote =
+    dk.running.source === 'estimate'
+      ? t(
+          dk.running.grundskyldMonthly == null
+            ? 'listing.detail.dkOwnerCostEstimateNoLand'
+            : 'listing.detail.dkOwnerCostEstimate',
+        )
+      : dk.running.source === 'advert'
+        ? t('listing.detail.dkOwnerCostAdvert')
+        : undefined;
+
+  const facts = [
+    {
+      id: 'monthly',
+      label: t('listing.detail.dkMonthly'),
+      value: money(dk.totalMonthly.net),
+      emphasis: true,
+      note: dk.totalMonthly.ownerCostKnown ? undefined : t('listing.detail.dkMonthlyLoansOnly'),
+    },
+    {
+      id: 'loans',
+      label: t('listing.detail.dkLoans'),
+      value: money(dk.payment.net),
+      emphasis: false,
+      note: t('listing.detail.dkLoansGross', { gross: money(dk.payment.gross) }),
+    },
+    {
+      id: 'ownerCost',
+      label: t('listing.detail.dkOwnerCost'),
+      value: ownerCost == null ? t('listing.detail.dkOwnerCostUnknown') : money(ownerCost),
+      emphasis: false,
+      note: ownerNote,
+    },
+    {
+      id: 'cash',
+      label: t('listing.detail.dkCash'),
+      value: money(dk.cashNeeded),
+      emphasis: false,
+      note:
+        dk.cashShortfall != null && dk.cashShortfall > 0
+          ? t('listing.detail.dkCashShortfall', { amount: money(dk.cashShortfall) })
+          : undefined,
+    },
+    {
+      id: 'debt',
+      label: t('listing.detail.dkDebtAfter', { years: String(dk.debt.atYears) }),
+      value: money(dk.debt.atYearsBalance),
+      emphasis: false,
+    },
+    { id: 'debtFree', label: t('finance.kpi.debtFreeAge'), value: debtFree || '-', emphasis: false },
+  ];
+
+  return {
+    facts,
+    footnote: t('listing.detail.dkFootnote', {
+      realkredit: formatDecimal(dk.params.realkredit.rate, locale),
+      bank: formatDecimal(dk.params.bank.rate, locale),
+    }),
+  };
+}
+
+/**
  * What a for-sale advert states beside the price - the owner's monthly costs, how long the home has
  * been on the market, the building, a floor plan and the next open house - as descriptors for the sale
  * card. The listing's `sale_terms` (see `lib/services/sale/saleTerms.js`) are the source.
@@ -578,7 +660,8 @@ function changeToToday(then, now, locale, money) {
  * reads as a fault in Fredy rather than a silent portal. A section with nothing in it is empty or `null`.
  *
  * @param {Object|null} listing - A row as the listings API returns it.
- * @param {FactContext & {now?: Date}} ctx
+ * @param {FactContext & {now?: Date, yourFinance?: Object|null}} ctx `yourFinance` is the Danish
+ *   financing result for this listing (`model: 'dk'`), when the household has a profile.
  * @returns {{costs: ListingFact[], sales: SaleHistory|null, market: {current: string|null, total: string|null, relisted: boolean, gapDays: number|null, previousRealtors: string[]}|null, building: ListingFact[], floorPlanUrl: string|null, openHouse: {text: string, signUpUrl: string|null}|null}|null}
  *   `null` for a rental, and for a purchase that states none of it.
  */
@@ -632,6 +715,25 @@ export function buildSaleFacts(listing, ctx) {
       value: money(terms.netPaymentMonthly),
       helpText: t('listing.detail.saleRealtorExampleHelp'),
     });
+  }
+  // Beside the realtor's example, the same two figures from the household's own finance profile:
+  // its rates, its tax, its other debts. Only for a home priced in kroner, and only once a profile exists.
+  const yours = ctx.yourFinance?.model === 'dk' ? ctx.yourFinance.dk : null;
+  if (yours != null && yours.payment.gross > 0) {
+    costs.push(
+      {
+        id: 'yourGross',
+        label: t('listing.detail.saleYourGross'),
+        value: money(Math.round(yours.payment.gross)),
+        helpText: t('listing.detail.saleYourHelp'),
+      },
+      {
+        id: 'yourNet',
+        label: t('listing.detail.saleYourNet'),
+        value: money(Math.round(yours.payment.net)),
+        helpText: t('listing.detail.saleYourHelp'),
+      },
+    );
   }
   // Zero is "never reduced", which is the usual case and not worth a line.
   if (has(terms.priceChangePct) && terms.priceChangePct !== 0) {

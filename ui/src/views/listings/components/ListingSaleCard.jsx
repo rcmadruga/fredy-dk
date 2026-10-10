@@ -20,14 +20,21 @@ import './ListingSaleCard.less';
  *
  * @param {Object} props
  * @param {Object} props.listing - A row as the listings API returns it.
+ * @param {Object|null} [props.finance] - The listing's financing payload (`useListingFinance`). Once the
+ *   household has a profile, its own monthly payment is shown next to the realtor's example.
  * @returns {React.ReactElement|null}
  */
-export default function ListingSaleCard({ listing }) {
+export default function ListingSaleCard({ listing, finance = null }) {
   const t = useTranslation();
   const locale = useLocale();
   const currencyOf = useCurrencyOf();
 
-  const facts = buildSaleFacts(listing, { t, locale, currency: currencyOf(listing?.provider) });
+  const facts = buildSaleFacts(listing, {
+    t,
+    locale,
+    currency: currencyOf(listing?.provider),
+    yourFinance: finance?.result ?? null,
+  });
   if (facts == null) return null;
   const { costs, sales, market, building, floorPlanUrl, openHouse } = facts;
 

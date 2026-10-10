@@ -18,7 +18,7 @@ Status per step. Updated after every step, before anything else. The plan is `dk
 
 - [x] 6 `finance/dk/constants.js`, open figures re-verified
 - [x] 7 `finance/dk/financing.js`
-- [ ] 8 Wired into calculate, financing tab, card, MCP, `doc/financing.md`
+- [x] 8 Wired into calculate, financing tab, card, MCP, `doc/financing.md`
 
 ## Phase 4: Boliga and the rest
 
@@ -75,3 +75,19 @@ Both resolved in step 6 (2026-10-10); each source sits beside its constant in
   supplied (Boligsiden gives only the promille). The user's own choices live in `financing.dk` of the
   profile (step 8). `municipalTaxPct` is not used: the deduction rates stay the editable 33/25 %
   defaults.
+- Step 8: `computeFinanceResult(profile, {currency, saleTerms})` returns the Danish result (`model: 'dk'`,
+  figures under `.dk`) for `DKK`; the German result gains no new key. The Danish result is built in
+  `finance/dk/result.js`. The editable defaults are stored under `financing.dk` (only what the user
+  changed, like `grunderwerbsteuerPct`), with `financing.market` (`'de'|'dk'`) remembering which tab
+  variant to show; cash on hand reuses `financing.equity`. Listing facts (public valuation, ejerudgift,
+  grundskyld promille) come from the listing's `sale_terms` and win over anything typed on the page.
+  The listing route resolves the currency with `getCurrencyForProvider`; the card and sale card share one
+  request (`useListingFinance`, new hook), so `ListingFinanceCard` now takes `finance` as a prop.
+  `/finance?market=dk` opens the page on Denmark. MCP `calculate_financing` also takes `bankRate`,
+  `downPaymentPct` and `ownerCostMonthly` (and `annualRate` is the realkredit rate for a Danish
+  answer); a bare `purchasePrice` is answered the Danish way only when the saved buying tab is on
+  Denmark. No charts in the Danish variant (the German charts are Zinsbindung/Restschuld shaped).
+  Known limit, left alone on purpose: the affordability filter, the verdict chips on the overview and
+  `/api/finance/affordability` still score every buy listing with the German model and thresholds, also
+  DKK ones. The Danish verdict appears on the detail page, the calculator and over MCP only.
+  `get_listing` over MCP does not yet print `sale_terms` (plan section 7); that is done with step 11.
