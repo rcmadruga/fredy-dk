@@ -1,30 +1,43 @@
 # Ledger: Listing score and radar chart
 
 Status per step. Updated after every step, before anything else. The plan is `listing-score.md`;
-§0 is the scope, §6 the steps.
+§0 is the scope, §7 the steps.
 
-## Score engine
+## Phase A: engine on existing data
 
 - [ ] 1 Ledger created
-- [ ] 2 `score.js` and the target formula
-- [ ] 3 Axes: value for money, space, monthly cost
-- [ ] 4 Commute axis
-- [ ] 5 Schools axis
+- [ ] 2 `score.js`: formula, groups, weights, missing, rent re-weighting
+- [ ] 3 Money: value, affordable, budget
+- [ ] 4 Schools: nearby, special, area
+- [ ] 5 Work: commute, jobs
+- [ ] 6 Home: size, bathrooms, grocery, park, internet, newBuild
+- [ ] 7 Heuristics: upkeep, parking
+- [ ] 8 Migration `score_config`, storage, validation
+- [ ] 9 `context.js`, `score` on listings from the API
 
-## Storage and API
+## Phase B: UI and MCP
 
-- [ ] 6 Migration `score_config` on `jobs`, storage, validation
-- [ ] 7 `context.js`, `score` on listings from the API
+- [ ] 10 `ListingScoreCard`: radar and breakdown
+- [ ] 11 Score chip on listing cards
+- [ ] 12 Job form "Score" card
+- [ ] 13 MCP
 
-## UI and MCP
+## Phase C: new sources
 
-- [ ] 8 `ListingScoreCard` radar chart
-- [ ] 9 Score chip on listing cards
-- [ ] 10 Job form "Score" card
-- [ ] 11 MCP
-- [ ] 12 Docs and acceptance
+- [ ] 14 Valuation trend: spike, client, metric
+- [ ] 15 Income and safety (DST): spike, clients, metrics
+- [ ] 16 `listing_area_facts`, Overpass sweeper: green, quiet
+- [ ] 17 Commute options
+
+## Close
+
+- [ ] 18 Docs and acceptance
 
 ## Notes
 
-- Migration number to be settled against `feat/dk-buying` (which takes 51).
-- Monthly cost for a purchase uses the price until `dk-buying` step 8 (Danish financing) lands.
+- Migration numbers to be settled against `feat/dk-buying` (which takes 51).
+- `work.jobs` depends on the jobs layer, which fails on the deployed instance (#11).
+- `money.affordable` for a Danish purchase uses the Danish model from `dk-buying` step 8; until that
+  merges, it falls back to the existing verdict.
+- The dev sandbox cannot reach api.statbank.dk or boliga.dk; spikes 14 and 15 verify on the host or
+  from documentation.

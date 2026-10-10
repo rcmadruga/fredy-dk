@@ -1,7 +1,8 @@
 # Listing score and radar chart
 
-A 0–100 score per listing, built from five axes the user scores against their own targets, weighted
-per job, and drawn as a radar ("spiderweb") chart on the listing detail page.
+A 0–100 score per listing in four groups (Money, Schools, Work, Home), each built from metrics the
+user scores against their own targets and weights per job. Drawn as a four-spoke radar chart on the
+listing detail page, with a drill-down into each group's metrics.
 
 The progress ledger is `listing-score.progress.md`. Update it after every step, before anything else.
 
@@ -13,140 +14,274 @@ Decided with the user (2026-10-10):
 
 | Question | Answer |
 |---|---|
-| Axes | Value for money, Commute, Schools, Space, Monthly cost |
-| Scaling | The user's own targets: an ideal and a worst case per axis, linear in between |
-| Weights | Per job, equal by default |
-| Missing data | The axis scores a neutral 50 and is drawn as "unknown" |
-| Commute | One address, the user's workplace (a saved travel-time address) |
+| Structure | 4 groups as radar spokes; each group is the weighted mean of its metrics; drill-down per group |
+| Scaling | The user's own targets: an ideal and a worst value per metric, linear in between |
+| Weights | Per job: one weight per group, and one per metric inside its group. Equal by default |
+| Missing data | A metric with no value scores a neutral 50 and is drawn as "unknown" |
+| Commute | To the user's company address (a saved travel-time address) |
+| Rent vs buy | Same four groups. Rentals skip the buy-only metrics and re-weight over the rest |
+| New sources | Valuation trend, income/social, safety, green/quiet, commute options: all wanted |
+| Heuristics | Upkeep estimate and parking from advert text: wanted, labelled as estimates |
 | Surfaces | Radar on the listing detail page, a score chip on listing cards, MCP |
 
-Out of scope: sorting and filtering by score, score in notifications, connectivity and
-neighbourhood axes (supermarkets, jobs, tax). The axis list is open for later additions, so build it
-as a registry, not five hardcoded branches.
+Out of scope: sorting and filtering by score, score in notifications.
 
-## 1 The axes
+## 1 Metrics
 
-Every axis turns a raw value into 0–100 with the job's targets:
+Every metric turns a raw value into 0–100 with the job's targets:
 
 ```
 score = clamp(0, 100, 100 × (worst − value) / (worst − ideal))
 ```
 
-That one formula covers "lower is better" (ideal < worst) and "higher is better" (ideal > worst).
-A value past the ideal scores 100, a value past the worst scores 0.
+This covers both directions: ideal < worst means lower is better, ideal > worst means higher is
+better. Past the ideal scores 100; past the worst scores 0. Boolean metrics use ideal 1 and worst 0.
 
-| Axis | Raw value | Direction | Source | Default targets |
-|---|---|---|---|---|
-| **Value for money** | Price per m² (purchase price or rent) | lower | `price / size` on the listing | ideal / worst = 25th / 90th percentile of the job's active listings, until the user sets them |
-| **Commute** | Minutes to the commute address | lower | `listing_travel_times` for that address label (exact over estimated when both exist) | 20 / 60 |
-| **Schools** | Average grade of the nearest schools | higher | the Danish school layer (`getSchoolLayer`), the schools within 2 km of the listing, or the 3 nearest if none | 7 / 4 (Danish 7-point scale) |
-| **Space** | m², with rooms as a bonus (see §1.1) | higher | listing `size`, `rooms` | the job's `spec_filter` min size as worst, +40 % as ideal |
-| **Monthly cost** | Rent, or ejerudgift plus the user's Danish financing net payment once `dk-buying` step 8 lands, otherwise the price | lower | the listing, the rental terms, the sale terms, the finance profile | the finance profile's ceiling as worst, 75 % of it as ideal |
+Columns: **Src** is where the value comes from. **Status**: ✅ data exists, 🔶 exists but partial,
+🆕 new source (needs a spike), 🧮 heuristic. **Buy** means buy-only (skipped for rentals).
 
-### 1.1 Notes per axis
+### 1.1 Money
 
-- **Value for money** and **Monthly cost** must not double-count the price. Value for money is
-  normalised by m² and compared with the market; monthly cost is absolute and compared with the
-  budget. That is the reason both stay.
-- **Commute** reuses what the job already knows: `commute_filter.limits` (migration 35) is keyed
-  by address label. The score names one label (`commute.label`), defaulting to the only label in
-  `limits` if there is exactly one, else asks.
-- **Schools** is Danish-only today. Outside Denmark it is always missing (50, drawn as unknown). The
-  layer needs `UDDANNELSESSTATISTIK_API_KEY`; without it, also missing. School positions come from
-  STIL's register; the nearest-school lookup is in memory (a few thousand points), computed on read.
-- **Space**: `size` drives the axis. Rooms add up to 10 points when they meet the job's min rooms,
-  so a 70 m² three-room flat beats a 70 m² two-room flat without rooms becoming an axis of their own.
-- **Monthly cost** for a rental with `chargesIncluded: false` adds the Nebenkosten surcharge exactly
-  as the finance verdict does (`lib/services/finance/affordability.js`); reuse that, don't recompute.
+| Metric | Raw value | Dir. | Src | Status | Default targets |
+|---|---|---|---|---|---|
+| `value` | Price per m² | lower | `price / size` | ✅ | 25th / 90th percentile of the job's active listings |
+| `affordable` | Monthly cost ÷ the finance profile's ceiling | lower | finance verdict (`affordability.js`); Danish model from `dk-buying` | ✅ | 0.75 / 1.0 |
+| `budget` | Price ÷ the job's max price (`spec_filter`) | lower | listing, job | ✅ | 0.8 / 1.0 |
+| `trend` | Area price per m², change over 3 years | higher | 🆕 see §2.1 | 🆕 Buy | +15 % / −5 % |
 
-## 2 Storage
+### 1.2 Schools
 
-**Targets and weights**: a new nullable JSON column `score_config` on `jobs`, in the style of
-`commute_filter`. Its own column, not a key in `spec_filter`, for the same reason migration 35 gives:
-the score is computed on read, the spec filter runs early in the pipeline.
+| Metric | Raw value | Dir. | Src | Status | Default targets |
+|---|---|---|---|---|---|
+| `nearby` | Average grade of the schools within 2 km (or the 3 nearest) | higher | Danish school layer (`getSchoolLayer`) | ✅ DK | 7 / 4 |
+| `special` | Distance to the nearest school with a special-class offer | lower | school layer (special-class share > 0) | ✅ DK | 2 km / 10 km |
+| `area` | Kommune's average grade minus the national average | higher | school layer, aggregated | ✅ DK | +0.5 / −0.5 |
+
+Outside Denmark, and without `UDDANNELSESSTATISTIK_API_KEY`, every school metric is missing (50).
+
+### 1.3 Work
+
+| Metric | Raw value | Dir. | Src | Status | Default targets |
+|---|---|---|---|---|---|
+| `commute` | Minutes to the company address | lower | `listing_travel_times` (exact over estimated) | ✅ | 20 / 60 |
+| `jobs` | Open job posts in the listing's kommune | higher | jobs layer (`getJobsLayer`) | 🔶 currently failing, #11; one occupation only | 20 / 0 |
+| `options` | Distinct transit lines with a stop within 500 m walk | higher | 🆕 Overpass stops + Transitous, see §2.5 | 🆕 | 6 / 0 |
+
+### 1.4 Home
+
+| Metric | Raw value | Dir. | Src | Status | Default targets |
+|---|---|---|---|---|---|
+| `size` | m² | higher | listing | ✅ | job min size +40 % / job min size |
+| `bathrooms` | Count | higher | `sale_terms.bathrooms` | 🔶 mostly buy | 2 / 1 |
+| `grocery` | Minutes on foot to the nearest supermarket | lower | travel-time place type `supermarket`; DK supermarket layer as fallback | ✅ | 5 / 20 |
+| `park` | Minutes on foot to the nearest park | lower | travel-time place type `park` | ✅ | 5 / 20 |
+| `internet` | Best fixed download, Mbit/s | higher | connectivity (`tjekditnet` in DK) | ✅ | 1000 / 50 |
+| `newBuild` | Years since built or last renovated | lower | `sale_terms.yearBuilt` / `yearRenovated` | 🔶 Buy | 5 / 60 |
+| `upkeep` | Estimated upkeep, kr/m²/year | lower | 🧮 see §2.6 | 🧮 Buy | 100 / 400 |
+| `parking` | Parking mentioned in the advert (0/1) | higher | 🧮 see §2.7 | 🧮 | 1 / 0 |
+| `social` | Kommune disposable income vs. national median | higher | 🆕 see §2.2 | 🆕 DK | +10 % / −10 % |
+| `safety` | Reported crimes per 1,000 inhabitants in the kommune | lower | 🆕 see §2.3 | 🆕 DK | national −25 % / national +25 % |
+| `green` | Share of green area within 500 m | higher | 🆕 Overpass, see §2.4 | 🆕 | 30 % / 5 % |
+| `quiet` | Distance to the nearest motorway, trunk road or railway | higher | 🆕 Overpass, see §2.4 | 🆕 | 500 m / 50 m |
+
+The user's "neighbourhood" became `social`, `safety`, `green` and `quiet` in the Home group.
+
+### 1.5 Notes
+
+- **Money metrics must not double-count the price.** `value` is market-relative per m², `budget` is
+  against the job's own price cap, `affordable` is the monthly burden against income. Each answers a
+  different question. If that still feels heavy, the user can lower the weights.
+- **`commute`** names one travel-time address label in the job's score config. If the job's
+  `commute_filter.limits` (migration 35) has exactly one label, that is the default.
+- **`affordable` for a rental** with `chargesIncluded: false` adds the Nebenkosten surcharge exactly
+  as the finance verdict does. Reuse `affordability.js`; never recompute.
+- **Kommune-level metrics** (`area`, `jobs`, `social`, `safety`) give every listing in a kommune the
+  same value. Their tooltip must say "kommune average", so nobody reads it as street-level data.
+
+## 2 New sources and heuristics
+
+Each 🆕 source starts with a spike step: is the endpoint reachable from the host, what are its
+licence and rate limits, and what is the exact table or query. The result is written into this
+section before any client code. The dev sandbox reaches neither api.statbank.dk nor boliga.dk
+(proxy 403), so spikes that need a live call run on the host, or are verified from documentation
+and marked as such.
+
+All new clients follow `lib/services/regionalData/`: a disk cache with a versioned key, fail-soft
+(`null` is never cached as data), attribution string.
+
+### 2.1 Valuation trend (Money, buy)
+
+Candidates, in order:
+1. **Finans Danmark, Boligmarkedsstatistikken**: free, quarterly price per m² per kommune and
+   postcode, for houses and flats. Has a statistics bank; API to be confirmed in the spike.
+2. **Danmarks Statistik, EJS10/EJS20** (quarterly and annual sales per kommune, with price per m²)
+   and **EJS50** (price index, 2006 = 100). Kommune and postcode tables sit in DST's paid
+   "Betalingsdatabank", not the free Statistikbanken. A free kommune-level series is to be confirmed.
+
+Pick the source that is free at kommune level for both houses and flats. The metric is the 3-year
+change in price per m² for the listing's property type in its kommune (postcode if available).
+
+### 2.2 Income / social (Home, DK)
+
+Danmarks Statistik, the income tables per kommune (the INDKP family; exact table id to be
+confirmed in the spike). Metric: median disposable income per kommune against the national median.
+Free Statistikbanken, `api.statbank.dk`.
+
+### 2.3 Safety (Home, DK)
+
+Danmarks Statistik **STRAF22** (reported crimes by area and type of offence; kommune level,
+updated 2026-02-19) divided by kommune population. Use property crime and violence. Exclude
+traffic offences, which mostly measure enforcement. Annual; cache for a year.
+
+### 2.4 Green and quiet (Home)
+
+`lib/services/poi/overpassClient.js` already talks to Overpass. Two queries per listing, cached
+per rounded coordinate (≈100 m grid) so neighbours share them:
+- **green**: area of `leisure=park|garden|nature_reserve`, `landuse=forest|grass|meadow|recreation_ground`
+  and `natural=wood` intersecting a 500 m circle, divided by the circle's area. Use the geometry
+  helpers already in the tree, `@turf/*`.
+- **quiet**: distance to the nearest `highway=motorway|trunk|primary` or `railway=rail`.
+
+Overpass is a shared volunteer service: batch, throttle, and run it in a background sweeper like
+connectivity and travel times. Never at read time.
+
+### 2.5 Commute options (Work)
+
+Count distinct transit routes with a stop within 500 m: Overpass `public_transport=platform` /
+`highway=bus_stop` plus `route` relations, or Transitous (`transitousClient.js`) stop departures.
+The spike picks one. Computed in the same sweeper as §2.4.
+
+### 2.6 Upkeep estimate (Home, buy) 🧮
+
+A transparent heuristic, documented in its module and shown as "estimate":
+
+```
+base kr/m²/yr by age band (years since built or renovated):  <10: 80 · 10–30: 150 · 30–60: 250 · >60: 350
++ 100 if the roof is fibre cement (often asbestos, from BBR `roofingMaterial`)
++  50 if the energy label is E, F or G
+−  30 if heating is district heating (fjernvarme)
+```
+
+Every number is an editable default. Inputs come from `sale_terms` (BBR via Boligsiden). If an
+input is missing, that term drops out. With no age at all, the metric is missing.
+
+### 2.7 Parking from advert text (Home) 🧮
+
+Case-insensitive word match over title and description:
+- **Danish:** `carport`, `garage`, `p-plads`, `parkeringsplads`, `egen parkering`
+- **German:** `Stellplatz`, `Garage`, `Tiefgarage`, `Carport`
+- **English:** `parking`
+
+Negations (`ingen parkering`, `kein Stellplatz`) score 0. No match is *missing* (50), not 0:
+an advert's silence says nothing. Pure function, tested with real advert snippets.
+
+## 3 Storage
+
+**Config**: a nullable JSON column `score_config` on `jobs`, in the style of `commute_filter`:
 
 ```json
 {
-  "weights":  { "value": 1, "commute": 1, "schools": 1, "space": 1, "monthly": 1 },
-  "targets":  { "commute": { "ideal": 20, "worst": 60 }, "schools": { "ideal": 7, "worst": 4 } },
-  "commute":  { "label": "Work" }
+  "groups":  { "money": 1, "schools": 1, "work": 1, "home": 1 },
+  "metrics": { "home.parking": 0, "work.jobs": 0.5 },
+  "targets": { "work.commute": { "ideal": 20, "worst": 60 } },
+  "commute": { "label": "Work" }
 }
 ```
 
-Everything optional; NULL means every default. A weight of 0 switches an axis off and removes its
-spoke.
+Everything is optional, and NULL means all defaults. A weight of 0 switches a metric or a group
+off. Migration number: next free at the time (`dk-buying` takes 51); re-check before merging.
 
-Migration number: `dk-buying` takes 51 for `sale_terms`. Use the next free number at the time of
-the step and re-check before merging, since both branches are open at once.
+**Sweeper results** (green, quiet, transit options) are per-listing facts, not score: a
+`listing_area_facts` table keyed by listing, with its own `*_at` clock (migration 31's rule: one
+clock per probe).
 
-**The score itself is not stored.** It depends on the targets, the weights, the job's other listings
-(value-for-money defaults) and the finance profile, all of which change; a stored score would be
-stale the moment any of them moved. Compute it on read in one pass per listing query. If profiling
-shows it matters, cache per `(job, listing, config hash)` in memory, not on disk.
+**Kommune-level data** (trend, income, safety) lives in disk caches like the tax and school layers.
 
-## 3 The service
+**The score is computed on read, never stored.** Targets, weights, the job's percentiles and the
+finance profile all move.
+
+## 4 Service
 
 `lib/services/score/`:
+- `metrics/`: one module per group, each exporting metric descriptors
+  `{ id, group, labelKey, unit, direction, buyOnly, raw(listing, ctx), defaults(ctx) }`.
+- `score.js`: pure. `scoreListing(listing, config, ctx)` returns
+  `{ total, groups: [{ id, score, weight, metrics: [{ id, raw, score, missing, weight }] }] }`.
+  A group with every metric missing scores 50 and is marked `missing`.
+- `context.js`: the only part that touches the database or caches. Builds `ctx` for a batch of
+  listings with one query per kind.
+- `upkeep.js`, `parkingText.js`: the heuristics, pure.
 
-- `axes.js`: the registry. Each axis is `{ id, labelKey, direction, raw(listing, ctx), defaults(ctx) }`.
-  `raw` returns a number or `null` (missing).
-- `score.js`: pure. `scoreListing(listing, config, ctx) → { total, axes: [{ id, raw, score, missing, weight }] }`.
-  Missing axes score 50 and carry `missing: true`. The total is the weighted mean.
-- `context.js`: the only part that reads the database or the caches. It builds `ctx` for a batch of
-  listings: the job's config, the percentiles for value-for-money defaults, the travel times, the
-  school index, the finance profile. One query per kind, never one per listing.
+Hook `score` onto the listing read paths that the overview, the detail page and MCP use.
 
-Hook into the listing read paths the overview, the detail page and MCP already use, adding
-`score` to each listing object.
+## 5 UI
 
-## 4 UI
-
-- **Radar chart** on the listing detail page (`ListingScoreCard.jsx`): chart.js `radar` through
-  `react-chartjs-2`, both already dependencies. Five spokes in registry order. A missing axis is drawn
-  at 50 with a dashed point and "unknown" in the tooltip. The total sits beside the chart; each spoke's
-  tooltip shows the raw value with its unit and the target band ("32 min, ideal 20, worst 60").
-- Canvas cannot read CSS custom properties: take colours through `chartTheme.js` getters, as the
-  existing charts do, and rely on the theme key on `<Layout>` for repaints (AGENTS.md, "Things CSS
-  cannot switch").
-- **Score chip** on listing cards: the total as a number, coloured by band (≥ 70 good, 40–69 fair,
-  < 40 poor) using existing tokens. Hover lists the five axis scores.
-- **Job form**: a "Score" card with a weight slider and ideal/worst inputs per axis, empty fields
-  showing the default as placeholder. Commute address picker from the saved travel-time addresses.
+- **Radar** (`ListingScoreCard.jsx`): chart.js `radar` through `react-chartjs-2` (both already
+  dependencies), four spokes. Missing groups get a dashed point. The total sits beside it. Below,
+  a breakdown with one row per group, expandable to its metrics: raw value with unit, score, and the
+  target band ("32 min · ideal 20 · worst 60"). Estimates and kommune averages are labelled.
+- Colours come from `chartTheme.js` getters, since canvas can't read CSS custom properties; the theme
+  key on `<Layout>` repaints it (AGENTS.md).
+- **Chip** on listing cards: the total, banded ≥ 70 / 40–69 / < 40 with existing tokens; hover
+  shows the four group scores.
+- **Job form "Score" card**: group weight sliders. "Advanced" opens per-metric weights and
+  ideal/worst inputs, with defaults as placeholders. A commute address picker.
 - i18n in all locales.
 
-## 5 MCP
+## 6 MCP
 
-`get_listing` and `list_listings` include `score.total` and the per-axis scores in
-`mcpNormalizer.js`, as a short Markdown table on `get_listing` and one number per row on
-`list_listings`.
+`get_listing`: total, a four-row group table, then each group's metrics. `list_listings`: the total
+per row.
 
-## 6 Steps
+## 7 Steps
 
-Each step is one commit and one tick in the ledger, with tests (AGENTS.md: tested and JSDoc'd).
-`yarn lint`, `yarn format:check`, `yarn test:offline` after each.
+One step = one commit = one ledger tick, with tests and JSDoc. `yarn lint`, `yarn format:check`,
+`yarn test:offline` after each.
 
+**Phase A: engine on existing data**
 1. Ledger created.
-2. `score/score.js` and the target formula, pure, with exhaustive unit tests (both directions,
-   clamping, missing axes, zero weights, all-missing).
-3. `score/axes.js`: value for money, space, monthly cost (the axes with no external data). Tests.
-4. Commute axis from `listing_travel_times`. Tests with fixtures for exact, estimated, missing.
-5. Schools axis: the nearest-school index over the school layer, Danish-only. Tests with a small
-   school fixture.
-6. Migration `score_config` on `jobs`; job storage read and write; API validation.
-7. `score/context.js` and the read-path hook; `score` on listings from the API.
-8. `ListingScoreCard` with the radar chart, both themes.
-9. Score chip on listing cards.
-10. Job form "Score" card.
-11. MCP.
-12. `doc/listing-score.md`, then acceptance: both themes, phone width, a Danish and a German job.
+2. `score.js`: the target formula, groups, weights, missing handling, rent re-weighting. Exhaustive tests.
+3. Money metrics: `value`, `affordable`, `budget`.
+4. Schools metrics: `nearby`, `special`, `area`.
+5. Work metrics: `commute`, `jobs`.
+6. Home metrics: `size`, `bathrooms`, `grocery`, `park`, `internet`, `newBuild`.
+7. Heuristics: `upkeep.js`, `parkingText.js` and their metrics.
+8. Migration `score_config`; job storage; API validation.
+9. `context.js`; `score` on listings from the API.
 
-## 7 Risks
+**Phase B: UI and MCP**
+10. `ListingScoreCard`: radar and breakdown.
+11. Score chip on listing cards.
+12. Job form "Score" card.
+13. MCP.
 
-- **Relative defaults move.** Value-for-money defaults are percentiles of the job's own listings, so
-  a listing's score shifts as the job finds more. Show "based on N listings" in the tooltip until the
-  user pins targets.
-- **Read cost.** Scoring a page of the overview needs travel times, schools and the finance profile
-  for every row. Batch per page; measure before caching.
-- **Schools coverage.** Kommune-level school data is coarse and Danish-only. The axis must say what
-  it measured ("3 schools within 2 km, average grade 6.8").
-- **Two open plans touch migrations.** `dk-buying` and this one each add one; renumber on merge.
+**Phase C: new sources** (each: spike, write-up here, then client and metric)
+14. Spike and client: valuation trend (§2.1).
+15. Spike and client: income (§2.2) and safety (§2.3), both DST.
+16. `listing_area_facts`, and the Overpass sweeper for green and quiet (§2.4).
+17. Commute options (§2.5), in the same sweeper.
+
+**Close**
+18. `doc/listing-score.md`, then acceptance: both themes, phone width, a Danish buy job, a Danish
+    rent job, a German job.
+
+## 8 Risks
+
+- **Too many metrics.** 22 metrics in four groups. Equal weights within a group dilute the ones the
+  user cares about. Ship sensible metric defaults, e.g. `parking` and `jobs` at 0.5.
+- **Kommune granularity.** Four metrics are kommune-wide. Label them, and keep their default weights
+  modest.
+- **Volunteer services.** Overpass and Transitous are shared; sweep in the background, cache by grid
+  cell, throttle.
+- **Heuristics read as facts.** Upkeep and parking are always labelled "estimate". Every heuristic
+  constant is editable.
+- **Read cost.** Scoring an overview page needs travel times, schools, connectivity, area facts and
+  the finance profile for every row. Batch per page; measure before caching.
+- **Two open plans add migrations.** Renumber on merge.
+
+## Sources
+
+- [DST: ejendomssalg (property sales statistics)](https://www.dst.dk/ejendomssalg)
+- [DST: ejendomssalg product page (Betalingsdatabank)](https://www.dst.dk/da/TilSalg/produkter/erhvervsliv-og-handel/ejendomssalg)
+- [DST: anmeldte forbrydelser (reported crime)](https://www.dst.dk/da/Statistik/emner/sociale-forhold/kriminalitet/anmeldte-forbrydelser)
+- [DST: reported crime, availability](https://www.dst.dk/da/Statistik/dokumentation/statistikdokumentation/anmeldte-forbrydelser/tilgaengelighed)
