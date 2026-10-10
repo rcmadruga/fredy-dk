@@ -11,7 +11,7 @@ Status per step. Updated after every step, before anything else. The plan is `li
 - [x] 4 Schools: nearby, special, area
 - [x] 5 Work: commute, jobs
 - [x] 6 Home: size, bathrooms, internet, newBuild; heuristics upkeep, parking
-- [ ] 7 Area (grocery, park) and Deal (vsValuation, vsLastSale, priceDrop, onMarket, relisted)
+- [x] 7 Area (grocery, park) and Deal (vsValuation, vsLastSale, priceDrop, onMarket, relisted)
 - [ ] 8 Migration `score_config`, storage, validation
 - [ ] 9 `context.js`, `score` on listings from the API
 
