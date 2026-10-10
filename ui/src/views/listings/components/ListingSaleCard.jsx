@@ -105,8 +105,11 @@ export default function ListingSaleCard({ listing, finance = null }) {
                         {!sale.free && <span className="listing-sale__sale-type">{sale.typeLabel}</span>}
                       </th>
                       <td>{sale.amount}</td>
-                      <td>{sale.perM2 ?? t('common.na')}</td>
-                      <td title={sale.change?.diffText}>{sale.change?.text ?? t('common.na')}</td>
+                      {/* The labels are only shown when the table is stacked, see the .less file. */}
+                      <td data-label={t('listing.detail.saleSalesPerM2')}>{sale.perM2 ?? t('common.na')}</td>
+                      <td data-label={t('listing.detail.saleSalesChange')} title={sale.change?.diffText}>
+                        {sale.change?.text ?? t('common.na')}
+                      </td>
                     </tr>
                   ))}
                 </tbody>

@@ -54,10 +54,13 @@
     color: @color-muted;
   }
 
-  // A narrow rail or a phone: the table scrolls inside its box rather than widening the page.
+  // The box the table is laid out against. Its own width decides the layout, not the window's: on a desktop
+  // the card sits in a rail about 400px wide, which is as narrow as the card is on a phone. Scrolling stays as
+  // the last resort for a table that still does not fit.
   &__table-wrap {
     margin-top: @space-2;
     overflow-x: auto;
+    container-type: inline-size;
   }
 
   &__table {
@@ -89,6 +92,61 @@
     th:last-child,
     td:last-child {
       padding-right: 0;
+    }
+  }
+
+  // Too narrow for four columns (the rail, a phone): each sale becomes a small block, the date and the price
+  // on the first line, the price per m2 and the change on the second, each with its column's name in front.
+  // 30rem is about what the four columns need, with "DKK 1,450,000" in them.
+  @container (max-width: 30rem) {
+    &__table {
+      thead {
+        // Out of sight, not out of the document: the names are in each cell now.
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+      }
+
+      tbody,
+      tr {
+        display: block;
+      }
+
+      tr {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        column-gap: @space-3;
+        row-gap: @space-1;
+        padding: @space-2 0;
+        border-top: 1px solid @color-border;
+      }
+
+      th,
+      td,
+      th:last-child,
+      td:last-child {
+        padding: 0;
+        border-top: 0;
+        white-space: normal;
+      }
+
+      th:first-child {
+        text-align: left;
+      }
+
+      td[data-label]::before {
+        content: attr(data-label) ' ';
+        font-size: @text-sm;
+        color: @color-muted;
+      }
+
+      // Second line: the per m2 on the left, the change on the right.
+      td:nth-of-type(2) {
+        text-align: left;
+      }
     }
   }
 

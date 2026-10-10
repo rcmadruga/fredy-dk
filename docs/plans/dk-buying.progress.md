@@ -137,3 +137,8 @@ Both resolved in step 6 (2026-10-10); each source sits beside its constant in
   `sale_terms.pricePerM2` all present; the portal's figure was only ever shown in the sale card's cost list. The tile
   now uses `sale_terms.pricePerM2`, else the stored column, else price / size (`pricePerSqmOf` in `listingFacts.js`,
   with the same 5 m2 floor as the server). The market comparison pill still reads the stored column.
+- Review fix 3 (earlier-sales table): four `nowrap` columns inside a scroll box need about 460 px, and the card is
+  about 400 px wide in the desktop rail (269 px on a phone), so the last column ("Change") was cut off. The table's box
+  is now a size container; below 30rem each sale stacks (date and price, then price per m2 and change, each cell
+  carrying its column name via `data-label`), above it the table is unchanged. Screenshots at 1400 and 390 px show all
+  four values, no scroll box.
