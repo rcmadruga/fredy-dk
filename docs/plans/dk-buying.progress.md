@@ -5,8 +5,8 @@ Status per step. Updated after every step, before anything else. The plan is `dk
 
 ## Phase 1: data
 
-- [ ] 1 Ledger created
-- [ ] 2 Migration 51 `listing-sale-terms`, `saleTerms.js`, storage
+- [x] 1 Ledger created
+- [x] 2 Migration 51 `listing-sale-terms`, `saleTerms.js`, storage
 - [ ] 3 Boligsiden fills `saleTerms`
 
 ## Phase 2: the card
@@ -33,3 +33,9 @@ Status per step. Updated after every step, before anything else. The plan is `dk
 - Ejendomsværdiskat progression limit 2026: 9.2 M kr vs 9,007,000 kr. Needs Skatteforvaltningen.
 
 ## Notes
+- Step 2: `SaleTerms` carries six fields beyond the §4 typedef, because §6 needs them and the card
+  must not re-read the raw case: `previousRealtors` (the "relisted" badge names them), `basementArea`,
+  `bathrooms`, `floorPlanUrl` and `nextOpenHouse` (the links in §6.5), and `propertyType` was kept as
+  listed. Fields are always present and null when unstated; the whole object is absent (column NULL)
+  when the advert states none of it. A sale without a stated type is stored as `other`, never `normal`.
+- Step 1 was already satisfied by the plan commit that created this file; ticked here.
