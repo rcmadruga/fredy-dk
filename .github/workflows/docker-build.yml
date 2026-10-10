@@ -72,7 +72,9 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
-          cache-to: type=gha,mode=max
+          # A cache write can collide with another build of the same commit (docker.yml and
+          # release-dk.yml both build a release merge). Losing the cache must never cancel the push.
+          cache-to: type=gha,mode=max,ignore-error=true
 
       # Test container health with docker compose
       - name: Test container with docker compose
