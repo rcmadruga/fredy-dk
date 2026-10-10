@@ -1678,5 +1678,22 @@
   "score.metric.deal.priceDrop": "Cambio de precio desde su publicación",
   "score.metric.deal.onMarket": "Días en el mercado",
   "score.metric.deal.relisted": "Vuelto a publicar",
-  "score.chipTitle": "Puntuación {{score}} de 100"
+  "score.chipTitle": "Puntuación {{score}} de 100",
+  "jobs.mutation.sectionScore": "Puntuación de anuncios",
+  "jobs.mutation.scoreHelp": "Cada anuncio recibe una puntuación de 0 a 100 por grupos: dinero, colegios, trabajo, vivienda, zona y, en una compra, la operación. Indica cuánto cuenta cada uno en esta búsqueda y qué es ideal y qué es lo peor para los valores que hay detrás.",
+  "jobs.mutation.scoreIntro": "Cuánto cuenta cada grupo en esta búsqueda. 1 es el valor por defecto; 0 desactiva un grupo, que sigue en el gráfico como desactivado.",
+  "jobs.mutation.scoreCommuteLabel": "¿Dónde está el trabajo?",
+  "jobs.mutation.scoreCommuteDefault": "La dirección con un límite de trayecto",
+  "jobs.mutation.scoreCommuteHint": "La puntuación de trayecto mide el viaje a esta dirección guardada. Por defecto es la única dirección con un límite de trayecto.",
+  "jobs.mutation.scoreCommuteNoAddresses": "Aún no hay direcciones guardadas. Añade una en Ajustes, Tiempo de viaje, y la puntuación de trayecto podrá usarla.",
+  "jobs.mutation.scoreAdvancedOpen": "Avanzado: pesos y objetivos por métrica",
+  "jobs.mutation.scoreAdvancedClose": "Ocultar ajustes avanzados",
+  "jobs.mutation.scoreAdvancedHint": "Por métrica: su peso dentro del grupo y el valor ideal y el peor entre los que se puntúa. Un campo vacío usa el valor por defecto que muestra.",
+  "jobs.mutation.scoreAutomatic": "automático",
+  "jobs.mutation.scoreIdeal": "ideal",
+  "jobs.mutation.scoreWorst": "peor",
+  "jobs.mutation.scoreMetricWeightAria": "Peso de {{metric}}",
+  "jobs.mutation.scoreIdealAria": "Valor ideal para {{metric}}",
+  "jobs.mutation.scoreWorstAria": "Peor valor para {{metric}}",
+  "jobs.mutation.scoreTargetsDiffer": "El ideal y el peor deben ser distintos."
 }

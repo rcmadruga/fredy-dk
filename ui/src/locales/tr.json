@@ -1639,5 +1639,22 @@
   "score.metric.deal.priceDrop": "İlk ilandan bu yana fiyat değişimi",
   "score.metric.deal.onMarket": "Piyasada geçen gün",
   "score.metric.deal.relisted": "Yeniden ilana çıktı",
-  "score.chipTitle": "100 üzerinden {{score}} puan"
+  "score.chipTitle": "100 üzerinden {{score}} puan",
+  "jobs.mutation.sectionScore": "İlan puanı",
+  "jobs.mutation.scoreHelp": "Her ilan gruplar halinde 0 ile 100 arasında puan alır: para, okullar, iş, konut, çevre ve satın almada anlaşma. Bu aramada her birinin ne kadar sayılacağını ve arkasındaki değerler için neyin ideal, neyin en kötü olduğunu belirleyin.",
+  "jobs.mutation.scoreIntro": "Bu aramada her grubun ne kadar sayıldığı. 1 varsayılandır; 0 bir grubu kapatır, grafikte kapalı olarak kalır.",
+  "jobs.mutation.scoreCommuteLabel": "İş nerede?",
+  "jobs.mutation.scoreCommuteDefault": "Yol süresi sınırı olan adres",
+  "jobs.mutation.scoreCommuteHint": "Yol puanı bu kayıtlı adrese yolculuğu ölçer. Varsayılan olarak yol süresi sınırı olan tek adrestir.",
+  "jobs.mutation.scoreCommuteNoAddresses": "Henüz kayıtlı adres yok. Ayarlar, Yolculuk süresi bölümünden bir tane ekleyin, yol puanı onu kullanabilir.",
+  "jobs.mutation.scoreAdvancedOpen": "Gelişmiş: ölçüt başına ağırlık ve hedef",
+  "jobs.mutation.scoreAdvancedClose": "Gelişmiş ayarları gizle",
+  "jobs.mutation.scoreAdvancedHint": "Ölçüt başına: grup içindeki ağırlığı ve puanlandığı ideal ile en kötü değer. Boş bırakılan kutu içinde görünen varsayılanı kullanır.",
+  "jobs.mutation.scoreAutomatic": "otomatik",
+  "jobs.mutation.scoreIdeal": "ideal",
+  "jobs.mutation.scoreWorst": "en kötü",
+  "jobs.mutation.scoreMetricWeightAria": "{{metric}} ağırlığı",
+  "jobs.mutation.scoreIdealAria": "{{metric}} için ideal değer",
+  "jobs.mutation.scoreWorstAria": "{{metric}} için en kötü değer",
+  "jobs.mutation.scoreTargetsDiffer": "İdeal ve en kötü değer farklı olmalı."
 }

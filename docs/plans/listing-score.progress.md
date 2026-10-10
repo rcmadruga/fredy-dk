@@ -19,7 +19,7 @@ Status per step. Updated after every step, before anything else. The plan is `li
 
 - [x] 10 `ListingScoreCard`: radar and breakdown
 - [x] 11 Score chip on listing cards
-- [ ] 12 Job form "Score" card
+- [x] 12 Job form "Score" card
 - [ ] 13 MCP
 
 ## Phase C: new sources
@@ -66,3 +66,8 @@ Status per step. Updated after every step, before anything else. The plan is `li
   point: chart.js has no per-point dash for the radar marker. Off groups get a cross marker at the centre.
   The card sits in the detail rail after the finance card. The radar registers its own chart.js pieces via
   `registerScoreChart()` in chartTheme.js; colours come from the CHART_COLORS getters (a `FAINT` getter was added).
+- Step 12: the Score card is its own card after the "Refine" fold (not inside it), since it filters nothing. The form keeps
+  a client copy of the metric catalogue (`ui/src/services/score/metricCatalog.js`) because the browser cannot import
+  `lib/`; `test/ui/scoreMetricCatalog.test.js` fails if it drifts from the server descriptors. Group weights use Semi
+  sliders in steps of 0.5 up to 3 (the API allows up to 100 for scripted use). The commute picker offers named
+  addresses only, not place types.

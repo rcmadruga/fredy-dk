@@ -1701,5 +1701,22 @@
   "score.metric.deal.priceDrop": "Preisänderung seit Erstveröffentlichung",
   "score.metric.deal.onMarket": "Tage am Markt",
   "score.metric.deal.relisted": "Erneut eingestellt",
-  "score.chipTitle": "Score {{score}} von 100"
+  "score.chipTitle": "Score {{score}} von 100",
+  "jobs.mutation.sectionScore": "Inserats-Score",
+  "jobs.mutation.scoreHelp": "Jedes Inserat erhält einen Score von 0 bis 100 in Gruppen: Geld, Schulen, Arbeit, Wohnung, Umgebung und bei einem Kauf das Geschäft. Lege fest, wie stark jede Gruppe für diese Suche zählt und was bei den Werten dahinter ideal und was am schlechtesten ist.",
+  "jobs.mutation.scoreIntro": "Wie stark jede Gruppe in dieser Suche zählt. 1 ist der Standard; 0 schaltet eine Gruppe aus, sie bleibt im Diagramm als ausgeschaltet.",
+  "jobs.mutation.scoreCommuteLabel": "Wo ist die Arbeit?",
+  "jobs.mutation.scoreCommuteDefault": "Die Adresse mit einem Pendellimit",
+  "jobs.mutation.scoreCommuteHint": "Der Pendel-Score misst den Weg zu dieser gespeicherten Adresse. Standardmäßig ist das die eine Adresse mit einem Pendellimit.",
+  "jobs.mutation.scoreCommuteNoAddresses": "Noch keine gespeicherten Adressen. Lege unter Einstellungen, Fahrzeit eine an, dann kann der Pendel-Score sie nutzen.",
+  "jobs.mutation.scoreAdvancedOpen": "Erweitert: Gewichte und Zielwerte je Kennzahl",
+  "jobs.mutation.scoreAdvancedClose": "Erweiterte Einstellungen ausblenden",
+  "jobs.mutation.scoreAdvancedHint": "Je Kennzahl: ihr Gewicht in der Gruppe sowie der ideale und der schlechteste Wert, zwischen denen bewertet wird. Ein leeres Feld nutzt den darin angezeigten Standard.",
+  "jobs.mutation.scoreAutomatic": "automatisch",
+  "jobs.mutation.scoreIdeal": "ideal",
+  "jobs.mutation.scoreWorst": "schlechtester",
+  "jobs.mutation.scoreMetricWeightAria": "Gewicht von {{metric}}",
+  "jobs.mutation.scoreIdealAria": "Idealwert für {{metric}}",
+  "jobs.mutation.scoreWorstAria": "Schlechtester Wert für {{metric}}",
+  "jobs.mutation.scoreTargetsDiffer": "Ideal und schlechtester Wert müssen sich unterscheiden."
 }

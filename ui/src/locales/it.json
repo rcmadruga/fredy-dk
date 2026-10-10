@@ -1678,5 +1678,22 @@
   "score.metric.deal.priceDrop": "Variazione di prezzo dalla pubblicazione",
   "score.metric.deal.onMarket": "Giorni sul mercato",
   "score.metric.deal.relisted": "Rimesso in vendita",
-  "score.chipTitle": "Punteggio {{score}} su 100"
+  "score.chipTitle": "Punteggio {{score}} su 100",
+  "jobs.mutation.sectionScore": "Punteggio degli annunci",
+  "jobs.mutation.scoreHelp": "Ogni annuncio riceve un punteggio da 0 a 100 per gruppi: denaro, scuole, lavoro, casa, zona e, per un acquisto, l'affare. Indica quanto conta ciascuno in questa ricerca e cosa è ideale e cosa è peggiore per i valori sottostanti.",
+  "jobs.mutation.scoreIntro": "Quanto conta ciascun gruppo in questa ricerca. 1 è il valore predefinito; 0 disattiva un gruppo, che resta nel grafico come disattivato.",
+  "jobs.mutation.scoreCommuteLabel": "Dov'è il lavoro?",
+  "jobs.mutation.scoreCommuteDefault": "L'indirizzo con un limite di tragitto",
+  "jobs.mutation.scoreCommuteHint": "Il punteggio del tragitto misura il viaggio verso questo indirizzo salvato. Per impostazione predefinita è l'unico indirizzo con un limite di tragitto.",
+  "jobs.mutation.scoreCommuteNoAddresses": "Nessun indirizzo salvato. Aggiungine uno in Impostazioni, Tempo di viaggio, e il punteggio del tragitto potrà usarlo.",
+  "jobs.mutation.scoreAdvancedOpen": "Avanzate: pesi e obiettivi per metrica",
+  "jobs.mutation.scoreAdvancedClose": "Nascondi le impostazioni avanzate",
+  "jobs.mutation.scoreAdvancedHint": "Per metrica: il suo peso nel gruppo e il valore ideale e peggiore tra cui viene valutata. Un campo vuoto usa il valore predefinito mostrato.",
+  "jobs.mutation.scoreAutomatic": "automatico",
+  "jobs.mutation.scoreIdeal": "ideale",
+  "jobs.mutation.scoreWorst": "peggiore",
+  "jobs.mutation.scoreMetricWeightAria": "Peso di {{metric}}",
+  "jobs.mutation.scoreIdealAria": "Valore ideale per {{metric}}",
+  "jobs.mutation.scoreWorstAria": "Valore peggiore per {{metric}}",
+  "jobs.mutation.scoreTargetsDiffer": "Ideale e peggiore devono essere diversi."
 }

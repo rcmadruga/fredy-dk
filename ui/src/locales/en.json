@@ -1701,5 +1701,22 @@
   "score.metric.deal.priceDrop": "Price change since first listed",
   "score.metric.deal.onMarket": "Days on the market",
   "score.metric.deal.relisted": "Relisted",
-  "score.chipTitle": "Score {{score}} of 100"
+  "score.chipTitle": "Score {{score}} of 100",
+  "jobs.mutation.sectionScore": "Listing score",
+  "jobs.mutation.scoreHelp": "Every listing gets a score from 0 to 100, in groups: money, schools, work, home, area and, for a purchase, the deal. Say how much each counts for this search, and what is ideal and what is worst for the values behind them.",
+  "jobs.mutation.scoreIntro": "How much each group counts in this search. 1 is the default; 0 switches a group off, and it stays on the chart drawn as off.",
+  "jobs.mutation.scoreCommuteLabel": "Where is work?",
+  "jobs.mutation.scoreCommuteDefault": "The address with a commute limit",
+  "jobs.mutation.scoreCommuteHint": "The commute score measures the journey to this saved address. By default that is the one address that has a commute limit.",
+  "jobs.mutation.scoreCommuteNoAddresses": "No saved addresses yet. Add one under Settings, Travel time, and the commute score can use it.",
+  "jobs.mutation.scoreAdvancedOpen": "Advanced: weights and targets per metric",
+  "jobs.mutation.scoreAdvancedClose": "Hide advanced settings",
+  "jobs.mutation.scoreAdvancedHint": "Per metric: its weight inside the group, and the ideal and worst value it is scored between. An empty box uses the default shown in it.",
+  "jobs.mutation.scoreAutomatic": "automatic",
+  "jobs.mutation.scoreIdeal": "ideal",
+  "jobs.mutation.scoreWorst": "worst",
+  "jobs.mutation.scoreMetricWeightAria": "Weight of {{metric}}",
+  "jobs.mutation.scoreIdealAria": "Ideal value for {{metric}}",
+  "jobs.mutation.scoreWorstAria": "Worst value for {{metric}}",
+  "jobs.mutation.scoreTargetsDiffer": "Ideal and worst must differ."
 }

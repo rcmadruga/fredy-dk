@@ -56,6 +56,7 @@ const aDraft = () => ({
   spatialFilter: null,
   specFilter: null,
   commuteFilter: { action: 'notify', limits: { Work: 35 } },
+  scoreConfig: { groups: { schools: 0 }, targets: { 'work.commute': { ideal: 15, worst: 45 } } },
 });
 
 describe('jobDraft', () => {
@@ -90,6 +91,7 @@ describe('jobDraft', () => {
       // rule is "anything the user set is worth keeping" and singling this one out as not counting
       // is how the field stops being carried at all.
       ['a travel time limit', { commuteFilter: { action: 'notify', limits: { Work: 35 } } }],
+      ['a score weight', { scoreConfig: { groups: { schools: 0 } } }],
     ])('counts %s', (_what, draft) => {
       expect(hasContent(draft)).toBe(true);
     });
