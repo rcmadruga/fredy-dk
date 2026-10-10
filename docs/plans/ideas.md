@@ -120,9 +120,33 @@ machine's GPU/VRAM decides whether they are practical.
 - **See the potential:** for a cheap-but-ugly home, an image model renders listing photos "after":
   paint, floors, a new kitchen. Beside it, a rough renovation budget, and price plus renovation
   against similar renovated homes nearby. It finds diamonds others scroll past.
-- **Where should we even live?** Give both workplaces, the school, a budget and a maximum commute. Fredy
-  intersects the travel-time areas (isochrones), crosses them with price per m², schools and the score,
-  and proposes search areas, then drafts the jobs for them. It starts the search before the search.
+- **Where should we even live?** Natural language in, a set of Fredy jobs out. Leanings so far
+  (2026-10-10, not decided): **MCP first**, **postcodes** as the area unit.
+  - **Head start:** the MCP server already drafts jobs conversationally (`lib/mcp/jobDraftStore.js`).
+    Transitous one-to-many reachability (`reachabilityService`) answers "every stop within N minutes
+    of X" in one request. Kommune and postcode shapes are bundled, with school and tax layers. Price
+    per m² comes from Fredy's own listings. Jobs already hold a drawn area, the spec filter, a commute
+    filter and score weights (#15).
+  - **Workflow:**
+    1. A sentence such as "we work in Hillerød and Østerbro, kid starts school 2027, buy ≤ 4 M or rent
+       ≤ 15k, max 45 min by train, want a garden".
+    2. The LLM turns it into structured constraints and asks about gaps.
+    3. Fredy intersects the reachable areas per person and ranks the postcodes inside them by price
+       per m², schools, tax and the score, each with a one-line reason.
+    4. The user drops or adds postcodes.
+    5. Fredy drafts jobs per postcode group and portal, with search URLs, filters, the commute limit
+       and score weights, for the user to approve.
+    6. Re-run it when the situation changes; the roulette refines it.
+  - **MCP-first shape:** one new MCP tool, `suggest_areas(constraints)`, returning ranked postcodes
+    with reasons and figures. The chat client (Claude Desktop, LM Studio) does the language part and
+    then uses the existing job-draft tools. No LLM inside Fredy is needed for a first version; the
+    local Ollama UI version can come later.
+  - **Postcodes:** they match how Danish portals filter (Boligsiden's `zipCodes`), are easy to
+    explain, and the shapes are already bundled.
+  - **Still open:**
+    - which portals get automatic search URLs (Boligsiden is easy; others need URL builders);
+    - price per m² from Fredy's own data only (thin where you never searched) or an external source;
+    - one-shot setup, or a standing "search strategy" that updates jobs when inputs change.
 - **Negotiation sparring partner:** before calling the realtor or landlord, rehearse with the local LLM
   playing them. It is fed this listing's facts (days on market, drops, relists, earlier sales,
   realtor stats) and coaches you on what to ask and when to stop.
