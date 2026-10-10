@@ -76,6 +76,7 @@ export const PROVIDER_SIZE_ORDER = [
   // Denmark
   'boligsiden',
   'boligportal',
+  'danicaejendomme',
 ];
 
 /** Sorts anything unranked or unknown behind everything ranked or known. */

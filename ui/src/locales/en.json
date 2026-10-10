@@ -1543,6 +1543,7 @@
   "listing.detail.rentalLeaseMonths": "{{months}} months",
   "listing.detail.rentalLeaseHelp": "The lease period the portal lists for this advert.",
   "listing.detail.rentalSocialHousing": "Housing association home - often allocated by waiting list",
+  "listing.detail.rentalPriority": "Offered first to {{fund}} customers",
   "listing.detail.rentalDepositOverCap": "The deposit is more than 3 months' rent, the legal maximum for a private rental in Denmark.",
   "listing.detail.rentalPrepaidOverCap": "The prepaid rent is more than 3 months' rent, the legal maximum for a private rental in Denmark.",
   "listing.detail.rentalCombinedOverCap": "Deposit and prepaid rent together are more than 6 months' rent, the legal maximum for a private rental in Denmark.",

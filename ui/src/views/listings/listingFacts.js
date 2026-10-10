@@ -378,14 +378,20 @@ function dayOf(iso) {
 /**
  * When the home can be taken over, said both as a date and in relation to today.
  *
- * @param {string|undefined} availableFrom `YYYY-MM-DD`
+ * An advert that says "as soon as possible" has no date to show, only the state: it is free now.
+ *
+ * @param {{availableFrom?: string, availableImmediately?: boolean}} terms The stored rental terms.
  * @param {FactContext & {now?: Date}} ctx
- * @returns {{date: string, relative: string, state: 'now'|'soon'|'later'}|null}
+ * @returns {{date: string|null, relative: string, state: 'now'|'soon'|'later'}|null}
  */
-function buildAvailability(availableFrom, ctx) {
-  const target = dayOf(availableFrom);
-  if (target == null) return null;
+function buildAvailability(terms, ctx) {
   const { t, locale } = ctx;
+  const target = dayOf(terms.availableFrom);
+  if (target == null) {
+    return terms.availableImmediately === true
+      ? { date: null, relative: t('listing.detail.rentalAvailableNow'), state: 'now' }
+      : null;
+  }
   const now = ctx.now ?? new Date();
   const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
   const days = Math.round((target - today) / DAY_MS);
@@ -424,7 +430,7 @@ function buildAvailability(availableFrom, ctx) {
  *
  * @param {Object|null} listing - A row as the listings API returns it.
  * @param {FactContext & {now?: Date}} ctx
- * @returns {{availability: Object|null, rows: ListingFact[], moveIn: {text: string, stated: boolean, helpText: string}|null, warnings: string[], socialHousing: boolean}|null}
+ * @returns {{availability: Object|null, rows: ListingFact[], moveIn: {text: string, stated: boolean, helpText: string}|null, warnings: string[], socialHousing: boolean, priority: string|null}|null}
  *   `null` for a sale, and for a rental that states nothing of this.
  */
 export function buildRentalFacts(listing, ctx) {
@@ -439,7 +445,7 @@ export function buildRentalFacts(listing, ctx) {
   const charges = Number.isFinite(row.charges) && row.charges > 0 ? row.charges : null;
   const chargesOnTop = charges != null && row.charges_included === 0;
 
-  const availability = buildAvailability(terms.availableFrom, ctx);
+  const availability = buildAvailability(terms, ctx);
   const rows = [];
 
   if (chargesOnTop) {
@@ -500,6 +506,7 @@ export function buildRentalFacts(listing, ctx) {
   }
 
   const socialHousing = terms.socialHousing === true;
-  if (availability == null && rows.length === 0 && moveIn == null && !socialHousing) return null;
-  return { availability, rows, moveIn, warnings, socialHousing };
+  const priority = typeof terms.priority === 'string' && terms.priority !== '' ? terms.priority : null;
+  if (availability == null && rows.length === 0 && moveIn == null && !socialHousing && priority == null) return null;
+  return { availability, rows, moveIn, warnings, socialHousing, priority };
 }

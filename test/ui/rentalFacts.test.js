@@ -67,6 +67,18 @@ describe('buildRentalFacts', () => {
       );
     });
 
+    it('says "available now" with no date when the advert says as soon as possible', () => {
+      const facts = buildRentalFacts(rental({}, { availableFrom: undefined, availableImmediately: true }), ctx());
+
+      expect(facts.availability).toEqual({ date: null, relative: 'listing.detail.rentalAvailableNow', state: 'now' });
+    });
+
+    it('prefers a date over the flag', () => {
+      const facts = buildRentalFacts(rental({}, { availableFrom: '2027-01-15', availableImmediately: true }), ctx());
+
+      expect(facts.availability.state).toBe('later');
+    });
+
     it('is absent, with the rest still shown, when the advert gives no date', () => {
       const facts = buildRentalFacts(rental({}, { availableFrom: undefined }), ctx());
 
@@ -191,6 +203,16 @@ describe('buildRentalFacts', () => {
       expect(row(buildRentalFacts(rental({}, { leasePeriodMonths: undefined }), ctx()), 'lease')).toBeUndefined();
     });
 
+    it('names who the landlord offers the home to first, even when that is all that is known', () => {
+      const facts = buildRentalFacts(
+        { dealType: 'rent', price: 17950, rental_terms: { priority: 'Danica Pension' } },
+        ctx(),
+      );
+
+      expect(facts.priority).toBe('Danica Pension');
+      expect(buildRentalFacts(rental(), ctx()).priority).toBeNull();
+    });
+
     it('flags a housing association home, even when that is all that is known', () => {
       const facts = buildRentalFacts({ dealType: 'rent', price: 4000, rental_terms: { socialHousing: true } }, ctx());
 
@@ -229,6 +251,7 @@ describe('the strings the rental card asks for', () => {
       'rentalLeaseOpen',
       'rentalLeaseMonths',
       'rentalSocialHousing',
+      'rentalPriority',
       'rentalDepositOverCap',
       'rentalPrepaidOverCap',
       'rentalCombinedOverCap',

@@ -53,6 +53,7 @@ describe('listings filtered by when the home is free', () => {
     add('apr27', { availableFrom: '2027-04-01' });
     add('undated-rental', { deposit: 15000 });
     add('no-terms', null);
+    add('asap', { availableImmediately: true });
     add('jan27-inactive', { availableFrom: '2027-01-20' }, { active: 0 });
     add('jan27-nocoords', { availableFrom: '2027-01-25' }, { lat: null, lng: null });
     add('jan27-other-provider', { availableFrom: '2027-02-01' }, { provider: 'lejebolig' });
@@ -106,7 +107,23 @@ describe('listings filtered by when the home is free', () => {
 
     it('takes an open start and an open end', () => {
       expect(overview({ moveInFrom: '2027-03-31', moveInDatedOnly: true })).toEqual(['apr27', 'mar27']);
-      expect(overview({ moveInTo: '2026-12-31', moveInDatedOnly: true })).toEqual(['dec26']);
+      // Not the "as soon as possible" listing, which is free from today and so depends on the day this runs.
+      expect(overview({ moveInTo: '2026-12-31', moveInDatedOnly: true }).filter((id) => id !== 'asap')).toEqual([
+        'dec26',
+      ]);
+    });
+
+    it('treats "as soon as possible" as free from today: outside a window that starts later, inside one that includes today', () => {
+      expect(overview({ moveInFrom: '2027-01-01', moveInTo: '2027-03-31', moveInDatedOnly: true })).not.toContain(
+        'asap',
+      );
+      expect(overview({ moveInFrom: '2000-01-01', moveInTo: '2999-12-31', moveInDatedOnly: true })).toContain('asap');
+      expect(overview({ moveInTo: '2000-01-01', moveInDatedOnly: true })).not.toContain('asap');
+    });
+
+    it('counts "as soon as possible" as stating a date, so dated-only keeps it', () => {
+      expect(overview({ moveInFrom: '2000-01-01', moveInDatedOnly: true })).toContain('asap');
+      expect(overview({ moveInFrom: '2000-01-01', moveInDatedOnly: true })).not.toContain('undated-rental');
     });
 
     it('is not narrowed at all by the dated-only flag without a window', () => {

@@ -1520,6 +1520,7 @@
   "listing.detail.rentalLeaseMonths": "{{months}} mois",
   "listing.detail.rentalLeaseHelp": "La durée de location indiquée par le portail pour cette annonce.",
   "listing.detail.rentalSocialHousing": "Logement d'une association de logement - souvent attribué sur liste d'attente",
+  "listing.detail.rentalPriority": "Proposé en priorité aux clients de {{fund}}",
   "listing.detail.rentalDepositOverCap": "Le dépôt de garantie dépasse 3 mois de loyer, le maximum légal pour une location privée au Danemark.",
   "listing.detail.rentalPrepaidOverCap": "Le loyer payé d'avance dépasse 3 mois, le maximum légal pour une location privée au Danemark.",
   "listing.detail.rentalCombinedOverCap": "Le dépôt et le loyer payé d'avance dépassent ensemble 6 mois de loyer, le maximum légal pour une location privée au Danemark.",
