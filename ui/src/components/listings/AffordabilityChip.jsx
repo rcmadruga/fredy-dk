@@ -27,7 +27,7 @@ import './AffordabilityChip.less';
  * @param {boolean} [props.chargesIncluded] Whether the rent was quoted with the running charges in it,
  *   which the server measured against the warm ceiling rather than the cold one.
  */
-export default function AffordabilityChip({ verdict, dealType, chargesIncluded = false }) {
+export default function AffordabilityChip({ verdict, dealType, chargesIncluded = false, currency }) {
   const t = useTranslation();
   const locale = useLocale();
   const { thresholds } = useFinanceProfile();
@@ -38,11 +38,11 @@ export default function AffordabilityChip({ verdict, dealType, chargesIncluded =
 
   // A non-null verdict means the matching half of the profile exists, so the threshold quoted
   // in the tooltip is always there to read - the one the server measured this verdict against.
-  const { key, limit } = verdictExplanation(verdict, { dealType, chargesIncluded }, thresholds);
+  const { key, limit } = verdictExplanation(verdict, { dealType, chargesIncluded, currency }, thresholds);
   const color = VERDICT_COLORS[verdict];
 
   return (
-    <Tooltip content={t(key, { price: formatEuro(limit, locale) })} position="top">
+    <Tooltip content={t(key, { price: limit == null ? '' : formatEuro(limit, locale) })} position="top">
       <span
         className="affordabilityChip"
         style={{

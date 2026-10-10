@@ -183,7 +183,7 @@ function buildAffordability(row, ctx) {
   const { t, locale } = ctx;
   const { key, limit } = verdictExplanation(
     verdict,
-    { dealType: row.dealType, chargesIncluded: rentIncludesCharges(row) },
+    { dealType: row.dealType, chargesIncluded: rentIncludesCharges(row), currency: ctx.currency },
     ctx.financeThresholds,
   );
 

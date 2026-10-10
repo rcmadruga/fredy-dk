@@ -120,3 +120,14 @@ Both resolved in step 6 (2026-10-10); each source sits beside its constant in
 - Step 9: written up in plan section 3 ("Step 9 outcome"). No request to boliga.dk was made. `[~]` in
   the ledger means deferred, not done: step 10 stays open until someone with access to the site has
   worked through the four hand-over points listed there.
+- Review fix 1 (affordability by currency): the verdict chip on the overview rows and the listing page, the
+  affordability filter and `POST /api/finance/affordability` now pick the model by the provider's currency, as
+  `computeFinanceResult` does. A DKK purchase is judged by `finance/dk/listingVerdict.js` (the Danish result with the
+  listing's own `sale_terms`: ejerudgift, valuation, land tax); a rent and every euro listing keep the German path
+  unchanged. The Danish verdict is not a function of price alone, so the filter cannot be a price window: with
+  `affordabilityBandFor(band, profile, {dkkProviders})` the band gains a `dk` part, the German purchase windows stop
+  applying to those providers, and `listingsStorage` scores the DKK purchase candidates with the same function the
+  chip uses and ANDs on the ids that landed in the band. The chip is un-hidden; its tooltip for kroner quotes no euro
+  ceiling (`listings.affordabilityTooltipDk.*`). Seen and left: a DKK rental is still held against the rent ceilings
+  as numbers (there is no Danish rent model), and the sweep's `cheapestAffordable` mixes currencies if both markets
+  are scanned together.
