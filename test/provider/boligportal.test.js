@@ -131,3 +131,86 @@ describe('#boligportal detail fetch', () => {
     expect(config.detailFetchDelayMs).toBeGreaterThan(0);
   });
 });
+
+/**
+ * What an advert states beside the rent. The field names are the page's own, as recorded; the
+ * figures are made up.
+ */
+describe('#boligportal rental terms', () => {
+  const ad = (extra = {}) => ({
+    id: 5671615,
+    url: '/lejligheder/hiller%C3%B8d/23m2-1-vaer-id-5671615',
+    title: '1 værelses lejlighed',
+    city: 'Hillerød',
+    street_name: 'Bakkegade',
+    street_number: '23',
+    postal_code: '3400',
+    size_m2: 23,
+    rooms: 1,
+    monthly_rent: 5900,
+    monthly_rent_extra_costs: 450,
+    prepaid_rent: 5900,
+    deposit: 17700,
+    rental_period: 0,
+    available_from: '2026-12-01',
+    social_housing: false,
+    ...extra,
+  });
+  const normalize = (a) => provider.config.normalize(a);
+
+  it('keeps the extra costs apart from the rent, and says the rent is without them', () => {
+    const listing = normalize(ad());
+
+    expect(listing.price).toBe(5900);
+    expect(listing.charges).toBe(450);
+    expect(listing.chargesIncluded).toBe(false);
+  });
+
+  it('reads the deposit, the prepaid rent, the lease and the date the home is free', () => {
+    expect(normalize(ad()).rental).toEqual({
+      deposit: 17700,
+      prepaidRent: 5900,
+      leasePeriodMonths: 0,
+      availableFrom: '2026-12-01',
+    });
+  });
+
+  it('makes no claim about the rent basis when no extra costs are stated', () => {
+    for (const extra of [
+      { monthly_rent_extra_costs: null },
+      { monthly_rent_extra_costs: 0 },
+      { monthly_rent_extra_costs: undefined },
+    ]) {
+      const listing = normalize(ad(extra));
+
+      expect(listing.charges).toBeUndefined();
+      expect(listing.chargesIncluded).toBeUndefined();
+    }
+  });
+
+  it('keeps a stated deposit of zero as a deposit of zero, and a missing one as missing', () => {
+    expect(normalize(ad({ deposit: 0 })).rental.deposit).toBe(0);
+    expect(normalize(ad({ deposit: null })).rental).not.toHaveProperty('deposit');
+  });
+
+  it('carries a limited lease, a housing association and a date with a time', () => {
+    const { rental } = normalize(
+      ad({ rental_period: 12, social_housing: true, available_from: '2027-01-15T00:00:00+00:00' }),
+    );
+
+    expect(rental).toMatchObject({ leasePeriodMonths: 12, socialHousing: true, availableFrom: '2027-01-15' });
+  });
+
+  it('has no rental terms at all when the advert states none, instead of an empty object', () => {
+    const bare = ad({
+      monthly_rent_extra_costs: null,
+      prepaid_rent: null,
+      deposit: null,
+      rental_period: null,
+      available_from: null,
+      social_housing: false,
+    });
+
+    expect(normalize(bare)).not.toHaveProperty('rental');
+  });
+});

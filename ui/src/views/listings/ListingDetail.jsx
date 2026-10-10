@@ -26,6 +26,7 @@ import ApplicationModal from './components/ApplicationModal.jsx';
 import IconEuro from '../../components/icons/IconEuro.jsx';
 import ScamPanel from './components/ScamPanel.jsx';
 import ListingFinanceCard from './components/ListingFinanceCard.jsx';
+import ListingRentalCard from './components/ListingRentalCard.jsx';
 import NearbyStops from '../../components/transit/NearbyStops.jsx';
 import ConnectivityCard from '../../components/connectivity/ConnectivityCard.jsx';
 import ListingActionBar from './components/ListingActionBar.jsx';
@@ -633,6 +634,12 @@ export default function ListingDetail() {
         <aside className="listing-detail__rail">
           <div className="listing-detail__sec--keyfacts">
             <ListingKeyFacts listing={listing} priceHistory={priceHistory} financeThresholds={financeThresholds} />
+          </div>
+
+          {/* Renders nothing for a sale, or for a rental that states none of it. Right under the price
+              because "free from when" decides whether the rest of the page is worth reading. */}
+          <div className="listing-detail__sec--rental">
+            <ListingRentalCard listing={listing} />
           </div>
 
           <div className="listing-detail__sec--origin">
