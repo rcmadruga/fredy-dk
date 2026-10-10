@@ -5,7 +5,7 @@
     "locale": "en-US",
     "semiLocale": "en_US"
   },
-  "app.demoBanner": "This is a demo instance of Fredy. All changes and settings are reset daily.",
+  "app.demoBanner": "This is a demo instance of Fredy. All changes and settings are reset hourly.",
   "nav.dashboard": "Dashboard",
   "nav.jobs": "Jobs",
   "nav.listings": "Listings",
@@ -705,7 +705,7 @@
   "settings.connectivitySource.dk-tjekditnet": "Denmark: Tjekditnet.dk",
   "settings.analyticsEnable": "Enable analytics",
   "settings.demoMode": "Demo Mode",
-  "settings.demoModeHelp": "In demo mode, Fredy only runs the built-in Demo-Job. Everything else resets to defaults at midnight.",
+  "settings.demoModeHelp": "In demo mode, Fredy only runs the built-in Demo-Job. Everything else resets to defaults every hour.",
   "settings.demoModeEnable": "Enable demo mode",
   "settings.connectivitySourceHelp.dk-tjekditnet": "Offered speeds per address from the national file, updated yearly. No provider names.",
   "settings.proxyAuth": "Sign-in handled by the reverse proxy",
