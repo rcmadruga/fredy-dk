@@ -639,7 +639,14 @@ export default function ListingDetail() {
 
         <aside className="listing-detail__rail">
           <div className="listing-detail__sec--keyfacts">
-            <ListingKeyFacts listing={listing} priceHistory={priceHistory} financeThresholds={financeThresholds} />
+            {/* The thresholds are euro thresholds from the German model: a home priced in kroner is
+                judged by the Danish card below instead, and would otherwise be told it is out of reach
+                here. */}
+            <ListingKeyFacts
+              listing={currencyOf(listing.provider) === 'DKK' ? { ...listing, affordabilityVerdict: null } : listing}
+              priceHistory={priceHistory}
+              financeThresholds={currencyOf(listing.provider) === 'DKK' ? { buy: null, rent: null } : financeThresholds}
+            />
           </div>
 
           {/* Renders nothing for a sale, or for a rental that states none of it. Right under the price

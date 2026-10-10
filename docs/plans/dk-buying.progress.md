@@ -25,7 +25,7 @@ Status per step. Updated after every step, before anything else. The plan is `dk
 - [x] 9 Boliga research spike, go/no-go: no-go from the sandbox, needs on-host verification (plan section 3)
 - [~] 10 Boliga provider: DEFERRED. Step 9 ended without access to boliga.dk (proxy 403), so there is no verified endpoint, fixture or terms reading to build on
 - [x] 11 Filters and notification line
-- [ ] 12 Acceptance
+- [x] 12 Acceptance
 
 ## Open figures
 
@@ -104,6 +104,19 @@ Both resolved in step 6 (2026-10-10); each source sits beside its constant in
   null otherwise), added next to `commute` in every adapter that renders a commute line, plus both
   email templates. NOT done: Mattermost, whose table has fixed columns; it simply does not show the line.
   `get_listing` over MCP now prints the sale terms (plan section 7).
+- Step 12: ran the production build and backend locally (db in the worktree's gitignored `db/`, seeded
+  with five Boligsiden fixture cases normalised by the real provider code as a `buy` job, admin
+  profile saved with the buying tab on Denmark). Headless Chromium (puppeteer-core, the preinstalled
+  build) took the listing detail, the financing page (Denmark tab) and the overview, dark and light, at
+  1400 px and 390 px: 12 PNGs in
+  `/tmp/claude-0/-home-user-fredy-dk/3d8ccd5d-8216-5cab-8781-4b32ff31d25f/scratchpad/dk-buying-shots/`.
+  `document.documentElement.scrollWidth` equalled the viewport width in all 12: no horizontal scroll at
+  390 px. Not done: no live Boligsiden run (no network), so "a real Danish buy job end to end" is the
+  seeded one. Found and fixed while looking: the German verdict ("Out of reach", from euro thresholds)
+  showed on a DKK listing's price tile and overview rows; it is now hidden for DKK listings (the Danish
+  card carries the verdict). Seen and left: the shared household block still labels incomes with a euro
+  sign, and the page footer disclaimer still says "German purchase costs" in Denmark mode; the sale
+  card's earlier-sales table scrolls sideways inside its own box at narrow widths (step 5 design).
 - Step 9: written up in plan section 3 ("Step 9 outcome"). No request to boliga.dk was made. `[~]` in
   the ledger means deferred, not done: step 10 stays open until someone with access to the site has
   worked through the four hand-over points listed there.

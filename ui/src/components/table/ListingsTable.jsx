@@ -108,7 +108,9 @@ const ListingsTable = ({
                 <span className="listingsTable__row__perSqm">
                   <PricePerSqmBadge listing={item} />
                   <AffordabilityChip
-                    verdict={item.affordabilityVerdict}
+                    // The row's verdict is the German model's, in euros; for a home priced in kroner it would say
+                    // "out of reach" about a number it cannot read. The detail page carries the Danish verdict.
+                    verdict={currencyOf(item.provider) === 'DKK' ? null : item.affordabilityVerdict}
                     dealType={item.dealType}
                     chargesIncluded={rentIncludesCharges(item)}
                   />
