@@ -5,8 +5,8 @@ Status per step. Updated after every step, before anything else. The plan is `li
 
 ## Phase A: engine on existing data
 
-- [ ] 1 Ledger created
-- [ ] 2 `score.js`: formula, groups, weights, missing, rent re-weighting
+- [x] 1 Ledger created
+- [x] 2 `score.js`: formula, groups, weights, missing, rent re-weighting
 - [ ] 3 Money: value, affordable, budget
 - [ ] 4 Schools: nearby, special, area
 - [ ] 5 Work: commute, jobs
@@ -43,3 +43,11 @@ Status per step. Updated after every step, before anything else. The plan is `li
   merges, it falls back to the existing verdict.
 - The dev sandbox cannot reach api.statbank.dk or boliga.dk; spikes 14 and 15 verify on the host or
   from documentation.
+- Migration number: 52 for `score_config`. The runner (`migrate.js`) tracks applied migrations by file
+  name, not by sequence, so the gap at 51 (`feat/dk-buying`) is harmless on this branch.
+- Phase C metrics (`money.trend`, `work.options`, `area.green`, `area.quiet`, `area.social`,
+  `area.safety`) are registered as descriptors whose `raw` returns null until their step lands, so they
+  score missing (50) and show as unknown.
+- `sale_terms` is read defensively (`listing.sale_terms`, parsed or JSON text); absent means missing.
+  The branch is not merged here.
+- Phase A and B are done in this order; Phase C and step 18 are deliberately not part of this run.
