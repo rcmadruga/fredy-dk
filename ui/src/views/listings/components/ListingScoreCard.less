@@ -132,6 +132,7 @@
   &__group-score,
   &__metric-score {
     flex: 0 0 auto;
+    font-size: @text-base;
     min-width: 40px;
     text-align: right;
     font-variant-numeric: tabular-nums;
@@ -158,6 +159,9 @@
 
   &__metrics {
     padding: 0 0 @space-3 @space-6;
+    // Said outright: a list inherits whatever the page last set, and in the light theme that was a
+    // near-white that made every metric name vanish.
+    color: @color-text;
   }
 
   &__metric {
@@ -168,7 +172,8 @@
       border-top: 0;
     }
 
-    &--off {
+    &--off,
+    &--off .listing-score__metric-label {
       color: @color-muted;
     }
   }
@@ -176,14 +181,25 @@
   &__metric-head,
   &__metric-detail {
     display: flex;
-    flex-wrap: wrap;
     align-items: baseline;
     gap: @space-2;
   }
 
+  &__metric-head {
+    // One line even when the label is long: the label wraps inside its own box instead of pushing
+    // the score onto a line of its own.
+    flex-wrap: nowrap;
+  }
+
+  &__metric-detail {
+    flex-wrap: wrap;
+  }
+
   &__metric-label {
-    flex: 1 1 auto;
+    flex: 1 1 0;
+    min-width: 0;
     font-size: @text-base;
+    color: @color-text;
   }
 
   &__qualifier {
