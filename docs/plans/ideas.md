@@ -102,3 +102,16 @@ machine's GPU/VRAM decides whether they are practical.
 - **A 3D walk-through before the viewing:** reconstruct the home from the advert's photos and floor
   plan (Gaussian splatting or a floor-plan-to-3D model), and walk through it in the browser. Place your
   own furniture at true scale, from the furniture list in floor-plan reading.
+- **Fair-rent check (DK):** much Danish rental housing built before 1992 is rent-regulated (cost-based
+  or value-based rent, and the Huslejenævn rent tribunals). From the building year (BBR), the
+  kommune's regulation status and the rent per m², flag rentals that are likely above the legal
+  level, with what that means for a claim or a negotiation.
+- **Viewing companion:** at a viewing, the phone records voice notes and photos; the local LLM
+  transcribes them into the buying checklist ("damp smell in the basement", "windows from 1990") and
+  attaches them to the listing, so viewings can be compared side by side afterwards.
+- **Life after the purchase:** Fredy keeps working once you've bought: watches Danish mortgage-bond
+  prices for a conversion that pays (omlægning), reminds you of the property-tax notices, and tracks
+  what similar homes nearby sell for, so you know your own home's value.
+- **The neighbourhood through time:** Dataforsyningen's historical aerial photos (orthophotos by
+  year) as a time slider on the map. See how the area changed, what was built, and where water
+  stood in wet years.
