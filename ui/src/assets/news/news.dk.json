@@ -6,6 +6,10 @@
       "date": "2026-10-10",
       "entries": [
         {
+          "title": "What's new in two parts (Fredy + Fredy DK), and a release workflow",
+          "text": "What&#39;s new now has a Fredy DK part, so you&#39;ll hear about the Danish features here, next to upstream&#39;s news."
+        },
+        {
           "title": "Fredy DK: Fredy speaks Danish property",
           "text": "This fork of Fredy adds Denmark. Four new providers: <b>Boligsiden</b>, <b>BoligPortal</b>, <b>Lejebolig</b> and <b>Danica Ejendomme</b>. Paste a search URL from any of them like you would for any other portal.<br/><br/>Prices are shown in <b>kroner</b>, and the financing page speaks kroner and carries a Danish disclaimer when you are in Denmark mode."
         },
