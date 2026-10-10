@@ -11,8 +11,7 @@ import { useNavigate } from 'react-router';
 import VerdictBanner from '../../finance/components/VerdictBanner.jsx';
 import ListingPayoffChart from '../../finance/charts/ListingPayoffChart.jsx';
 import { formatEuro } from '../../../components/cards/chartTheme.js';
-import { buildRentFacts } from '../listingFacts.js';
-import { useActions } from '../../../services/state/store.js';
+import { buildDanishFinanceFacts, buildRentFacts } from '../listingFacts.js';
 import { useTranslation, useLocale } from '../../../services/i18n/i18n.jsx';
 
 import './ListingFinanceCard.less';
@@ -31,30 +30,18 @@ const { Text, Title } = Typography;
  * finance modules; the copy is gone, because two implementations of the same amortization scoring
  * the same listing is a contradiction waiting to be shipped.
  *
+ * A home priced in kroner comes back with the Danish model's result (`result.model === 'dk'`) and
+ * gets its own card: the loans are two, and there is no Zinsbindung or Restschuld.
+ *
  * @param {Object} props
  * @param {{id: string, price: number, dealType?: 'rent'|'buy'}} props.listing
+ * @param {Object|null} props.finance The payload of `GET /api/finance/listing/:id`, from `useListingFinance`.
  */
-export default function ListingFinanceCard({ listing }) {
+export default function ListingFinanceCard({ listing, finance }) {
   const t = useTranslation();
   const locale = useLocale();
   const navigate = useNavigate();
-  const actions = useActions();
-  const [finance, setFinance] = React.useState(null);
   const isRental = listing?.dealType === 'rent';
-
-  React.useEffect(() => {
-    if (listing?.id == null || listing?.price == null) {
-      setFinance(null);
-      return undefined;
-    }
-    let cancelled = false;
-    actions.finance.getListingFinance(listing.id).then((payload) => {
-      if (!cancelled) setFinance(payload);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [listing?.id, listing?.price]);
 
   if (isRental) {
     return finance?.scored == null ? null : (
@@ -67,6 +54,10 @@ export default function ListingFinanceCard({ listing }) {
   const result = finance?.result ?? null;
   if (result == null) {
     return null;
+  }
+
+  if (result.model === 'dk') {
+    return <DanishCard listing={listing} result={result} t={t} locale={locale} />;
   }
 
   const primary = result.financing.primary;
@@ -142,6 +133,64 @@ export default function ListingFinanceCard({ listing }) {
           rate: String(primary.annualRate),
           tilgung: String(primary.tilgung),
         })}
+      </Text>
+    </section>
+  );
+}
+
+/**
+ * The Danish variant: what the home costs a month after rentefradrag, the cash it takes to get it,
+ * and how much is still owed after a while. Every figure here is the Danish model's, in kroner.
+ *
+ * @param {Object} props
+ * @param {{id: string, price: number}} props.listing
+ * @param {Object} props.result The Danish result (`model: 'dk'`).
+ * @param {(key: string, params?: Object) => string} props.t
+ * @param {string} props.locale
+ */
+function DanishCard({ listing, result, t, locale }) {
+  const navigate = useNavigate();
+  const { facts, footnote } = buildDanishFinanceFacts(result, { t, locale });
+
+  return (
+    <section className="listingFinance">
+      <div className="listingFinance__header">
+        <Title heading={4} className="listingFinance__title">
+          {t('listing.detail.financeTitle')}
+        </Title>
+        <Button
+          theme="borderless"
+          size="small"
+          icon={<IconArrowRight />}
+          iconPosition="right"
+          onClick={() => navigate(`/finance?dealType=buy&market=dk&price=${listing.price}&listingId=${listing.id}`)}
+        >
+          {t('listing.detail.financeOpenCalculator')}
+        </Button>
+      </div>
+
+      <VerdictBanner
+        compact
+        currency="DKK"
+        verdict={result.verdict}
+        share={result.rateShareOfNetIncome}
+        monthlyRate={result.dk.totalMonthly.net}
+        recommendedRate={result.recommendation.recommendedRate}
+        maxPrice={result.recommendation.maxAffordablePrice}
+      />
+
+      <dl className="listingFinance__facts">
+        {facts.map(({ id, label, value, emphasis, note }) => (
+          <div className={`listingFinance__fact${emphasis ? ' listingFinance__fact--emphasis' : ''}`} key={id}>
+            <dt className="listingFinance__fact-label">{label}</dt>
+            <dd className="listingFinance__fact-value">{value}</dd>
+            {note && <dd className="listingFinance__fact-note">{note}</dd>}
+          </div>
+        ))}
+      </dl>
+
+      <Text type="tertiary" size="small" className="listingFinance__footnote">
+        {footnote}
       </Text>
     </section>
   );

@@ -35,11 +35,16 @@ export function rentIncludesCharges(listing) {
  * The sentence a verdict explains itself with, and the ceiling that sentence quotes.
  *
  * @param {'affordable'|'stretch'|'unaffordable'} verdict
- * @param {{dealType?: ('rent'|'buy'|null), chargesIncluded?: boolean}} basis How the listing's price is meant.
+ * @param {{dealType?: ('rent'|'buy'|null), chargesIncluded?: boolean, currency?: string}} basis How the
+ *   listing's price is meant, and what it is in. A purchase in kroner was judged by the Danish model, whose
+ *   ceiling depends on the home's own ejerudgift, so its sentence quotes no figure.
  * @param {{buy: Object|null, rent: Object|null}|null|undefined} thresholds As `useFinanceProfile` returns them.
  * @returns {{key: string, limit: number|null}} A translation key taking `price`, and the figure for it.
  */
-export function verdictExplanation(verdict, { dealType, chargesIncluded = false } = {}, thresholds) {
+export function verdictExplanation(verdict, { dealType, chargesIncluded = false, currency } = {}, thresholds) {
+  if (dealType !== 'rent' && currency === 'DKK') {
+    return { key: `listings.affordabilityTooltipDk.${verdict}`, limit: null };
+  }
   if (dealType !== 'rent') {
     return { key: `listings.affordabilityTooltip.${verdict}`, limit: thresholds?.buy?.affordableMaxPrice ?? null };
   }

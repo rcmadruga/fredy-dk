@@ -111,6 +111,7 @@ const ListingsTable = ({
                     verdict={item.affordabilityVerdict}
                     dealType={item.dealType}
                     chargesIncluded={rentIncludesCharges(item)}
+                    currency={currencyOf(item.provider)}
                   />
                   <PriceChangeBadge
                     price={item.price}

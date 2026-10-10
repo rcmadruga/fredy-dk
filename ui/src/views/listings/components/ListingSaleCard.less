@@ -1,0 +1,206 @@
+@import '../../../tokens.less';
+
+.listing-sale {
+  &__section + &__section,
+  &__section + &__links {
+    margin-top: @space-4;
+  }
+
+  // A small heading inside the card. The card's own label is the h2; these are the h3s under it.
+  &__heading {
+    display: flex;
+    align-items: center;
+    gap: @space-2;
+    margin: 0;
+    font-size: @text-base;
+    font-weight: 600;
+    color: @color-text;
+  }
+
+  &__rows {
+    margin: @space-2 0 0;
+  }
+
+  &__row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: @space-3;
+    padding: @space-2 0;
+    border-top: 1px solid @color-border;
+
+    dt {
+      color: @color-muted;
+    }
+
+    dd {
+      margin: 0;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      color: @color-text;
+    }
+
+    // The asking price is what every other line is read against.
+    &--lead dt,
+    &--lead dd {
+      font-weight: 700;
+      color: @color-text;
+    }
+  }
+
+  &__help {
+    margin-left: @space-1;
+    cursor: help;
+    color: @color-muted;
+  }
+
+  // The box the table is laid out against. Its own width decides the layout, not the window's: on a desktop
+  // the card sits in a rail about 400px wide, which is as narrow as the card is on a phone. Scrolling stays as
+  // the last resort for a table that still does not fit.
+  &__table-wrap {
+    margin-top: @space-2;
+    overflow-x: auto;
+    container-type: inline-size;
+  }
+
+  &__table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: @text-base;
+    font-variant-numeric: tabular-nums;
+
+    th,
+    td {
+      padding: @space-2 @space-2 @space-2 0;
+      border-top: 1px solid @color-border;
+      text-align: right;
+      white-space: nowrap;
+      font-weight: 400;
+      color: @color-text;
+    }
+
+    th:first-child {
+      text-align: left;
+    }
+
+    thead th {
+      border-top: 0;
+      font-size: @text-sm;
+      color: @color-muted;
+    }
+
+    th:last-child,
+    td:last-child {
+      padding-right: 0;
+    }
+  }
+
+  // Too narrow for four columns (the rail, a phone): each sale becomes a small block, the date and the price
+  // on the first line, the price per m2 and the change on the second, each with its column's name in front.
+  // 30rem is about what the four columns need, with "DKK 1,450,000" in them.
+  @container (max-width: 30rem) {
+    &__table {
+      thead {
+        // Out of sight, not out of the document: the names are in each cell now.
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+      }
+
+      tbody,
+      tr {
+        display: block;
+      }
+
+      tr {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        column-gap: @space-3;
+        row-gap: @space-1;
+        padding: @space-2 0;
+        border-top: 1px solid @color-border;
+      }
+
+      th,
+      td,
+      th:last-child,
+      td:last-child {
+        padding: 0;
+        border-top: 0;
+        white-space: normal;
+      }
+
+      th:first-child {
+        text-align: left;
+      }
+
+      td[data-label]::before {
+        content: attr(data-label) ' ';
+        font-size: @text-sm;
+        color: @color-muted;
+      }
+
+      // Second line: the per m2 on the left, the change on the right.
+      td:nth-of-type(2) {
+        text-align: left;
+      }
+    }
+  }
+
+  // A sale that was not on the open market: greyed, and named in the date cell.
+  &__sale--not-free {
+    th,
+    td {
+      color: @color-faint;
+    }
+  }
+
+  &__sale-type {
+    display: block;
+    font-size: @text-sm;
+    color: @color-muted;
+  }
+
+  // Told by the border and the word, not by colour alone.
+  &__badge {
+    padding: 0 @space-2;
+    border: 1px solid @color-warning;
+    border-radius: @radius-chip;
+    font-size: @text-sm;
+    font-weight: 600;
+    color: @color-text;
+    cursor: help;
+  }
+
+  &__note {
+    margin: @space-2 0 0;
+    font-size: @text-base;
+    color: @color-muted;
+  }
+
+  // Folded by default: the building is reference, not the decision.
+  &__building > summary {
+    cursor: pointer;
+    // A flex summary loses its disclosure marker, so it is a list item again here.
+    display: list-item;
+    list-style-position: inside;
+  }
+
+  &__links {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: @space-2;
+    font-size: @text-base;
+
+    a {
+      color: @color-accent-text;
+      text-decoration: underline;
+    }
+  }
+}

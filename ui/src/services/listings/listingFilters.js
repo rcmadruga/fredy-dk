@@ -5,6 +5,7 @@
 
 import { parseCommuteFilter } from '../../components/transit/travelTimeFormat.js';
 import { parseString, parseNumber, parseNullableBoolean } from '../../hooks/useSearchParamState.js';
+import { formatPrice } from '../price/priceService.js';
 
 /**
  * What the listings overview is filtered by, and how to say it out loud.
@@ -41,6 +42,10 @@ export const NEUTRAL = {
   mop: null,
   movein: null,
   mdated: null,
+  ejmax: null,
+  energy: null,
+  relisted: null,
+  reduced: null,
   hidden: false,
 };
 
@@ -77,6 +82,12 @@ export const FILTER_URL_STATE = {
   movein: { defaultValue: null, codec: parseString },
   // Leave out listings that state no date. Meaningless without `movein`, and cleared with it.
   mdated: { defaultValue: null, codec: parseNullableBoolean },
+  // What a for-sale advert states, read from its sale terms: the highest ejerudgift per month, the worst
+  // energy label (A to G), and two flags. None of them says anything about a rental.
+  ejmax: { defaultValue: null, codec: parseNumber },
+  energy: { defaultValue: null, codec: parseString },
+  relisted: { defaultValue: null, codec: parseNullableBoolean },
+  reduced: { defaultValue: null, codec: parseNullableBoolean },
   hidden: { defaultValue: false, codec: parseNullableBoolean },
 };
 
@@ -97,6 +108,10 @@ export const FILTER_KEYS = [
   'status',
   'afford',
   'movein',
+  'ejmax',
+  'energy',
+  'relisted',
+  'reduced',
   'commute',
   'down',
   'fiber',
@@ -122,6 +137,21 @@ export const MOVE_IN_DATED_KEY = 'mdated';
  * @type {string}
  */
 export const MOBILE_OPERATOR_KEY = 'mop';
+
+/**
+ * The ceilings the ejerudgift filter offers, in kroner per month. Steps rather than a free number, like
+ * the downstream filter's: a handful of round figures answers "what can I carry" and fits a dropdown.
+ *
+ * @type {number[]}
+ */
+export const OWNER_COST_STEPS = [2000, 3000, 4000, 5000, 7500, 10000];
+
+/**
+ * The energy labels the filter offers, best first. "B" means B or better; `A2020` and the like are an A.
+ *
+ * @type {string[]}
+ */
+export const ENERGY_LABELS = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
 
 /**
  * Whether a filter is doing something.
@@ -294,6 +324,10 @@ export function toListingsQuery(values) {
       // is offered as an extra filter rather than as the default way to sort the page.
       ...(toTravelTimeQuery(values.commute) ?? {}),
       ...moveInQuery(values),
+      saleOwnerCostMax: values.ejmax,
+      saleEnergyMin: values.energy,
+      saleRelistedOnly: values.relisted,
+      salePriceReducedOnly: values.reduced,
       connectivityMinDown: values.down,
       connectivityFiber: values.fiber,
       connectivityMobileTech: values.mtech,
@@ -374,6 +408,10 @@ export function describeActiveFilters(values, { t, jobs = [], providers = [], lo
         ? t('listings.filterMoveInChipFrom', { from: day(window.from) })
         : t('listings.filterMoveInChipTo', { to: day(window.to) });
     },
+    ejmax: () => t('listings.filterOwnerCostChip', { amount: formatPrice(values.ejmax, locale, null, 'DKK') }),
+    energy: () => t('listings.filterEnergyChip', { label: values.energy }),
+    relisted: () => t('listings.filterRelistedOnly'),
+    reduced: () => t('listings.filterReducedOnly'),
     down: () => t('listings.filterDownstreamOption', { mbit: values.down }),
     fiber: () => t('listings.filterFiberOnly'),
     mtech: () => {

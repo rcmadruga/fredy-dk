@@ -5,7 +5,7 @@
 
 import { SegmentPart } from '../../../components/segment/SegmentPart.jsx';
 import { NumberField } from './ProfileForm.jsx';
-import { formatEuro } from '../../../components/cards/chartTheme.js';
+import { currencyUnit, formatPrice, DEFAULT_CURRENCY } from '../../../services/price/priceService.js';
 import { useTranslation, useLocale } from '../../../services/i18n/i18n.jsx';
 
 import './HouseholdHeadline.less';
@@ -32,11 +32,20 @@ import './HouseholdHeadline.less';
  *   independent of any loan. Not derived here: this browser does no finance math.
  * @param {(patch: Object) => void} props.onChange
  * @param {(patch: Object) => void} props.onPersonChange Patches personA.
+ * @param {string} [props.currency='EUR'] What the amounts are in: kroner while the buying tab is on Denmark.
  * @returns {React.ReactElement}
  */
-export default function HouseholdHeadline({ profile, budget, housingBudget, onChange, onPersonChange }) {
+export default function HouseholdHeadline({
+  profile,
+  budget,
+  housingBudget,
+  onChange,
+  onPersonChange,
+  currency = DEFAULT_CURRENCY,
+}) {
   const t = useTranslation();
   const locale = useLocale();
+  const unit = currencyUnit(currency, locale);
 
   const net = budget?.netIncome ?? 0;
   const living = budget?.livingCosts ?? 0;
@@ -65,7 +74,7 @@ export default function HouseholdHeadline({ profile, budget, housingBudget, onCh
           label={t('finance.form.primaryIncome')}
           value={profile?.personA?.primaryIncome}
           step={50}
-          suffix="€"
+          suffix={unit}
           help={t('finance.form.primaryIncomeHelp')}
           onChange={(primaryIncome) => onPersonChange({ primaryIncome })}
         />
@@ -73,7 +82,7 @@ export default function HouseholdHeadline({ profile, budget, housingBudget, onCh
           label={t('finance.form.livingCosts')}
           value={profile?.livingCosts}
           step={50}
-          suffix="€"
+          suffix={unit}
           allowEmpty
           help={t('finance.form.livingCostsHelp')}
           onChange={(livingCosts) => onChange({ livingCosts })}
@@ -85,7 +94,9 @@ export default function HouseholdHeadline({ profile, budget, housingBudget, onCh
           <>
             <div className="householdHeadline__row">
               <span className="householdHeadline__caption">{t('finance.form.housingBudget')}</span>
-              <span className="householdHeadline__value">{formatEuro(housingBudget ?? 0, locale)}</span>
+              <span className="householdHeadline__value">
+                {formatPrice(Math.round(housingBudget ?? 0), locale, null, currency)}
+              </span>
             </div>
             <div className="householdHeadline__bar" aria-hidden="true">
               <span className="householdHeadline__seg householdHeadline__seg--rule" style={{ width: `${rulePct}%` }} />
