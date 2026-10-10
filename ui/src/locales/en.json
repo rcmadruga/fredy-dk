@@ -989,6 +989,7 @@
   "finance.intro": "Work out what a property would actually cost you every month, and which of the listings you have collected you could realistically buy.",
   "finance.rule.body": "Housing costs plus existing loan payments should stay at or below 35 % of your net income. Up to 40 % a listing counts as a stretch, beyond that as out of reach. Housing costs mean the warm rent when renting and the loan instalment when buying. The amount also has to fit what is left after your living costs.",
   "finance.disclaimer": "An estimate based on standard German purchase costs, not financial advice. Ask your bank for a binding offer.",
+  "finance.disclaimerDk": "An estimate based on typical Danish purchase costs and the tax rules in force, not financial advice. Ask your bank or mortgage lender for a binding offer.",
   "finance.noData": "No data",
   "finance.saveRent": "Save renting data",
   "finance.saveBuy": "Save buying data",

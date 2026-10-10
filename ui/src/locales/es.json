@@ -966,6 +966,7 @@
   "finance.intro": "Calcula lo que te costaría de verdad una vivienda cada mes y cuáles de los anuncios que has reunido podrías comprar con realismo.",
   "finance.rule.body": "Los gastos de vivienda más las cuotas de préstamos que ya pagas deberían quedarse en el 35 % de tus ingresos netos o por debajo. Hasta el 40 % un anuncio cuenta como ajustado y por encima como fuera de alcance. Los gastos de vivienda son el alquiler con gastos si alquilas y la cuota del préstamo si compras. La cantidad también tiene que caber en lo que te queda después de tus gastos de vida.",
   "finance.disclaimer": "Es una estimación basada en los costes de compra habituales en Alemania, no asesoramiento financiero. Pide a tu banco una oferta vinculante.",
+  "finance.disclaimerDk": "Es una estimación basada en los costes de compra habituales en Dinamarca y en las normas fiscales vigentes, no asesoramiento financiero. Pide a tu banco o a tu entidad de crédito hipotecario una oferta vinculante.",
   "finance.noData": "Sin datos",
   "finance.saveRent": "Guardar datos de alquiler",
   "finance.saveBuy": "Guardar datos de compra",

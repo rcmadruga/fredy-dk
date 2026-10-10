@@ -86,6 +86,30 @@ export const formatPrice = (price, locale = DEFAULT_LOCALE, fractionDigits = nul
 };
 
 /**
+ * The unit that stands beside a bare number in an input: `€` for euros, `kr` or `kr.` for kroner.
+ *
+ * Taken from the formatter's narrow symbol rather than written out, so a currency the app learns later
+ * needs no second table. Falls back to the code where the runtime has no symbol.
+ *
+ * @param {string} [currency='EUR'] ISO 4217 code.
+ * @param {string} [locale='de-DE'] BCP 47 locale.
+ * @returns {string}
+ */
+export const currencyUnit = (currency = DEFAULT_CURRENCY, locale = DEFAULT_LOCALE) => {
+  const code = codeOf(currency);
+  try {
+    const parts = new Intl.NumberFormat(locale || DEFAULT_LOCALE, {
+      style: 'currency',
+      currency: code,
+      currencyDisplay: 'narrowSymbol',
+    }).formatToParts(0);
+    return parts.find((part) => part.type === 'currency')?.value ?? code;
+  } catch {
+    return code;
+  }
+};
+
+/**
  * {@link formatPrice} in euros, for the places that are euros by construction: the market
  * benchmark and the finance tools, whose reference data is German.
  *

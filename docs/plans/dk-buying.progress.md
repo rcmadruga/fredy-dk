@@ -142,3 +142,9 @@ Both resolved in step 6 (2026-10-10); each source sits beside its constant in
   is now a size container; below 30rem each sale stacks (date and price, then price per m2 and change, each cell
   carrying its column name via `data-label`), above it the table is unchanged. Screenshots at 1400 and 390 px show all
   four values, no scroll box.
+- Review fix 4 (German leftovers on the financing page): the household block (`HouseholdHeadline`, `ProfileForm`)
+  hardcoded `€` as the input suffix and formatted the housing budget with `formatEuro`, and the footer always said
+  "standard German purchase costs". Both now follow Denmark mode (buying tab on `market: 'dk'`): the unit comes from
+  the new `currencyUnit(currency, locale)` in `priceService.js` (narrow symbol: `kr`/`kr.` for DKK, `€` as before), the
+  budget from `formatPrice`, and the footer reads the new key `finance.disclaimerDk` (all six locales). On the renting
+  tab, or with the German market, nothing changes.

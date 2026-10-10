@@ -43,6 +43,7 @@ import { summariseHousehold } from '../../services/finance/householdSummary.js';
 import { discardSection, financeDirtyState, isSectionDirty } from '../../services/finance/financeDirty.js';
 import { useUnsavedWarning } from '../../hooks/useUnsavedWarning.js';
 import { useTranslation } from '../../services/i18n/i18n.jsx';
+import { DEFAULT_CURRENCY } from '../../services/price/priceService.js';
 
 import './FinanceCalculator.less';
 
@@ -287,6 +288,10 @@ export default function FinanceCalculator() {
   // Tracked because the shared household block sits outside the tabs: when one of its fields is
   // left, the autosave has to know which half it belongs to.
   const [activeTab, setActiveTab] = React.useState(defaultTab);
+  // Denmark mode: the buying tab is on the Danish model. The shared household block and the footer follow
+  // it, so incomes read in kroner and the disclaimer talks about Danish costs, not German ones.
+  const danishMode = activeTab === 'buy' && market === 'dk';
+  const householdCurrency = danishMode ? 'DKK' : DEFAULT_CURRENCY;
   /** Whether the optional half of the household is folded open. */
   const [householdOpen, setHouseholdOpen] = React.useState(false);
 
@@ -346,6 +351,7 @@ export default function FinanceCalculator() {
             housingBudget={result?.recommendation?.recommendedRate ?? null}
             onChange={patchProfile}
             onPersonChange={(patch) => patchProfile({ personA: { ...draft.personA, ...patch } })}
+            currency={householdCurrency}
           />
 
           <Collapse
@@ -366,7 +372,7 @@ export default function FinanceCalculator() {
                 </span>
               }
             >
-              <ProfileForm profile={draft} onChange={patchProfile} />
+              <ProfileForm profile={draft} onChange={patchProfile} currency={householdCurrency} />
             </Collapse.Panel>
           </Collapse>
         </div>
@@ -520,7 +526,7 @@ export default function FinanceCalculator() {
         </SegmentPart>
       )}
 
-      <Text className="finance__disclaimer">{t('finance.disclaimer')}</Text>
+      <Text className="finance__disclaimer">{t(danishMode ? 'finance.disclaimerDk' : 'finance.disclaimer')}</Text>
 
       {/* One bar for the whole page, sticky, and only while there is something to save - the same
           one every settings page carries. It saves the tab you are on, because that is the half the
