@@ -91,7 +91,7 @@ describe('GroceryPanel', () => {
 });
 
 describe('DenmarkPanel', () => {
-  it('has the SCHOOLS, KOMMUNE and GROCERIES groups, in that order', () => {
+  it('has the SCHOOLS, KOMMUNE, GROCERIES and JOBS groups, in that order', () => {
     const html = renderToStaticMarkup(
       createElement(
         I18nProvider,
@@ -118,6 +118,16 @@ describe('DenmarkPanel', () => {
             shownCount: 0,
             onReset: () => {},
           },
+          jobs: {
+            status: 'idle',
+            areaEnabled: false,
+            onAreaEnabledChange: () => {},
+            pointsEnabled: false,
+            onPointsEnabledChange: () => {},
+            total: 0,
+            kommuneCount: 0,
+            fetchedAt: null,
+          },
         }),
       ),
     );
@@ -125,5 +135,6 @@ describe('DenmarkPanel', () => {
     expect(at('Schools')).toBeGreaterThan(-1);
     expect(at('Schools')).toBeLessThan(at('Kommune'));
     expect(at('Kommune')).toBeLessThan(at('Groceries'));
+    expect(at('Groceries')).toBeLessThan(at('Jobs'));
   });
 });

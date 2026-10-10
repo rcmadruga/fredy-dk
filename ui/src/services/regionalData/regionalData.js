@@ -34,6 +34,22 @@ import { xhrGet } from '../xhr.js';
  */
 
 /**
+ * @typedef {Object} JobPosting One dot on the jobs map: an advert at one place.
+ * @property {string} id
+ * @property {string} title
+ * @property {string} employer
+ * @property {string|null} url - The advert on Jobindex.
+ * @property {string|null} lastDate - Application deadline, `YYYY-MM-DD`.
+ * @property {'exact'|'kitchen'} tier
+ * @property {string} kommuneCode
+ * @property {string} kommuneName
+ * @property {number} lat
+ * @property {number} lng
+ * @property {boolean} approximate - A postcode's or a town's centre rather than the workplace.
+ * @property {string[]} alsoIn - Other kommuner the same advert lists.
+ */
+
+/**
  * Fetches the Denmark tax choropleth: one GeoJSON feature per kommune, carrying `kommuneskatPct` and
  * `grundskyldPromille` in its properties.
  *
@@ -68,5 +84,19 @@ export async function fetchSchoolLayer() {
  */
 export async function fetchGroceryLayer() {
   const { json } = await xhrGet('/api/regional-data/dk/groceries');
+  return json;
+}
+
+/**
+ * Fetches where the jobs are: a count per kommune (a GeoJSON feature per kommune, with `count`) and a
+ * dot per advert and place.
+ *
+ * The server reads Jobindex at most every two weeks and keeps the result, so this is cheap except for
+ * the first request after that, which can take about a minute.
+ *
+ * @returns {Promise<{available: boolean, failed: boolean, fetchedAt: number|null, total: number, postings: JobPosting[], choropleth: {type: 'FeatureCollection', features: Array<Object>}, attribution: string[]}>}
+ */
+export async function fetchJobsLayer() {
+  const { json } = await xhrGet('/api/regional-data/dk/jobs');
   return json;
 }

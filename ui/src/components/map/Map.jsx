@@ -28,12 +28,27 @@ import {
   applyTaxLayer,
   applySchoolLayer,
   applyGroceryLayer,
+  applyJobsAreaLayer,
+  applyJobsPointLayer,
   TAX_FILL_LAYER_ID,
   SCHOOL_LAYER_ID,
   GROCERY_LAYER_ID,
+  JOBS_FILL_LAYER_ID,
+  JOBS_POINT_LAYER_ID,
 } from './regionalDataLayers.js';
-import { fetchTaxChoropleth, fetchSchoolLayer, fetchGroceryLayer } from '../../services/regionalData/regionalData.js';
-import { buildTaxPopupHtml, buildSchoolPopupHtml, buildGroceryPopupHtml } from './regionalPopups.js';
+import {
+  fetchTaxChoropleth,
+  fetchSchoolLayer,
+  fetchGroceryLayer,
+  fetchJobsLayer,
+} from '../../services/regionalData/regionalData.js';
+import {
+  buildTaxPopupHtml,
+  buildSchoolPopupHtml,
+  buildGroceryPopupHtml,
+  buildJobsAreaPopupHtml,
+  buildJobPostingPopupHtml,
+} from './regionalPopups.js';
 import {
   DEFAULT_GROCERY_FILTERS,
   countByChain,
@@ -179,12 +194,18 @@ const GERMANY_CENTER = [10.4515, 51.1657];
  *   server has no `UDDANNELSESSTATISTIK_API_KEY` configured.
  * @param {boolean} [props.groceryLayer] - Controlled Denmark supermarket overlay. Same Denmark scoping
  *   as `taxLayer`; nothing is fetched until it is first switched on.
+ * @param {boolean} [props.jobsLayer] - Controlled Denmark jobs-by-kommune shading (ernæringsassistent
+ *   adverts per kommune). Same Denmark scoping as `taxLayer`; fetched the first time this or
+ *   `jobsPoints` is switched on.
+ * @param {boolean} [props.jobsPoints] - Controlled Denmark job dots, one per advert and place.
  * @param {'STANDARD'|'SATELLITE'} [props.defaultStyle]
  * @param {boolean} [props.defaultShow3dBuildings]
  * @param {boolean} [props.defaultShowTransit]
  * @param {boolean} [props.defaultTaxLayer]
  * @param {boolean} [props.defaultSchoolLayer]
  * @param {boolean} [props.defaultGroceryLayer]
+ * @param {boolean} [props.defaultJobsLayer]
+ * @param {boolean} [props.defaultJobsPoints]
  * @param {(patch: Object) => void} [props.onControlsChange]
  * @param {'expanded'|'always'|'never'} [props.controlsMode] - When to show the controls panel.
  * @param {boolean} [props.searchable] - Show the address search in the top right corner. Off by
@@ -225,12 +246,16 @@ export default function Map({
   taxLayer,
   schoolLayer,
   groceryLayer,
+  jobsLayer,
+  jobsPoints,
   defaultStyle = 'STANDARD',
   defaultShow3dBuildings = false,
   defaultShowTransit = false,
   defaultTaxLayer = false,
   defaultSchoolLayer = false,
   defaultGroceryLayer = false,
+  defaultJobsLayer = false,
+  defaultJobsPoints = false,
   onControlsChange = null,
   controlsMode = 'expanded',
   controlsInPanels = false,
@@ -273,6 +298,8 @@ export default function Map({
   const [taxLayerValue, setTaxLayerValue] = useControllableState(taxLayer, defaultTaxLayer);
   const [schoolLayerValue, setSchoolLayerValue] = useControllableState(schoolLayer, defaultSchoolLayer);
   const [groceryLayerValue, setGroceryLayerValue] = useControllableState(groceryLayer, defaultGroceryLayer);
+  const [jobsLayerValue, setJobsLayerValue] = useControllableState(jobsLayer, defaultJobsLayer);
+  const [jobsPointsValue, setJobsPointsValue] = useControllableState(jobsPoints, defaultJobsPoints);
   const [isExpanded, setIsExpanded] = useControllableState(expanded, defaultExpanded);
 
   // Whether this map is showing a Danish context at all - the same `countries` union the job form
@@ -346,6 +373,17 @@ export default function Map({
   );
   const groceryCounts = useMemo(() => countByChain(groceryLayerData?.stores), [groceryLayerData]);
 
+  // The jobs are fetched the first time either of the two jobs switches is turned on: the server may
+  // have to read Jobindex first, which takes about a minute, and a map that never uses the layer should
+  // not trigger it. Both switches draw on the one answer.
+  const [jobsData, setJobsData] = useState(null);
+  const [jobsLoading, setJobsLoading] = useState(false);
+  const jobsStatus = jobsData?.failed ? 'error' : jobsData != null ? 'ready' : jobsLoading ? 'loading' : 'idle';
+  const jobsKommuneCount = useMemo(
+    () => (jobsData?.choropleth?.features ?? []).filter((f) => f.properties.count > 0).length,
+    [jobsData],
+  );
+
   /**
    * The single entry point for control changes, so a controlled parent is told once per action.
    */
@@ -359,6 +397,8 @@ export default function Map({
     if ('taxLayer' in next) setTaxLayerValue(next.taxLayer);
     if ('schoolLayer' in next) setSchoolLayerValue(next.schoolLayer);
     if ('groceryLayer' in next) setGroceryLayerValue(next.groceryLayer);
+    if ('jobsLayer' in next) setJobsLayerValue(next.jobsLayer);
+    if ('jobsPoints' in next) setJobsPointsValue(next.jobsPoints);
     onControlsChange?.(next);
   };
 
@@ -658,6 +698,80 @@ export default function Map({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isDenmarkScoped, groceryLayerValue]);
 
+  // Fetch the jobs on first use, guarded by a ref for the same reason as the supermarkets above: the
+  // loading state must not be a dependency, or setting it would cancel the request just started.
+  // Switching a jobs switch on again after a failure is the retry.
+  const jobsRequested = useRef(false);
+  const jobsWanted = jobsLayerValue || jobsPointsValue;
+  useEffect(() => {
+    if (!isDenmarkScoped || !jobsWanted) return;
+    if (jobsRequested.current && jobsData?.failed !== true) return;
+    jobsRequested.current = true;
+
+    setJobsData(null);
+    setJobsLoading(true);
+    fetchJobsLayer()
+      .then((data) => setJobsData(data))
+      .catch((error) => {
+        console.error('Error fetching the Denmark jobs layer', error);
+        setJobsData({
+          available: true,
+          failed: true,
+          fetchedAt: null,
+          total: 0,
+          postings: [],
+          choropleth: { type: 'FeatureCollection', features: [] },
+          attribution: [],
+        });
+      })
+      .finally(() => setJobsLoading(false));
+    // `jobsData` is read only to tell a failure from a success when a switch is turned on; it must
+    // not be a dependency, or its own arrival would start the next fetch.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDenmarkScoped, jobsWanted]);
+
+  // Handle Denmark jobs by kommune
+  useEffect(() => {
+    if (!mapRef.current) return;
+
+    const onStyleData = () => {
+      if (!mapRef.current) return;
+      const show = jobsLayerValue && isDenmarkScoped && jobsStatus === 'ready';
+      applyJobsAreaLayer(mapRef.current, show ? jobsData.choropleth : null);
+    };
+
+    if (mapRef.current.isStyleLoaded()) {
+      onStyleData();
+    }
+
+    mapRef.current.on('styledata', onStyleData);
+
+    return () => {
+      mapRef.current?.off('styledata', onStyleData);
+    };
+  }, [jobsLayerValue, styleValue, isDenmarkScoped, jobsData, jobsStatus]);
+
+  // Handle Denmark job dots
+  useEffect(() => {
+    if (!mapRef.current) return;
+
+    const onStyleData = () => {
+      if (!mapRef.current) return;
+      const show = jobsPointsValue && isDenmarkScoped && jobsStatus === 'ready';
+      applyJobsPointLayer(mapRef.current, show ? jobsData.postings : null);
+    };
+
+    if (mapRef.current.isStyleLoaded()) {
+      onStyleData();
+    }
+
+    mapRef.current.on('styledata', onStyleData);
+
+    return () => {
+      mapRef.current?.off('styledata', onStyleData);
+    };
+  }, [jobsPointsValue, styleValue, isDenmarkScoped, jobsData, jobsStatus]);
+
   // Handle Denmark kommune tax choropleth
   useEffect(() => {
     if (!mapRef.current) return;
@@ -781,6 +895,33 @@ export default function Map({
         .addTo(mapInstance);
     };
 
+    const onJobsAreaClick = (event) => {
+      // A dot lies on top of the shading: a click that hit one is for the dot, not for the kommune.
+      if (
+        mapInstance.getLayer(JOBS_POINT_LAYER_ID) &&
+        mapInstance.queryRenderedFeatures(event.point, { layers: [JOBS_POINT_LAYER_ID] }).length > 0
+      ) {
+        return;
+      }
+      const feature = event.features?.[0];
+      if (!feature) return;
+
+      new maplibregl.Popup({ offset: 8 })
+        .setLngLat(event.lngLat)
+        .setHTML(buildJobsAreaPopupHtml(feature.properties, t))
+        .addTo(mapInstance);
+    };
+
+    const onJobPointClick = (event) => {
+      const feature = event.features?.[0];
+      if (!feature) return;
+
+      new maplibregl.Popup({ offset: 8, maxWidth: '300px' })
+        .setLngLat(feature.geometry.coordinates)
+        .setHTML(buildJobPostingPopupHtml(feature.properties, t))
+        .addTo(mapInstance);
+    };
+
     const showPointer = () => {
       mapInstance.getCanvas().style.cursor = 'pointer';
     };
@@ -797,6 +938,12 @@ export default function Map({
     mapInstance.on('click', GROCERY_LAYER_ID, onGroceryClick);
     mapInstance.on('mouseenter', GROCERY_LAYER_ID, showPointer);
     mapInstance.on('mouseleave', GROCERY_LAYER_ID, clearPointer);
+    mapInstance.on('click', JOBS_FILL_LAYER_ID, onJobsAreaClick);
+    mapInstance.on('mouseenter', JOBS_FILL_LAYER_ID, showPointer);
+    mapInstance.on('mouseleave', JOBS_FILL_LAYER_ID, clearPointer);
+    mapInstance.on('click', JOBS_POINT_LAYER_ID, onJobPointClick);
+    mapInstance.on('mouseenter', JOBS_POINT_LAYER_ID, showPointer);
+    mapInstance.on('mouseleave', JOBS_POINT_LAYER_ID, clearPointer);
 
     return () => {
       mapInstance.off('click', TAX_FILL_LAYER_ID, onTaxClick);
@@ -808,6 +955,12 @@ export default function Map({
       mapInstance.off('click', GROCERY_LAYER_ID, onGroceryClick);
       mapInstance.off('mouseenter', GROCERY_LAYER_ID, showPointer);
       mapInstance.off('mouseleave', GROCERY_LAYER_ID, clearPointer);
+      mapInstance.off('click', JOBS_FILL_LAYER_ID, onJobsAreaClick);
+      mapInstance.off('mouseenter', JOBS_FILL_LAYER_ID, showPointer);
+      mapInstance.off('mouseleave', JOBS_FILL_LAYER_ID, clearPointer);
+      mapInstance.off('click', JOBS_POINT_LAYER_ID, onJobPointClick);
+      mapInstance.off('mouseenter', JOBS_POINT_LAYER_ID, showPointer);
+      mapInstance.off('mouseleave', JOBS_POINT_LAYER_ID, clearPointer);
     };
   }, [isDenmarkScoped, t]);
 
@@ -1185,6 +1338,16 @@ export default function Map({
               total: groceryLayerData?.stores?.length ?? 0,
               shownCount: filteredStores.length,
               onReset: resetGroceryFilters,
+            }}
+            jobs={{
+              status: jobsStatus,
+              areaEnabled: jobsLayerValue,
+              onAreaEnabledChange: (value) => applyControls({ jobsLayer: value }),
+              pointsEnabled: jobsPointsValue,
+              onPointsEnabledChange: (value) => applyControls({ jobsPoints: value }),
+              total: jobsData?.total ?? 0,
+              kommuneCount: jobsKommuneCount,
+              fetchedAt: jobsData?.fetchedAt ?? null,
             }}
           />
         )}

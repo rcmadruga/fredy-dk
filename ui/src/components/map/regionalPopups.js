@@ -116,3 +116,45 @@ export function buildGroceryPopupHtml(properties, t) {
   );
   return `<div class="map-popup-content"><h4>${escapeHtml(title)}</h4>${lines.join('')}</div>`;
 }
+
+/** Only Jobindex's own pages are linked to: the address comes from a scraped page, and a link is a click. */
+const JOBINDEX_LINK = /^https:\/\/www\.jobindex\.dk\//;
+
+/**
+ * A kommune on the jobs choropleth: how many adverts it has.
+ *
+ * @param {{name?: string, count?: number}} properties A kommune feature's properties.
+ * @param {(key: string, values?: Object) => string} t
+ * @returns {string}
+ */
+export function buildJobsAreaPopupHtml(properties, t) {
+  const count = Number(properties.count) || 0;
+  return `<div class="map-popup-content"><h4>${escapeHtml(properties.name ?? '')}</h4><p>${escapeHtml(
+    t('map.jobsAreaPopupCount', { count }),
+  )}</p></div>`;
+}
+
+/**
+ * One job advert: its title, who is hiring, where, the deadline and a link to the advert itself.
+ * Titles and employers come from a scraped page, so all of it is escaped and the link is checked.
+ *
+ * @param {{title?: string, employer?: string, url?: string|null, lastDate?: string|null, kommuneName?: string, approximate?: boolean|string, alsoIn?: string}} properties A posting feature's properties.
+ * @param {(key: string, values?: Object) => string} t
+ * @returns {string}
+ */
+export function buildJobPostingPopupHtml(properties, t) {
+  const { title, employer, url, lastDate, kommuneName, alsoIn } = properties;
+  const approximate = properties.approximate === true || properties.approximate === 'true';
+  const lines = [];
+  if (employer) lines.push(`<p>${escapeHtml(employer)}</p>`);
+  lines.push(`<p>${escapeHtml(kommuneName ?? '')}</p>`);
+  if (alsoIn) lines.push(`<p><em>${escapeHtml(t('map.jobsPopupAlsoIn', { places: alsoIn }))}</em></p>`);
+  if (approximate) lines.push(`<p><small>${escapeHtml(t('map.jobsPopupApproximate'))}</small></p>`);
+  if (lastDate) lines.push(`<p>${escapeHtml(t('map.jobsPopupDeadline', { date: lastDate }))}</p>`);
+  if (typeof url === 'string' && JOBINDEX_LINK.test(url)) {
+    lines.push(
+      `<p><a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(t('map.jobsPopupOpen'))}</a></p>`,
+    );
+  }
+  return `<div class="map-popup-content"><h4>${escapeHtml(title ?? '')}</h4>${lines.join('')}</div>`;
+}

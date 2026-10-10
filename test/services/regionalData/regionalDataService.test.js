@@ -16,6 +16,7 @@ vi.mock('../../../lib/services/regionalData/diskCache.js', () => ({
 vi.mock('../../../lib/services/regionalData/kommuneClient.js', () => ({ fetchKommuner: vi.fn() }));
 vi.mock('../../../lib/services/regionalData/taxClient.js', () => ({ fetchKommuneTaxRates: vi.fn() }));
 vi.mock('../../../lib/services/regionalData/groceryClient.js', () => ({ fetchGroceryStores: vi.fn() }));
+vi.mock('../../../lib/services/regionalData/jobsClient.js', () => ({ fetchJobPostings: vi.fn() }));
 vi.mock('../../../lib/services/regionalData/schoolClient.js', () => ({
   fetchSchoolStats: vi.fn(),
   hasApiKey: vi.fn(),
@@ -25,7 +26,8 @@ const { fetchKommuner } = await import('../../../lib/services/regionalData/kommu
 const { fetchKommuneTaxRates } = await import('../../../lib/services/regionalData/taxClient.js');
 const { fetchSchoolStats, hasApiKey } = await import('../../../lib/services/regionalData/schoolClient.js');
 const { fetchGroceryStores } = await import('../../../lib/services/regionalData/groceryClient.js');
-const { getTaxChoropleth, getSchoolLayer, getGroceryLayer } =
+const { fetchJobPostings } = await import('../../../lib/services/regionalData/jobsClient.js');
+const { getTaxChoropleth, getSchoolLayer, getGroceryLayer, getJobsLayer } =
   await import('../../../lib/services/regionalData/regionalDataService.js');
 
 const kommune = (code, name) => ({ code, name, geometry: { type: 'Polygon', coordinates: [] } });
@@ -62,7 +64,7 @@ describe('getTaxChoropleth', () => {
     expect(choropleth.features.map((f) => f.id)).toEqual(['0101']);
   });
 
-  it('is an empty (not broken) collection when DAWA could not be reached', async () => {
+  it('is an empty (not broken) collection when the bundled boundaries could not be read', async () => {
     fetchKommuner.mockResolvedValue(null);
 
     const choropleth = await getTaxChoropleth();
@@ -158,5 +160,53 @@ describe('getGroceryLayer', () => {
     const layer = await getGroceryLayer();
 
     expect(layer).toMatchObject({ available: true, failed: true, stores: [] });
+  });
+});
+
+describe('getJobsLayer', () => {
+  const advert = (id, title, extra = {}) => ({
+    id,
+    title,
+    employer: 'Plejehjemmet',
+    area: '3400 Hillerød',
+    url: `https://www.jobindex.dk/vis-job/${id}`,
+    firstDate: null,
+    lastDate: null,
+    addresses: [],
+    ...extra,
+  });
+
+  it('counts the adverts per kommune, and says when it was fetched', async () => {
+    fetchKommuner.mockResolvedValue([kommune('0219', 'Hillerød'), kommune('0101', 'København')]);
+    fetchJobPostings.mockResolvedValue([advert('a', 'Ernæringsassistent'), advert('b', 'Sygeplejerske')]);
+
+    const layer = await getJobsLayer();
+
+    expect(layer).toMatchObject({ available: true, failed: false, total: 1, fetchedAt: expect.any(Number) });
+    expect(layer.choropleth.features.map((f) => [f.properties.code, f.properties.count])).toEqual([
+      ['0219', 1],
+      ['0101', 0],
+    ]);
+    expect(layer.postings).toHaveLength(1);
+    expect(layer.attribution.join(' ')).toMatch(/Jobindex/);
+  });
+
+  it('is `failed` and empty, rather than an error, when Jobindex could not be read', async () => {
+    fetchKommuner.mockResolvedValue([kommune('0219', 'Hillerød')]);
+    fetchJobPostings.mockResolvedValue(null);
+
+    const layer = await getJobsLayer();
+
+    expect(layer).toMatchObject({ available: true, failed: true, fetchedAt: null, total: 0, postings: [] });
+    expect(layer.choropleth.features[0].properties.count).toBe(0);
+  });
+
+  it('survives the JSON the API sends', async () => {
+    fetchKommuner.mockResolvedValue([kommune('0219', 'Hillerød')]);
+    fetchJobPostings.mockResolvedValue([advert('a', 'Ernæringsassistent')]);
+
+    const layer = await getJobsLayer();
+
+    expect(JSON.parse(JSON.stringify(layer))).toEqual(layer);
   });
 });
