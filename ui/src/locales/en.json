@@ -935,6 +935,8 @@
   "news.sheetDone": "Got it",
   "news.historyTrigger": "What's new",
   "news.historyTitle": "What's new in Fredy",
+  "news.sectionFredy": "Fredy",
+  "news.sectionDk": "Fredy DK",
   "version.newBadge": "New",
   "version.modalClose": "Close",
   "version.viewOnGithub": "View on GitHub",

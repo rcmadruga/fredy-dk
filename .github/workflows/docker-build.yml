@@ -15,6 +15,11 @@ on:
         description: 'tags input passed through to docker/metadata-action'
         required: true
         type: string
+      ref:
+        description: 'Git ref to build. Empty means the ref the calling workflow ran on'
+        required: false
+        type: string
+        default: ''
 
 env:
   REGISTRY: ghcr.io
@@ -33,6 +38,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v4
