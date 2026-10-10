@@ -13,7 +13,7 @@ Status per step. Updated after every step, before anything else. The plan is `li
 - [x] 6 Home: size, bathrooms, internet, newBuild; heuristics upkeep, parking
 - [x] 7 Area (grocery, park) and Deal (vsValuation, vsLastSale, priceDrop, onMarket, relisted)
 - [x] 8 Migration `score_config`, storage, validation
-- [ ] 9 `context.js`, `score` on listings from the API
+- [x] 9 `context.js`, `score` on listings from the API
 
 ## Phase B: UI and MCP
 
@@ -56,3 +56,9 @@ Status per step. Updated after every step, before anything else. The plan is `li
   an older client or the MCP job draft must not reset a job's weights. Three existing tests hand-build a
   `jobs` table (`jobStorageHydration`, `jobRouterTourGuard`, `jobChannelAuthorization`); each got a
   `score_config TEXT` column, because `jobStorage` now selects it.
+- Step 9: `attachScores` is fail-soft (a score that cannot be built returns `score: null`, never a failed page)
+  and reaches the storage modules through namespaces at call time, so route tests that partially mock one
+  are not broken at import time. The national layers (schools, supermarkets, job posts) are raced against
+  a 1.5 s deadline and count as unavailable (metrics unknown) while a cold fetch finishes in the
+  background. Overview rows carry a compact score (total and group scores); the detail page carries every
+  metric.

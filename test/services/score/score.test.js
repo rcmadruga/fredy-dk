@@ -4,7 +4,14 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { GROUP_IDS, MISSING_SCORE, groupsFor, scoreListing, targetScore } from '../../../lib/services/score/score.js';
+import {
+  GROUP_IDS,
+  MISSING_SCORE,
+  compactScore,
+  groupsFor,
+  scoreListing,
+  targetScore,
+} from '../../../lib/services/score/score.js';
 
 /**
  * A descriptor whose raw value is read straight off the listing, so each test states its inputs.
@@ -327,5 +334,19 @@ describe('scoreListing: rent versus buy', () => {
     const tagged = [metric('home', 'size', { qualifier: 'estimate' })];
     const result = scoreListing(rent({ 'home.size': 20 }), null, {}, tagged);
     expect(result.groups.find((g) => g.id === 'home').metrics[0].qualifier).toBe('estimate');
+  });
+});
+
+describe('compactScore', () => {
+  it('keeps the total and the group scores, and drops the metrics', () => {
+    const registry = [metric('money', 'a'), metric('schools', 'a')];
+    const full = scoreListing(rent({ 'money.a': 20 }), { groups: { schools: 0 } }, {}, registry);
+    const compact = compactScore(full);
+
+    expect(compact.total).toBe(full.total);
+    expect(compact.dealType).toBe('rent');
+    expect(compact.groups[0]).toEqual({ id: 'money', score: 100, weight: 1, off: false, missing: false });
+    expect(compact.groups[1]).toEqual({ id: 'schools', score: null, weight: 0, off: true, missing: false });
+    expect(compact.groups.every((g) => g.metrics === undefined)).toBe(true);
   });
 });
