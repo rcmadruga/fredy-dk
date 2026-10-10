@@ -92,6 +92,37 @@ Unknowns, to settle in step 9 before any code:
   Treat every one of those claims as unverified.
 - Terms of use: read them before step 9, as was done for Boligsiden's robots.txt (see its file header).
 
+### Step 9 outcome (2026-10-10)
+
+**Decision: no-go from the sandbox: needs on-host verification.**
+
+What can be established without access to the site, and no more than this:
+
+- Boliga exists as a Danish property portal (boliga.dk) with a for-sale search and a listing page per
+  home. That is common knowledge, not something verified here.
+- Its listing page shows, as §3 says above, a price-history graph, the sold prices of comparable homes
+  nearby ("handelspriser") and a price estimate of its own. These are the three things it would add
+  to Boligsiden, and the reason a provider was wanted.
+- Nothing else is known. Whether the search results are in the page as JSON, whether a public search
+  endpoint sits behind the front end, which paths need a browser session, and what a response looks
+  like are all claims from third-party scrapers (see the Apify source) and stay unverified. No
+  fixture exists, so a provider written now would be written against a guess.
+- Terms of use and robots.txt have not been read. They must be, with a note of the date and the
+  outcome in the provider's file header (as for Boligsiden), before any request is sent by Fredy.
+
+Why it stops here: boliga.dk is not reachable from the development sandbox (the egress proxy answers
+403), so every question above needs a machine that can reach it. Scraping through any other route
+was ruled out. Phases 1 to 3 do not depend on Boliga.
+
+What step 10 needs when someone has access (the work to hand over, not a promise):
+
+1. Read the terms of use and robots.txt; stop if automated access is not allowed.
+2. Load a listing page and a search page in a browser and in plain `curl`; note which of the two the
+   site answers, and whether bot protection (DataDome, Cloudflare) is in front.
+3. Record the endpoint, the parameters and a sample response as fixtures under `test/testFixtures/`.
+4. Only then decide go or no-go on the provider, and whether the price history and the comparable sales
+   fit `sale_terms` (which already holds `sales` and `daysOnMarket`) or need a new field.
+
 ## 4 Storage
 
 One JSON column, `sale_terms`, on `listings`, migration 51, mirroring `rental_terms`. Not separate

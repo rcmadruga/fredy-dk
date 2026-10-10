@@ -22,8 +22,8 @@ Status per step. Updated after every step, before anything else. The plan is `dk
 
 ## Phase 4: Boliga and the rest
 
-- [ ] 9 Boliga research spike, go/no-go
-- [ ] 10 Boliga provider (only if 9 says go)
+- [x] 9 Boliga research spike, go/no-go: no-go from the sandbox, needs on-host verification (plan section 3)
+- [~] 10 Boliga provider: DEFERRED. Step 9 ended without access to boliga.dk (proxy 403), so there is no verified endpoint, fixture or terms reading to build on
 - [ ] 11 Filters and notification line
 - [ ] 12 Acceptance
 
@@ -91,3 +91,6 @@ Both resolved in step 6 (2026-10-10); each source sits beside its constant in
   `/api/finance/affordability` still score every buy listing with the German model and thresholds, also
   DKK ones. The Danish verdict appears on the detail page, the calculator and over MCP only.
   `get_listing` over MCP does not yet print `sale_terms` (plan section 7); that is done with step 11.
+- Step 9: written up in plan section 3 ("Step 9 outcome"). No request to boliga.dk was made. `[~]` in
+  the ledger means deferred, not done: step 10 stays open until someone with access to the site has
+  worked through the four hand-over points listed there.
