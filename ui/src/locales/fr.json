@@ -1677,5 +1677,6 @@
   "score.metric.deal.vsLastSale": "Prix demandé par rapport à la dernière vente",
   "score.metric.deal.priceDrop": "Variation de prix depuis la mise en ligne",
   "score.metric.deal.onMarket": "Jours sur le marché",
-  "score.metric.deal.relisted": "Remis en vente"
+  "score.metric.deal.relisted": "Remis en vente",
+  "score.chipTitle": "Score {{score}} sur 100"
 }

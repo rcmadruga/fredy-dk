@@ -11,6 +11,7 @@ import { useCurrencyOf } from '../../hooks/useCurrencyOf.js';
 import * as timeService from '../../services/time/timeService.js';
 import StatusControl from '../listings/StatusControl.jsx';
 import AffordabilityChip from '../listings/AffordabilityChip.jsx';
+import ListingScoreChip from '../listings/ListingScoreChip.jsx';
 import { rentIncludesCharges } from '../../services/finance/rentBasis.js';
 import PriceChangeBadge from '../listings/PriceChangeBadge.jsx';
 import PricePerSqmBadge from '../listings/PricePerSqmBadge.jsx';
@@ -107,6 +108,7 @@ const ListingsTable = ({
                 </span>
                 <span className="listingsTable__row__perSqm">
                   <PricePerSqmBadge listing={item} />
+                  <ListingScoreChip score={item.score} />
                   <AffordabilityChip
                     verdict={item.affordabilityVerdict}
                     dealType={item.dealType}

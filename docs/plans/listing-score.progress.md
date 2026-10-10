@@ -18,7 +18,7 @@ Status per step. Updated after every step, before anything else. The plan is `li
 ## Phase B: UI and MCP
 
 - [x] 10 `ListingScoreCard`: radar and breakdown
-- [ ] 11 Score chip on listing cards
+- [x] 11 Score chip on listing cards
 - [ ] 12 Job form "Score" card
 - [ ] 13 MCP
 

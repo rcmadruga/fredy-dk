@@ -1700,5 +1700,6 @@
   "score.metric.deal.vsLastSale": "Angebotspreis gegen letzten Verkauf",
   "score.metric.deal.priceDrop": "Preisänderung seit Erstveröffentlichung",
   "score.metric.deal.onMarket": "Tage am Markt",
-  "score.metric.deal.relisted": "Erneut eingestellt"
+  "score.metric.deal.relisted": "Erneut eingestellt",
+  "score.chipTitle": "Score {{score}} von 100"
 }

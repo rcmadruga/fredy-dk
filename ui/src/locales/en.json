@@ -1700,5 +1700,6 @@
   "score.metric.deal.vsLastSale": "Asking price against last sale",
   "score.metric.deal.priceDrop": "Price change since first listed",
   "score.metric.deal.onMarket": "Days on the market",
-  "score.metric.deal.relisted": "Relisted"
+  "score.metric.deal.relisted": "Relisted",
+  "score.chipTitle": "Score {{score}} of 100"
 }

@@ -1638,5 +1638,6 @@
   "score.metric.deal.vsLastSale": "İstenen fiyat ve son satış",
   "score.metric.deal.priceDrop": "İlk ilandan bu yana fiyat değişimi",
   "score.metric.deal.onMarket": "Piyasada geçen gün",
-  "score.metric.deal.relisted": "Yeniden ilana çıktı"
+  "score.metric.deal.relisted": "Yeniden ilana çıktı",
+  "score.chipTitle": "100 üzerinden {{score}} puan"
 }
