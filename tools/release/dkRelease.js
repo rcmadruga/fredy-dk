@@ -200,19 +200,30 @@ export function buildRelease({ version, date, title, news }) {
 }
 
 /**
- * Put a release at the top of a news config. An existing release with the same version is replaced
- * rather than duplicated, so re-running a half-finished release is harmless. The input is not
- * mutated.
+ * Put a release at the top of a news config. The input is not mutated.
+ *
+ * When the file already holds a release of the same version - the hand-written seed that the very
+ * first tag belongs to, or a half-finished run being repeated - the new entries are merged in front
+ * of the existing ones instead of replacing them, and an entry that is already there (same title and
+ * text) is not added twice.
  *
  * @param {{schemaVersion?: number, releases?: any[]}} config The parsed news.dk.json.
- * @param {{version: string}} release
+ * @param {{version: string, entries: any[]}} release
  * @returns {{schemaVersion: number, releases: any[]}}
  */
 export function prependRelease(config, release) {
-  const others = (Array.isArray(config?.releases) ? config.releases : []).filter(
-    (existing) => existing?.version !== release.version,
-  );
-  return { ...config, schemaVersion: config?.schemaVersion ?? 1, releases: [release, ...others] };
+  const all = Array.isArray(config?.releases) ? config.releases : [];
+  const same = all.find((existing) => existing?.version === release.version);
+  const others = all.filter((existing) => existing?.version !== release.version);
+  let merged = release;
+  if (same) {
+    const known = same.entries ?? [];
+    const fresh = release.entries.filter(
+      (entry) => !known.some((old) => old.title === entry.title && old.text === entry.text),
+    );
+    merged = { ...same, entries: [...fresh, ...known] };
+  }
+  return { ...config, schemaVersion: config?.schemaVersion ?? 1, releases: [merged, ...others] };
 }
 
 /**

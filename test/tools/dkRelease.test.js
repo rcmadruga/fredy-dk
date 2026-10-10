@@ -214,11 +214,19 @@ describe('building and prepending a release', () => {
     expect(existing.releases).toHaveLength(1);
   });
 
-  it('replaces a release of the same version instead of duplicating it', () => {
+  it('merges into a release of the same version, keeping what it already says', () => {
     const release = buildRelease({ version: '29.2.1-dk.1', date: '2026-10-12', title: 'Again', news: 'n' });
     const next = prependRelease(existing, release);
     expect(next.releases).toHaveLength(1);
-    expect(next.releases[0].entries[0].title).toBe('Again');
+    expect(next.releases[0].date).toBe('2026-10-10');
+    expect(next.releases[0].entries.map((entry) => entry.title)).toEqual(['Again', 'First']);
+  });
+
+  it('does not add the same entry twice when a release is repeated', () => {
+    const release = buildRelease({ version: '29.2.1-dk.2', date: '2026-10-12', title: 'Again', news: 'n' });
+    const once = prependRelease(existing, release);
+    const twice = prependRelease(once, release);
+    expect(twice).toEqual(once);
   });
 
   it('copes with an empty or missing config', () => {
