@@ -12,7 +12,7 @@ Status per step. Updated after every step, before anything else. The plan is `dk
 ## Phase 2: the card
 
 - [x] 4 `ListingSaleCard`: price and monthly costs, time on market, building, links
-- [ ] 5 Earlier-sales table
+- [x] 5 Earlier-sales table
 
 ## Phase 3: financing
 
@@ -49,3 +49,10 @@ Status per step. Updated after every step, before anything else. The plan is `dk
   at least one other cost figure exists. A price change of exactly 0 is not shown. An open house in the
   past is dropped; its time is shown in Danish time. "Your" financing figure beside the realtor's
   example (§6.1) waits for step 8. The building section is a `<details>`, closed by default.
+- Step 5: the table sits right after the cost rows (§6 order). Change to today is
+  (asking price - paid) / paid, from `sale_terms.sales[].amount` and the listing's price; it is `null`
+  for every sale with `type !== 'normal'`, which is greyed and named in words (family, auction, other)
+  with a note under the table, because a gift or an auction is not a market price. Per m² at the time
+  uses the sale's own area and is blank where the register has none. The public valuation is shown
+  under the table (or alone, for a home never sold), with a help text saying it is not a market price.
+  The table scrolls inside its box on a narrow rail instead of widening the page.

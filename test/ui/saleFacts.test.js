@@ -278,3 +278,118 @@ describe('buildSaleFacts', () => {
     for (const key of used) expect(en[key], key).toBeTruthy();
   });
 });
+
+describe('buildSaleFacts, the earlier sales', () => {
+  const history = [
+    { date: '2023-08-29', amount: 1500000, type: 'family', area: 170 },
+    { date: '2013-04-24', amount: 1450000, type: 'normal', area: 229 },
+    { date: '1999-11-10', amount: 900000, type: 'normal', area: null },
+    { date: '2010-03-11', amount: 400000, type: 'auction', area: null },
+  ];
+
+  it('is null when there are no sales and no valuation', () => {
+    expect(buildSaleFacts(sale({ sales: [], publicValuation: null }), ctx()).sales).toBeNull();
+  });
+
+  it('lists the sales in the order given, which is newest first, with the amount in kroner', () => {
+    const { sales } = buildSaleFacts(sale({ sales: history }), ctx()).sales;
+
+    expect(sales.map((s) => s.date)).toEqual(['Aug 29, 2023', 'Apr 24, 2013', 'Nov 10, 1999', 'Mar 11, 2010']);
+    expect(sales[1].amount).toBe(money(1450000));
+  });
+
+  it('works out the price per m2 at the time, and leaves it out where the register has no area', () => {
+    const { sales } = buildSaleFacts(sale({ sales: history }), ctx()).sales;
+
+    expect(sales[1].perM2).toBe(formatPrice(Math.round(1450000 / 229), 'en', 0, 'DKK') + '/m²');
+    expect(sales[2].perM2).toBeNull();
+  });
+
+  describe('the change to today', () => {
+    it('is the asking price against what was paid, as a signed percentage', () => {
+      // (6,495,000 - 1,450,000) / 1,450,000 = +347.93 %
+      const { sales } = buildSaleFacts(sale({ sales: history }), ctx()).sales;
+
+      expect(sales[1].change.percent).toBeCloseTo(347.93, 2);
+      expect(sales[1].change.text).toBe('+347.9 %');
+      expect(sales[1].change.diffText).toBe(`+${money(6495000 - 1450000)}`);
+    });
+
+    it('is negative when the home is asked for less than it once sold for', () => {
+      const earlier = [{ date: '2022-01-01', amount: 7000000, type: 'normal', area: 229 }];
+      const { sales } = buildSaleFacts(sale({ sales: earlier }), ctx()).sales;
+
+      expect(sales[0].change.text).toBe('-7.2 %');
+      expect(sales[0].change.diffText).toBe(money(-505000));
+    });
+
+    it('is zero when nothing changed', () => {
+      const earlier = [{ date: '2022-01-01', amount: 6495000, type: 'normal', area: null }];
+      const { sales } = buildSaleFacts(sale({ sales: earlier }), ctx()).sales;
+
+      expect(sales[0].change.percent).toBe(0);
+      expect(sales[0].change.text).toBe('0 %');
+    });
+
+    it('is unknown when the listing has no asking price', () => {
+      const { sales } = buildSaleFacts(sale({ sales: history }, { price: null }), ctx()).sales;
+
+      expect(sales.every((s) => s.change === null)).toBe(true);
+    });
+  });
+
+  describe('the sales that were not free', () => {
+    it('labels them and compares none of them with today', () => {
+      const { sales, hasNonFree } = buildSaleFacts(sale({ sales: history }), ctx()).sales;
+
+      expect(hasNonFree).toBe(true);
+      expect(sales.map((s) => [s.free, s.typeLabel, s.change === null])).toEqual([
+        [false, 'listing.detail.saleSaleTypeFamily', true],
+        [true, 'listing.detail.saleSaleTypeNormal', false],
+        [true, 'listing.detail.saleSaleTypeNormal', false],
+        [false, 'listing.detail.saleSaleTypeAuction', true],
+      ]);
+    });
+
+    it('treats anything but "normal" as not free, including a type it has never heard of', () => {
+      const earlier = [{ date: '2020-01-01', amount: 1000000, type: 'gift', area: null }];
+      const { sales } = buildSaleFacts(sale({ sales: earlier }), ctx()).sales;
+
+      expect(sales[0]).toMatchObject({ free: false, typeLabel: 'listing.detail.saleSaleTypeOther', change: null });
+    });
+
+    it('does not ask for the note when every sale was free', () => {
+      const { hasNonFree } = buildSaleFacts(sale({ sales: [history[1]] }), ctx()).sales;
+
+      expect(hasNonFree).toBe(false);
+    });
+  });
+
+  it('puts the public valuation underneath, with the explanation that it is not a market price', () => {
+    const { valuation } = buildSaleFacts(sale({ sales: history }), ctx()).sales;
+
+    expect(valuation).toEqual({ text: money(2700000), helpText: 'listing.detail.saleValuationHelp' });
+    expect(buildSaleFacts(sale({ sales: history, publicValuation: null }), ctx()).sales.valuation).toBeNull();
+  });
+
+  it('shows the valuation of a home that has never been sold', () => {
+    const { sales } = buildSaleFacts(sale({ sales: [] }), ctx());
+
+    expect(sales.sales).toEqual([]);
+    expect(sales.valuation.text).toBe(money(2700000));
+  });
+
+  it('only asks for translation keys the English locale has', () => {
+    const asked = new Set();
+    const record = (key, params) => {
+      asked.add(key);
+      return t(key, params);
+    };
+    buildSaleFacts(sale({ sales: history }), ctx({ t: record }));
+
+    for (const key of ['saleSaleTypeNormal', 'saleSaleTypeFamily', 'saleSaleTypeAuction', 'saleValuationHelp']) {
+      expect(asked.has(`listing.detail.${key}`), key).toBe(true);
+    }
+    for (const key of asked) expect(en[key], key).toBeTruthy();
+  });
+});

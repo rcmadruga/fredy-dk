@@ -29,7 +29,7 @@ export default function ListingSaleCard({ listing }) {
 
   const facts = buildSaleFacts(listing, { t, locale, currency: currencyOf(listing?.provider) });
   if (facts == null) return null;
-  const { costs, market, building, floorPlanUrl, openHouse } = facts;
+  const { costs, sales, market, building, floorPlanUrl, openHouse } = facts;
 
   const help = (text, label) =>
     text ? (
@@ -64,6 +64,62 @@ export default function ListingSaleCard({ listing }) {
         <div className="listing-sale__section">
           <h3 className="listing-sale__heading">{t('listing.detail.saleCostsTitle')}</h3>
           {rows(costs)}
+        </div>
+      )}
+
+      {sales != null && (
+        <div className="listing-sale__section">
+          <h3 className="listing-sale__heading">{t('listing.detail.saleSalesTitle')}</h3>
+
+          {sales.sales.length > 0 && (
+            <div className="listing-sale__table-wrap">
+              <table className="listing-sale__table">
+                <thead>
+                  <tr>
+                    <th scope="col">{t('listing.detail.saleSalesDate')}</th>
+                    <th scope="col">{t('listing.detail.saleSalesPrice')}</th>
+                    <th scope="col">{t('listing.detail.saleSalesPerM2')}</th>
+                    <th scope="col">
+                      {t('listing.detail.saleSalesChange')}
+                      {help(t('listing.detail.saleSalesChangeHelp'), t('listing.detail.saleSalesChange'))}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sales.sales.map((sale, index) => (
+                    <tr
+                      // A register can list several sales on one day, so the date alone is not a key.
+                      key={`${sale.date}-${index}`}
+                      className={sale.free ? undefined : 'listing-sale__sale--not-free'}
+                    >
+                      <th scope="row">
+                        {sale.date}
+                        {/* Said in words as well as greyed: grey alone would not tell a family sale from an old one. */}
+                        {!sale.free && <span className="listing-sale__sale-type">{sale.typeLabel}</span>}
+                      </th>
+                      <td>{sale.amount}</td>
+                      <td>{sale.perM2 ?? t('common.na')}</td>
+                      <td title={sale.change?.diffText}>{sale.change?.text ?? t('common.na')}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {sales.hasNonFree && <p className="listing-sale__note">{t('listing.detail.saleSalesNotFreeNote')}</p>}
+
+          {sales.valuation != null && (
+            <dl className="listing-sale__rows">
+              <div className="listing-sale__row">
+                <dt>
+                  {t('listing.detail.saleValuation')}
+                  {help(sales.valuation.helpText, t('listing.detail.saleValuation'))}
+                </dt>
+                <dd>{sales.valuation.text}</dd>
+              </div>
+            </dl>
+          )}
         </div>
       )}
 

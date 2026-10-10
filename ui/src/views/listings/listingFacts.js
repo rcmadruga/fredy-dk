@@ -523,6 +523,52 @@ const PROPERTY_TYPE_KEYS = {
   'villa apartment': 'listing.detail.saleTypeVillaApartment',
 };
 
+/** The names of the kinds of sale the register distinguishes; anything else is `other`. */
+const SALE_TYPE_KEYS = {
+  normal: 'listing.detail.saleSaleTypeNormal',
+  family: 'listing.detail.saleSaleTypeFamily',
+  auction: 'listing.detail.saleSaleTypeAuction',
+  other: 'listing.detail.saleSaleTypeOther',
+};
+
+/**
+ * One earlier sale of the address, as the sales table shows it.
+ *
+ * @typedef {Object} EarlierSale
+ * @property {string} date The day, in the reader's locale.
+ * @property {string} amount What was paid.
+ * @property {string|null} perM2 What was paid per square metre, when the register has the area.
+ * @property {{percent: number, text: string, diffText: string}|null} change Today's asking price against
+ *   what was paid. `null` for a sale that was not a free one: a family transfer or an auction says
+ *   nothing about what the market would pay, so it is never compared.
+ * @property {boolean} free `true` for `type: normal`, the only kind that is a market price.
+ * @property {string} typeLabel The kind of sale, in words.
+ */
+
+/**
+ * @typedef {Object} SaleHistory
+ * @property {EarlierSale[]} sales Newest first.
+ * @property {boolean} hasNonFree Whether any sale in the list was not a free one, which is what the note
+ *   under the table is for.
+ * @property {{text: string, helpText: string}|null} valuation The latest public valuation.
+ */
+
+/**
+ * The change from what was paid then to the price asked now.
+ *
+ * @param {number} then
+ * @param {number|null|undefined} now The asking price.
+ * @param {string} locale
+ * @param {(value: number) => string} money
+ * @returns {{percent: number, text: string, diffText: string}|null}
+ */
+function changeToToday(then, now, locale, money) {
+  if (!Number.isFinite(now) || !(then > 0)) return null;
+  const percent = ((now - then) / then) * 100;
+  const diff = now - then;
+  return { percent, text: formatDeviation(percent, locale), diffText: `${diff > 0 ? '+' : ''}${money(diff)}` };
+}
+
 /**
  * What a for-sale advert states beside the price - the owner's monthly costs, how long the home has
  * been on the market, the building, a floor plan and the next open house - as descriptors for the sale
@@ -533,7 +579,7 @@ const PROPERTY_TYPE_KEYS = {
  *
  * @param {Object|null} listing - A row as the listings API returns it.
  * @param {FactContext & {now?: Date}} ctx
- * @returns {{costs: ListingFact[], market: {current: string|null, total: string|null, relisted: boolean, gapDays: number|null, previousRealtors: string[]}|null, building: ListingFact[], floorPlanUrl: string|null, openHouse: {text: string, signUpUrl: string|null}|null}|null}
+ * @returns {{costs: ListingFact[], sales: SaleHistory|null, market: {current: string|null, total: string|null, relisted: boolean, gapDays: number|null, previousRealtors: string[]}|null, building: ListingFact[], floorPlanUrl: string|null, openHouse: {text: string, signUpUrl: string|null}|null}|null}
  *   `null` for a rental, and for a purchase that states none of it.
  */
 export function buildSaleFacts(listing, ctx) {
@@ -600,6 +646,29 @@ export function buildSaleFacts(listing, ctx) {
   if (costs.length > 0 && has(row.price)) {
     costs.unshift({ id: 'price', label: t('listing.detail.salePrice'), value: money(row.price) });
   }
+
+  const dateFormat = new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeZone: 'UTC' });
+  const saleList = Array.isArray(terms.sales) ? terms.sales : [];
+  const sales =
+    saleList.length === 0 && !has(terms.publicValuation)
+      ? null
+      : {
+          sales: saleList.map((earlier) => {
+            const free = earlier.type === 'normal';
+            return {
+              date: dateFormat.format(new Date(`${earlier.date}T00:00:00Z`)),
+              amount: money(earlier.amount),
+              perM2: has(earlier.area) ? formatPricePerSqm(earlier.amount / earlier.area, locale, currency) : null,
+              change: free ? changeToToday(earlier.amount, row.price, locale, money) : null,
+              free,
+              typeLabel: t(SALE_TYPE_KEYS[earlier.type] ?? SALE_TYPE_KEYS.other),
+            };
+          }),
+          hasNonFree: saleList.some((earlier) => earlier.type !== 'normal'),
+          valuation: has(terms.publicValuation)
+            ? { text: money(terms.publicValuation), helpText: t('listing.detail.saleValuationHelp') }
+            : null,
+        };
 
   const current = terms.daysOnMarket?.current ?? null;
   const total = terms.daysOnMarket?.total ?? null;
@@ -678,8 +747,15 @@ export function buildSaleFacts(listing, ctx) {
     };
   }
 
-  if (costs.length === 0 && market == null && building.length === 0 && floorPlanUrl == null && openHouse == null) {
+  if (
+    costs.length === 0 &&
+    sales == null &&
+    market == null &&
+    building.length === 0 &&
+    floorPlanUrl == null &&
+    openHouse == null
+  ) {
     return null;
   }
-  return { costs, market, building, floorPlanUrl, openHouse };
+  return { costs, sales, market, building, floorPlanUrl, openHouse };
 }

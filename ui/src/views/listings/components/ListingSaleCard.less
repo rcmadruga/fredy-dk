@@ -54,6 +54,58 @@
     color: @color-muted;
   }
 
+  // A narrow rail or a phone: the table scrolls inside its box rather than widening the page.
+  &__table-wrap {
+    margin-top: @space-2;
+    overflow-x: auto;
+  }
+
+  &__table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: @text-base;
+    font-variant-numeric: tabular-nums;
+
+    th,
+    td {
+      padding: @space-2 @space-2 @space-2 0;
+      border-top: 1px solid @color-border;
+      text-align: right;
+      white-space: nowrap;
+      font-weight: 400;
+      color: @color-text;
+    }
+
+    th:first-child {
+      text-align: left;
+    }
+
+    thead th {
+      border-top: 0;
+      font-size: @text-sm;
+      color: @color-muted;
+    }
+
+    th:last-child,
+    td:last-child {
+      padding-right: 0;
+    }
+  }
+
+  // A sale that was not on the open market: greyed, and named in the date cell.
+  &__sale--not-free {
+    th,
+    td {
+      color: @color-faint;
+    }
+  }
+
+  &__sale-type {
+    display: block;
+    font-size: @text-sm;
+    color: @color-muted;
+  }
+
   // Told by the border and the word, not by colour alone.
   &__badge {
     padding: 0 @space-2;
