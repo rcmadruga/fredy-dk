@@ -70,6 +70,7 @@ export function buildObjectFacts(listing, ctx) {
   const benchmark = readMarketBenchmark(row);
   const isRental = row.dealType === 'rent';
   const currency = ctx.currency ?? DEFAULT_CURRENCY;
+  const perSqm = pricePerSqmOf(row, benchmark);
 
   const price = {
     text: row.price != null ? formatPrice(row.price, locale, null, currency) : na,
@@ -101,7 +102,7 @@ export function buildObjectFacts(listing, ctx) {
       label: t('listing.detail.fieldPricePerSqm'),
       // Without the unit: the tile's own label already says "per m²", and repeating it there is
       // what pushed the figure past the width of a third of the rail.
-      value: benchmark != null ? formatPricePerSqm(benchmark.pricePerSqm, locale, currency, false) : null,
+      value: perSqm != null ? formatPricePerSqm(perSqm, locale, currency, false) : null,
       // Two different explanations. With a benchmark the interesting part is the comparison and
       // where it came from; without one it is why no comparison is shown, which is a question the
       // page would otherwise leave the reader to guess at.
@@ -113,6 +114,43 @@ export function buildObjectFacts(listing, ctx) {
   ];
 
   return { price, benchmark, tiles, affordability: buildAffordability(row, ctx) };
+}
+
+/**
+ * Smallest living space, in m², a price is divided by. Portals write "1" into the size field for a plot
+ * or a parking space, and a quotient of that is not a price per square metre. Frontend copy of
+ * `MIN_SIZE_SQM` in lib/services/listings/marketBenchmark.js.
+ */
+const MIN_SIZE_SQM = 5;
+
+/**
+ * The price per square metre the "at a glance" box shows.
+ *
+ * Three sources, in order of how directly they state the figure: the sale terms, where the portal
+ * quotes it itself (Boligsiden's `perAreaPrice`); the column the server derives and stores when it
+ * saves a listing; and finally the price divided by the size. The last one matters because the stored
+ * column is only written along with the row and is empty for any row that got in another way, which
+ * used to leave the tile on "N/A" for a home whose price and size were both on the page. The market
+ * comparison keeps reading the stored column: it needs the area's median beside it.
+ *
+ * @param {Object} row A listing as the API returns it.
+ * @param {{pricePerSqm: number}|null} benchmark From `readMarketBenchmark`.
+ * @returns {number|null}
+ */
+export function pricePerSqmOf(row, benchmark) {
+  const stated = Number(row?.sale_terms?.pricePerM2);
+  if (row?.sale_terms?.pricePerM2 != null && Number.isFinite(stated) && stated > 0) {
+    return stated;
+  }
+  if (benchmark != null) {
+    return benchmark.pricePerSqm;
+  }
+  const price = Number(row?.price);
+  const size = Number(row?.size);
+  if (row?.price == null || row?.size == null || !(price > 0) || !(size >= MIN_SIZE_SQM)) {
+    return null;
+  }
+  return Math.round((price / size) * 100) / 100;
 }
 
 /**

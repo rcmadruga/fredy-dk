@@ -131,3 +131,9 @@ Both resolved in step 6 (2026-10-10); each source sits beside its constant in
   ceiling (`listings.affordabilityTooltipDk.*`). Seen and left: a DKK rental is still held against the rent ceilings
   as numbers (there is no Danish rent model), and the sweep's `cheapestAffordable` mixes currencies if both markets
   are scanned together.
+- Review fix 2 (price per m2 "N/A"): the "at a glance" tile read only the stored `price_per_sqm` column, which
+  `storeListings` fills when it saves a row. A row that got in another way, like the seeded ones of the step 12
+  screenshot run (a plain INSERT without the column), has it NULL, so the tile said N/A with price, size and
+  `sale_terms.pricePerM2` all present; the portal's figure was only ever shown in the sale card's cost list. The tile
+  now uses `sale_terms.pricePerM2`, else the stored column, else price / size (`pricePerSqmOf` in `listingFacts.js`,
+  with the same 5 m2 floor as the server). The market comparison pill still reads the stored column.
