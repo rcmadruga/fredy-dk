@@ -1782,5 +1782,18 @@
   "listing.detail.dkFootnote": "Based on your saved profile: realkreditlån at {{realkredit}} % and bank loan at {{bank}} %, default bidrag and 5 % udbetaling unless you changed them. An estimate, not an offer.",
   "listing.detail.saleYourGross": "Your monthly payment before tax relief",
   "listing.detail.saleYourNet": "Your monthly payment after tax relief",
-  "listing.detail.saleYourHelp": "Calculated from your finance profile: your loans, your rates and your tax relief, not the realtor’s example."
+  "listing.detail.saleYourHelp": "Calculated from your finance profile: your loans, your rates and your tax relief, not the realtor’s example.",
+  "listings.filterGroupSale": "For sale",
+  "listings.filterOwnerCostHelp": "The highest monthly running cost (ejerudgift) the advert states. Homes that state none are left out.",
+  "listings.filterOwnerCostPlaceholder": "Ejerudgift per month",
+  "listings.filterOwnerCostOption": "Up to {{amount}} a month",
+  "listings.filterOwnerCostChip": "Ejerudgift up to {{amount}}",
+  "listings.filterEnergyHelp": "The worst energy label to accept. B means B or better; A2020 and similar count as an A. Homes without a label are left out.",
+  "listings.filterEnergyPlaceholder": "Energy label",
+  "listings.filterEnergyOption": "{{label}} or better",
+  "listings.filterEnergyChip": "Energy {{label}} or better",
+  "listings.filterRelistedHelp": "A home offered at least 60 days longer in total than with its current realtor has been on the market before.",
+  "listings.filterRelistedOnly": "Relisted only",
+  "listings.filterReducedHelp": "Only homes whose price is lower than when they were first listed.",
+  "listings.filterReducedOnly": "Price reduced only"
 }

@@ -1782,5 +1782,18 @@
   "listing.detail.dkFootnote": "Auf Basis deines Profils: Realkreditlån mit {{realkredit}} % und Banklån mit {{bank}} %, Standard-Bidrag und 5 % Udbetaling, sofern du sie nicht geändert hast. Eine Schätzung, kein Angebot.",
   "listing.detail.saleYourGross": "Deine Monatsrate vor Steuervorteil",
   "listing.detail.saleYourNet": "Deine Monatsrate nach Steuervorteil",
-  "listing.detail.saleYourHelp": "Berechnet aus deinem Finanzprofil: deine Darlehen, deine Zinsen und dein Steuervorteil, nicht das Beispiel des Maklers."
+  "listing.detail.saleYourHelp": "Berechnet aus deinem Finanzprofil: deine Darlehen, deine Zinsen und dein Steuervorteil, nicht das Beispiel des Maklers.",
+  "listings.filterGroupSale": "Zum Verkauf",
+  "listings.filterOwnerCostHelp": "Die höchsten monatlichen Betriebskosten (Ejerudgift) laut Inserat. Objekte ohne Angabe werden ausgeblendet.",
+  "listings.filterOwnerCostPlaceholder": "Ejerudgift pro Monat",
+  "listings.filterOwnerCostOption": "Bis {{amount}} im Monat",
+  "listings.filterOwnerCostChip": "Ejerudgift bis {{amount}}",
+  "listings.filterEnergyHelp": "Das schlechteste akzeptierte Energielabel. B heißt B oder besser; A2020 und ähnliche zählen als A. Objekte ohne Label werden ausgeblendet.",
+  "listings.filterEnergyPlaceholder": "Energielabel",
+  "listings.filterEnergyOption": "{{label}} oder besser",
+  "listings.filterEnergyChip": "Energie {{label}} oder besser",
+  "listings.filterRelistedHelp": "Ein Objekt, das insgesamt mindestens 60 Tage länger angeboten wird als bei seinem aktuellen Makler, war schon einmal auf dem Markt.",
+  "listings.filterRelistedOnly": "Nur erneut inserierte",
+  "listings.filterReducedHelp": "Nur Objekte, deren Preis niedriger ist als bei der ersten Anzeige.",
+  "listings.filterReducedOnly": "Nur mit gesenktem Preis"
 }

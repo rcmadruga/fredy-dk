@@ -1759,5 +1759,18 @@
   "listing.detail.dkFootnote": "In base al tuo profilo salvato: realkreditlån al {{realkredit}} % e prestito bancario al {{bank}} %, bidrag predefinito e 5 % di udbetaling se non li hai modificati. Una stima, non un'offerta.",
   "listing.detail.saleYourGross": "La tua rata mensile prima del beneficio fiscale",
   "listing.detail.saleYourNet": "La tua rata mensile dopo il beneficio fiscale",
-  "listing.detail.saleYourHelp": "Calcolato dal tuo profilo finanziario: i tuoi prestiti, i tuoi tassi e il tuo beneficio fiscale, non l'esempio dell'agente."
+  "listing.detail.saleYourHelp": "Calcolato dal tuo profilo finanziario: i tuoi prestiti, i tuoi tassi e il tuo beneficio fiscale, non l'esempio dell'agente.",
+  "listings.filterGroupSale": "In vendita",
+  "listings.filterOwnerCostHelp": "La spesa mensile massima (ejerudgift) indicata dall'annuncio. Le case che non ne indicano nessuna sono escluse.",
+  "listings.filterOwnerCostPlaceholder": "Ejerudgift al mese",
+  "listings.filterOwnerCostOption": "Fino a {{amount}} al mese",
+  "listings.filterOwnerCostChip": "Ejerudgift fino a {{amount}}",
+  "listings.filterEnergyHelp": "La peggiore etichetta energetica accettata. B significa B o migliore; A2020 e simili contano come A. Le case senza etichetta sono escluse.",
+  "listings.filterEnergyPlaceholder": "Etichetta energetica",
+  "listings.filterEnergyOption": "{{label}} o migliore",
+  "listings.filterEnergyChip": "Energia {{label}} o migliore",
+  "listings.filterRelistedHelp": "Una casa offerta in totale per almeno 60 giorni in più rispetto al suo agente attuale era già sul mercato.",
+  "listings.filterRelistedOnly": "Solo rimesse in vendita",
+  "listings.filterReducedHelp": "Solo case il cui prezzo è inferiore a quello della prima pubblicazione.",
+  "listings.filterReducedOnly": "Solo prezzo ridotto"
 }

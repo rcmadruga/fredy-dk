@@ -24,7 +24,7 @@ Status per step. Updated after every step, before anything else. The plan is `dk
 
 - [x] 9 Boliga research spike, go/no-go: no-go from the sandbox, needs on-host verification (plan section 3)
 - [~] 10 Boliga provider: DEFERRED. Step 9 ended without access to boliga.dk (proxy 403), so there is no verified endpoint, fixture or terms reading to build on
-- [ ] 11 Filters and notification line
+- [x] 11 Filters and notification line
 - [ ] 12 Acceptance
 
 ## Open figures
@@ -91,6 +91,19 @@ Both resolved in step 6 (2026-10-10); each source sits beside its constant in
   `/api/finance/affordability` still score every buy listing with the German model and thresholds, also
   DKK ones. The Danish verdict appears on the detail page, the calculator and over MCP only.
   `get_listing` over MCP does not yet print `sale_terms` (plan section 7); that is done with step 11.
+- Step 11: four filters, URL keys `ejmax`, `energy`, `relisted`, `reduced` (API `saleOwnerCostMax`,
+  `saleEnergyMin`, `saleRelistedOnly`, `salePriceReducedOnly`), in `FILTER_URL_STATE` so the overview and
+  the map both get them, read with `json_extract(l.sale_terms, ...)` in `buildListingWhere`. Unlike the
+  move-in window, a listing that does not state the figure does NOT pass (a ceiling on the ejerudgift
+  cannot be met by a silent advert), so the help text says homes without it are left out. The energy
+  label compares the first letter of the stored label (`A2020` is an A) between `A` and the chosen
+  letter. Relisted means total minus current days on market >= 60, the same figure as the sale card;
+  `RELISTED_GAP_DAYS` therefore exists in `lib/services/sale/saleTerms.js` and in the UI's
+  `listingFacts.js`, and `test/ui/saleFilters.test.js` fails if they differ. The notification line is
+  `saleCosts` on the formatted listing (`Ejerudgift 3.900 kr./month | 26.322 kr./m²`, DKK sales only,
+  null otherwise), added next to `commute` in every adapter that renders a commute line, plus both
+  email templates. NOT done: Mattermost, whose table has fixed columns; it simply does not show the line.
+  `get_listing` over MCP now prints the sale terms (plan section 7).
 - Step 9: written up in plan section 3 ("Step 9 outcome"). No request to boliga.dk was made. `[~]` in
   the ledger means deferred, not done: step 10 stays open until someone with access to the site has
   worked through the four hand-over points listed there.

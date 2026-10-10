@@ -1720,5 +1720,18 @@
   "listing.detail.dkFootnote": "Kayıtlı profilinize göre: %{{realkredit}} realkreditlån ve %{{bank}} banka kredisi; değiştirmediyseniz varsayılan bidrag ve %5 udbetaling. Bir tahmindir, teklif değildir.",
   "listing.detail.saleYourGross": "Vergi indirimi öncesi aylık ödemeniz",
   "listing.detail.saleYourNet": "Vergi indirimi sonrası aylık ödemeniz",
-  "listing.detail.saleYourHelp": "Finans profilinizden hesaplanır: kredileriniz, faizleriniz ve vergi indiriminiz; emlakçının örneği değil."
+  "listing.detail.saleYourHelp": "Finans profilinizden hesaplanır: kredileriniz, faizleriniz ve vergi indiriminiz; emlakçının örneği değil.",
+  "listings.filterGroupSale": "Satılık",
+  "listings.filterOwnerCostHelp": "İlanın belirttiği en yüksek aylık gider (ejerudgift). Belirtmeyen konutlar listeden çıkarılır.",
+  "listings.filterOwnerCostPlaceholder": "Aylık ejerudgift",
+  "listings.filterOwnerCostOption": "Ayda en çok {{amount}}",
+  "listings.filterOwnerCostChip": "Ejerudgift en çok {{amount}}",
+  "listings.filterEnergyHelp": "Kabul edilen en kötü enerji etiketi. B, B veya daha iyi demektir; A2020 ve benzerleri A sayılır. Etiketsiz konutlar listeden çıkarılır.",
+  "listings.filterEnergyPlaceholder": "Enerji etiketi",
+  "listings.filterEnergyOption": "{{label}} veya daha iyi",
+  "listings.filterEnergyChip": "Enerji {{label}} veya daha iyi",
+  "listings.filterRelistedHelp": "Toplamda mevcut emlakçısından en az 60 gün daha uzun süredir satışta olan konut, daha önce de piyasadaydı.",
+  "listings.filterRelistedOnly": "Yalnızca yeniden listelenenler",
+  "listings.filterReducedHelp": "Yalnızca fiyatı ilk listelendiğindekinden düşük olan konutlar.",
+  "listings.filterReducedOnly": "Yalnızca fiyatı düşenler"
 }

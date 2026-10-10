@@ -1759,5 +1759,18 @@
   "listing.detail.dkFootnote": "D'après votre profil enregistré : realkreditlån à {{realkredit}} % et prêt bancaire à {{bank}} %, bidrag par défaut et 5 % d'udbetaling sauf modification. Une estimation, pas une offre.",
   "listing.detail.saleYourGross": "Votre mensualité avant avantage fiscal",
   "listing.detail.saleYourNet": "Votre mensualité après avantage fiscal",
-  "listing.detail.saleYourHelp": "Calculé à partir de votre profil financier : vos prêts, vos taux et votre avantage fiscal, pas l'exemple de l'agent."
+  "listing.detail.saleYourHelp": "Calculé à partir de votre profil financier : vos prêts, vos taux et votre avantage fiscal, pas l'exemple de l'agent.",
+  "listings.filterGroupSale": "À vendre",
+  "listings.filterOwnerCostHelp": "La charge mensuelle maximale (ejerudgift) indiquée par l'annonce. Les biens qui n'en indiquent aucune sont écartés.",
+  "listings.filterOwnerCostPlaceholder": "Ejerudgift par mois",
+  "listings.filterOwnerCostOption": "Jusqu'à {{amount}} par mois",
+  "listings.filterOwnerCostChip": "Ejerudgift jusqu'à {{amount}}",
+  "listings.filterEnergyHelp": "La pire étiquette énergétique acceptée. B signifie B ou mieux ; A2020 et similaires comptent comme A. Les biens sans étiquette sont écartés.",
+  "listings.filterEnergyPlaceholder": "Étiquette énergétique",
+  "listings.filterEnergyOption": "{{label}} ou mieux",
+  "listings.filterEnergyChip": "Énergie {{label}} ou mieux",
+  "listings.filterRelistedHelp": "Un bien proposé au total au moins 60 jours de plus qu'avec son agent actuel a déjà été sur le marché.",
+  "listings.filterRelistedOnly": "Seulement remis en vente",
+  "listings.filterReducedHelp": "Seulement les biens dont le prix est inférieur à celui de la première mise en vente.",
+  "listings.filterReducedOnly": "Seulement prix baissé"
 }

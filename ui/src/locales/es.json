@@ -1759,5 +1759,18 @@
   "listing.detail.dkFootnote": "Según tu perfil guardado: realkreditlån al {{realkredit}} % y préstamo bancario al {{bank}} %, bidrag por defecto y 5 % de udbetaling salvo que los cambiaras. Una estimación, no una oferta.",
   "listing.detail.saleYourGross": "Tu cuota mensual antes de la deducción",
   "listing.detail.saleYourNet": "Tu cuota mensual tras la deducción",
-  "listing.detail.saleYourHelp": "Calculado con tu perfil financiero: tus préstamos, tus tipos y tu deducción fiscal, no el ejemplo del agente."
+  "listing.detail.saleYourHelp": "Calculado con tu perfil financiero: tus préstamos, tus tipos y tu deducción fiscal, no el ejemplo del agente.",
+  "listings.filterGroupSale": "En venta",
+  "listings.filterOwnerCostHelp": "El gasto mensual máximo (ejerudgift) que indica el anuncio. Se omiten las viviendas que no indican ninguno.",
+  "listings.filterOwnerCostPlaceholder": "Ejerudgift al mes",
+  "listings.filterOwnerCostOption": "Hasta {{amount}} al mes",
+  "listings.filterOwnerCostChip": "Ejerudgift hasta {{amount}}",
+  "listings.filterEnergyHelp": "La peor etiqueta energética que se acepta. B significa B o mejor; A2020 y similares cuentan como A. Se omiten las viviendas sin etiqueta.",
+  "listings.filterEnergyPlaceholder": "Etiqueta energética",
+  "listings.filterEnergyOption": "{{label}} o mejor",
+  "listings.filterEnergyChip": "Energía {{label}} o mejor",
+  "listings.filterRelistedHelp": "Una vivienda ofrecida en total al menos 60 días más que con su agente actual ya estuvo antes en el mercado.",
+  "listings.filterRelistedOnly": "Solo vueltas a publicar",
+  "listings.filterReducedHelp": "Solo viviendas cuyo precio es inferior al de su primera publicación.",
+  "listings.filterReducedOnly": "Solo con precio rebajado"
 }
