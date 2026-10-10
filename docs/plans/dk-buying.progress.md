@@ -7,7 +7,7 @@ Status per step. Updated after every step, before anything else. The plan is `dk
 
 - [x] 1 Ledger created
 - [x] 2 Migration 51 `listing-sale-terms`, `saleTerms.js`, storage
-- [ ] 3 Boligsiden fills `saleTerms`
+- [x] 3 Boligsiden fills `saleTerms`
 
 ## Phase 2: the card
 
@@ -39,3 +39,8 @@ Status per step. Updated after every step, before anything else. The plan is `dk
   listed. Fields are always present and null when unstated; the whole object is absent (column NULL)
   when the advert states none of it. A sale without a stated type is stored as `other`, never `normal`.
 - Step 1 was already satisfied by the plan commit that created this file; ticked here.
+- Step 3: `previousRealtors` is the case's `timeOnMarket.total.realtors` minus the realtor holding the
+  case now (`realtor.name`). The year built, heating and renovation come from the largest building on
+  the address (a garage's year is not the home's). `daysOnMarket.current` falls back to the case-level
+  `daysOnMarket` only when `timeOnMarket` is missing. `municipalTaxPct` is `councilTaxPercentage`
+  (kommuneskat); the church tax is not stored.
