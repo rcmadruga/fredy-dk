@@ -113,6 +113,28 @@ machine's GPU/VRAM decides whether they are practical.
 - **The neighbourhood through time:** Dataforsyningen's historical aerial photos (orthophotos by
   year) as a time slider on the map. See how the area changed, what was built, and where water
   stood in wet years.
+- **Your taste, learned from photos:** turn the photos of listings you liked into image embeddings
+  with a local model (CLIP class), and learn your taste (light wood, high ceilings, big windows, old
+  brick). New listings get "looks like homes you loved" with the photo that matches best. It becomes
+  another score axis, and the roulette trains it for free.
+- **See the potential:** for a cheap-but-ugly home, an image model renders listing photos "after":
+  paint, floors, a new kitchen. Beside it, a rough renovation budget, and price plus renovation
+  against similar renovated homes nearby. It finds diamonds others scroll past.
+- **Where should we even live?** Give both workplaces, the school, a budget and a maximum commute. Fredy
+  intersects the travel-time areas (isochrones), crosses them with price per m², schools and the score,
+  and proposes search areas, then drafts the jobs for them. It starts the search before the search.
+- **Negotiation sparring partner:** before calling the realtor or landlord, rehearse with the local LLM
+  playing them. It is fed this listing's facts (days on market, drops, relists, earlier sales,
+  realtor stats) and coaches you on what to ask and when to stop.
+- **Your own market index:** Fredy has been watching your exact niche (say, 3-room rentals in Hillerød)
+  for months. Turn that into a monthly index: median price per m², time-to-gone, supply, share of price
+  drops. A chart nobody else has, because nobody else watches exactly this.
+- **Home swap matcher (boligbytte):** Danish rentals and cooperative flats are often swapped. Describe
+  your current home once, and Fredy matches it against swap listings, including three-way chains
+  (A wants B's, B wants C's, C wants A's).
+- **Down-payment coach:** link a savings goal to the buying plan. Fredy shows when you can afford the
+  homes you're looking at ("at your savings rate, the 5 % down payment for listings like this is
+  reached in March"), and how a rate change moves that date.
 
 ## Dropped
 
