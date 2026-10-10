@@ -5,7 +5,7 @@
     "locale": "fr-FR",
     "semiLocale": "fr"
   },
-  "app.demoBanner": "Ceci est une instance de démonstration de Fredy. Toutes les modifications et tous les paramètres sont réinitialisés chaque jour.",
+  "app.demoBanner": "Ceci est une instance de démonstration de Fredy. Toutes les modifications et tous les paramètres sont réinitialisés toutes les heures.",
   "nav.dashboard": "Tableau de bord",
   "nav.jobs": "Recherches",
   "nav.listings": "Annonces",
@@ -671,7 +671,7 @@
   "settings.connectivitySource.dk-tjekditnet": "Danemark : Tjekditnet.dk",
   "settings.analyticsEnable": "Activer les statistiques",
   "settings.demoMode": "Mode démo",
-  "settings.demoModeHelp": "En mode démo, Fredy n'exécute que la recherche de démonstration intégrée. Tout le reste est réinitialisé à minuit.",
+  "settings.demoModeHelp": "En mode démo, Fredy n'exécute que la recherche de démonstration intégrée. Tout le reste est réinitialisé toutes les heures.",
   "settings.demoModeEnable": "Activer le mode démo",
   "settings.connectivitySourceHelp.dk-tjekditnet": "Débits proposés par adresse d’après le fichier national, mis à jour chaque année. Sans noms d’opérateurs.",
   "settings.proxyAuth": "Connexion gérée par le reverse proxy",

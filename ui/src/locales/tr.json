@@ -5,7 +5,7 @@
     "locale": "tr-TR",
     "semiLocale": "tr_TR"
   },
-  "app.demoBanner": "Bu, Fredy'nin bir demo örneğidir. Tüm değişiklikler ve ayarlar her gün sıfırlanır.",
+  "app.demoBanner": "Bu, Fredy'nin bir demo örneğidir. Tüm değişiklikler ve ayarlar her saat sıfırlanır.",
   "nav.dashboard": "Kontrol Paneli",
   "nav.jobs": "İşler",
   "nav.listings": "İlanlar",
@@ -631,7 +631,7 @@
   "settings.connectivitySource.dk-tjekditnet": "Danimarka: Tjekditnet.dk",
   "settings.analyticsEnable": "Analitiği etkinleştir",
   "settings.demoMode": "Demo Modu",
-  "settings.demoModeHelp": "Demo modunda Fredy yalnızca yerleşik Demo İşi'ni çalıştırır. Diğer her şey gece yarısında varsayılanlara sıfırlanır.",
+  "settings.demoModeHelp": "Demo modunda Fredy yalnızca yerleşik Demo İşi'ni çalıştırır. Diğer her şey her saat varsayılanlara sıfırlanır.",
   "settings.demoModeEnable": "Demo modunu etkinleştir",
   "settings.connectivitySourceHelp.dk-tjekditnet": "Ulusal dosyadan adres başına sunulan hızlar, yılda bir güncellenir. Sağlayıcı adları yok.",
   "settings.proxyAuth": "Girişi ters vekil sunucu üstlensin",
