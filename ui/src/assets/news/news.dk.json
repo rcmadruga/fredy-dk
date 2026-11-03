@@ -1,5 +1,6 @@
 {
   "schemaVersion": 1,
+  "releasedVersion": "29.2.1-dk.3",
   "releases": [
     {
       "version": "29.2.1-dk.1",

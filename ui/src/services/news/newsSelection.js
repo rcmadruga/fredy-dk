@@ -181,8 +181,8 @@ export function newestDkVersion(config) {
 }
 
 /**
- * The version to show in the footer: the newest DK version when it belongs to the running upstream
- * version, otherwise the upstream version alone.
+ * The version to show in the footer: the newest DK release (`releasedVersion`, or else the newest news
+ * entry) when it belongs to the running upstream version, otherwise the upstream version alone.
  *
  * After a sync bumps package.json, news.dk.json may still name the previous upstream core until the
  * next DK release is cut; showing `29.2.1-dk.1` on a 29.3.0 build would be wrong, so it is not.
@@ -192,7 +192,11 @@ export function newestDkVersion(config) {
  * @returns {string|null|undefined}
  */
 export function footerVersion(localVersion, dkConfig) {
-  const dk = newestDkVersion(dkConfig);
+  // `releasedVersion` is written by every release, so it is current even when the release had no news.
+  // The newest news entry still counts, for a file that predates the field.
+  const released = typeof dkConfig?.releasedVersion === 'string' ? dkConfig.releasedVersion : null;
+  const newest = newestDkVersion(dkConfig);
+  const dk = released && (!newest || compareDkVersions(released, newest) >= 0) ? released : newest;
   if (!localVersion || !dk) {
     return localVersion;
   }

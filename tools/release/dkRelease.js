@@ -311,14 +311,24 @@ export function main(argv, options = {}) {
     }
     const pr = readPullRequest(env);
     const news = extractNewsSection(pr.body);
-    if (!news) {
+    const file = path.join(cwd, NEWS_DK_PATH);
+    const before = fs.readFileSync(file, 'utf8');
+    let config = JSON.parse(before);
+    if (news) {
+      config = prependRelease(
+        config,
+        buildRelease({ version, date: env.RELEASE_DATE || isoDate(), title: pr.title, news }),
+      );
+    }
+    // Every release says which version it is, news or not: the footer shows this, and a release without a
+    // News section would otherwise leave it on the last release that had one.
+    config = { ...config, releasedVersion: version };
+    const after = serializeNews(config);
+    if (after === before) {
       write('none\n');
       return;
     }
-    const file = path.join(cwd, NEWS_DK_PATH);
-    const config = JSON.parse(fs.readFileSync(file, 'utf8'));
-    const release = buildRelease({ version, date: env.RELEASE_DATE || isoDate(), title: pr.title, news });
-    fs.writeFileSync(file, serializeNews(prependRelease(config, release)));
+    fs.writeFileSync(file, after);
     write('changed\n');
     return;
   }

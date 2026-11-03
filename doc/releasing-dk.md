@@ -28,11 +28,11 @@ title and News section); it releases `master` as it stands.
 `.github/workflows/release-dk.yml` runs on merge and:
 
 1. Works out the next version from `package.json` and the existing tags.
-2. If the pull request has a `## News` section, adds it as a release at the top of
-   `ui/src/assets/news/news.dk.json` and commits that to `master` as `github-actions[bot]` with the
-   message `chore(release): <version> [skip ci]`. If master has moved on meanwhile, it rebases and
-   pushes again.
-3. Tags that commit (or the merge commit, when there is no news) `<version>` and pushes the tag.
+2. Records the release in `ui/src/assets/news/news.dk.json`: `releasedVersion` is always set, and if the
+   pull request has a `## News` section it is added as a release at the top. It commits that to `master`
+   as `github-actions[bot]` with the message `chore(release): <version> [skip ci]`. If master has moved
+   on meanwhile, it rebases and pushes again.
+3. Tags that commit `<version>` and pushes the tag.
 4. Creates a GitHub Release called `<version>`. Its notes are the pull request title and link, plus
    the News section.
 5. Builds and pushes the Docker image as `<version>` and `latest` by calling `docker-build.yml`. This
@@ -83,7 +83,9 @@ The "What's new" dialog has two parts, each with its own file and its own marker
   Users who already existed when migration 53 ran were given `0.0.0-dk.0` instead, so they see the
   first DK news once.
 - The history (bell icon in the sidebar) shows both parts as two tabs.
-- The footer shows `v<upstream>-dk.<n>` while the newest entry in `news.dk.json` matches the running
+- Every release also writes `releasedVersion` at the top of `news.dk.json`, news or not, so the footer
+  shows the release that is running even when it had no `## News` section.
+- The footer shows `v<upstream>-dk.<n>` (`releasedVersion`, or the newest news entry) while it matches the running
   upstream version, and the plain upstream version otherwise (for example right after a sync, before
   the next release).
 

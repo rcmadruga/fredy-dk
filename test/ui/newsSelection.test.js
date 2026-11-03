@@ -181,6 +181,14 @@ describe('the footer version', () => {
     expect(footerVersion('29.2.1', dk)).toBe('29.2.1-dk.3');
   });
 
+  it('shows a release that had no news, from releasedVersion', () => {
+    expect(footerVersion('29.2.1', { ...dk, releasedVersion: '29.2.1-dk.4' })).toBe('29.2.1-dk.4');
+  });
+
+  it('does not let an older releasedVersion hide a newer news entry', () => {
+    expect(footerVersion('29.2.1', { ...dk, releasedVersion: '29.2.1-dk.1' })).toBe('29.2.1-dk.3');
+  });
+
   it('falls back to the upstream version after a sync moved it on', () => {
     expect(footerVersion('29.3.0', dk)).toBe('29.3.0');
   });
