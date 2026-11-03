@@ -1,20 +1,30 @@
 #!/usr/bin/env bash
 #
-# Rebuilds and redeploys this fork on LXC 116, as the user/root that normally manages
-# the Fredy container. Pulls the latest commit from master, builds a local image, and
-# swaps it in - the whole point being that `docker pull ghcr.io/orangecoding/fredy` no
-# longer applies once the checkout carries patches the upstream image doesn't have.
-# Re-run this any time master has a new commit to try.
+# Redeploys this fork on LXC 116, as the user/root that normally manages the Fredy container.
+#
+# By default it runs a released image: every merge labelled `release` publishes
+# ghcr.io/rcmadruga/fredy-dk:<upstream>-dk.<n> (see doc/releasing-dk.md), so there is nothing to
+# build here - no checkout, no Chromium download, and a rollback is just an older version:
+#
+#   ./rebuild-on-lxc.sh                          newest DK release (asked from the GitHub API)
+#   VERSION=29.2.1-dk.1 ./rebuild-on-lxc.sh      a specific release, e.g. to roll back
+#   ./rebuild-on-lxc.sh --build                  build master locally, the old way (for something
+#                                                not released yet)
+#
+# A pinned version, never :latest: docker.yml also pushes :latest on every master commit, so
+# :latest means "master right now", not "the last release".
+#
+# The package is public, so no `docker login` is needed. If it is ever made private again, run
+# `docker login ghcr.io -u rcmadruga` once with a token that has read:packages.
 #
 # What it does, in order:
-#   1. Shows free disk space (Chromium download needs headroom).
+#   1. Shows free disk space (a pull or a build both need headroom).
 #   2. Finds the currently-running Fredy container and prints its volume mounts,
 #      so you can eyeball that the names below match your setup.
-#   3. Clones (first run) or pulls (later runs) rcmadruga/fredy-dk into ~/fredy-dk.
-#   4. Builds a local image from that checkout - this replaces `docker pull
-#      ghcr.io/orangecoding/fredy:master`, which no longer matches a patched fork.
-#   5. Stops (does NOT remove) the old container, so it's still there to roll back to.
-#   6. Starts a new container named fredy-new, reusing the same named volumes and
+#   3. Pulls the release image (or, with --build, updates ~/fredy-dk and builds fredy-dk:local).
+#      This happens BEFORE the old container is stopped, so a failed pull costs no downtime.
+#   4. Stops (does NOT remove) the old container, so it's still there to roll back to.
+#   5. Starts a new container named fredy-new, reusing the same named volumes and
 #      port, and tails its logs so you can watch it come up.
 #
 # Environment for the new container - NOT carried over from the old one, so anything the app needs
@@ -35,11 +45,28 @@
 
 set -euo pipefail
 
-REPO_URL="https://github.com/rcmadruga/fredy-dk.git"
+REPO="rcmadruga/fredy-dk"
+REPO_URL="https://github.com/$REPO.git"
+REGISTRY_IMAGE="ghcr.io/$REPO"
 CHECKOUT_DIR="$HOME/fredy-dk"
-IMAGE_TAG="fredy-dk:local"
+LOCAL_IMAGE="fredy-dk:local"
 NEW_CONTAINER="fredy-new"
 ENV_FILE="${ENV_FILE:-$HOME/fredy.env}"
+
+BUILD_LOCALLY=false
+for arg in "$@"; do
+  case "$arg" in
+    --build) BUILD_LOCALLY=true ;;
+    -h | --help)
+      sed -n '2,40p' "$0"
+      exit 0
+      ;;
+    *)
+      echo "Unknown argument: $arg (see --help)"
+      exit 1
+      ;;
+  esac
+done
 
 echo "== 1. Disk space =="
 df -h /
@@ -56,11 +83,16 @@ echo "== 2. Currently running Fredy container =="
 # otherwise kill the script silently, before it printed anything. OLD_CONTAINER from the
 # environment is honoured, as the message below promises.
 #
-# Both images are tried: upstream's for the first-ever run, and our own $IMAGE_TAG for every run
-# after that, since by then the live container was built from it, not from ghcr.io.
+# Three kinds of image can be behind the live container: one of our releases (any tag of
+# $REGISTRY_IMAGE), a local build ($LOCAL_IMAGE), or upstream's image on the very first run. The
+# release check matches on the image name rather than `--filter ancestor=`, because ancestor needs
+# the exact tag and the live one is whichever release was deployed last.
+if [ -z "${OLD_CONTAINER:-}" ]; then
+  OLD_CONTAINER="$(docker ps -a --format '{{.Names}} {{.Image}}' | awk -v img="$REGISTRY_IMAGE" -v skip="$NEW_CONTAINER" 'index($2, img) == 1 && $1 != skip { print $1; exit }' || true)"
+fi
 if [ -z "${OLD_CONTAINER:-}" ]; then
   OLD_CONTAINER=""
-  for image in "$IMAGE_TAG" "ghcr.io/orangecoding/fredy:master"; do
+  for image in "$LOCAL_IMAGE" "ghcr.io/orangecoding/fredy:master"; do
     OLD_CONTAINER="$(docker ps -a --filter "ancestor=$image" --format '{{.Names}}' | grep -vx "$NEW_CONTAINER" | head -n1 || true)"
     [ -n "$OLD_CONTAINER" ] && break
   done
@@ -95,24 +127,43 @@ echo "conf volume: $CONF_VOLUME"
 echo "db volume:   $DB_VOLUME"
 
 echo
-echo "== 3. Fetching code =="
-if [ -d "$CHECKOUT_DIR/.git" ]; then
-  git -C "$CHECKOUT_DIR" pull origin master
+if [ "$BUILD_LOCALLY" = true ]; then
+  echo "== 3. Building master locally (this can take a while - includes the Chromium download) =="
+  if [ -d "$CHECKOUT_DIR/.git" ]; then
+    # fetch + reset rather than pull: a pull refuses after master was ever rewritten upstream.
+    git -C "$CHECKOUT_DIR" fetch origin master
+    git -C "$CHECKOUT_DIR" reset --hard origin/master
+  else
+    git clone "$REPO_URL" "$CHECKOUT_DIR"
+  fi
+  git -C "$CHECKOUT_DIR" log -1 --oneline
+  docker build -t "$LOCAL_IMAGE" "$CHECKOUT_DIR"
+  IMAGE="$LOCAL_IMAGE"
 else
-  git clone "$REPO_URL" "$CHECKOUT_DIR"
+  if [ -z "${VERSION:-}" ]; then
+    # The newest GitHub release's tag. No jq on the LXC, so the field is cut out with sed.
+    VERSION="$(curl -fsSL "https://api.github.com/repos/$REPO/releases/latest" | sed -nE 's/.*"tag_name":[[:space:]]*"([^"]+)".*/\1/p' | head -n1 || true)"
+    if [ -z "$VERSION" ]; then
+      echo "Could not read the newest release from the GitHub API."
+      echo "Pass one explicitly: VERSION=<version> $0   (or build locally: $0 --build)"
+      exit 1
+    fi
+  fi
+  IMAGE="$REGISTRY_IMAGE:$VERSION"
+  echo "== 3. Pulling $IMAGE =="
+  if ! docker pull "$IMAGE"; then
+    echo "Pull failed. If the package was made private, log in once:"
+    echo "  docker login ghcr.io -u rcmadruga   (token with read:packages)"
+    exit 1
+  fi
 fi
-git -C "$CHECKOUT_DIR" log -1 --oneline
 
 echo
-echo "== 4. Building local image (this can take a while - includes the Chromium download) =="
-docker build -t "$IMAGE_TAG" "$CHECKOUT_DIR"
-
-echo
-echo "== 5. Stopping old container (not removing) =="
+echo "== 4. Stopping old container (not removing) =="
 docker stop "$OLD_CONTAINER"
 
 echo
-echo "== 6. Starting new container: $NEW_CONTAINER =="
+echo "== 5. Starting new container: $NEW_CONTAINER ($IMAGE) =="
 docker rm -f "$NEW_CONTAINER" >/dev/null 2>&1 || true
 
 # Extra `docker run` arguments, built up so each source of environment is reported (names only, never
@@ -134,7 +185,7 @@ fi
 
 docker run -d --name "$NEW_CONTAINER" --restart unless-stopped -p 9998:9998 \
   -v "$CONF_VOLUME":/conf -v "$DB_VOLUME":/db \
-  ${ENV_ARGS[@]+"${ENV_ARGS[@]}"} "$IMAGE_TAG"
+  ${ENV_ARGS[@]+"${ENV_ARGS[@]}"} "$IMAGE"
 
 echo
 echo "Tailing logs - Ctrl+C once it looks healthy (server listening, no fatal errors)."
@@ -149,18 +200,17 @@ cat <<EOF
 ======================================================================
 Next steps (manual, on purpose - nothing further is automated):
 
-1. Open http://<this-LXC-IP>:9998 in a browser, log in, and check the
-   job form's provider picker for "Boligsiden".
+1. Open http://<this-LXC-IP>:9998 in a browser, log in, and check that the
+   footer shows the version you deployed ($IMAGE).
 
-2. Try a test job with this search URL and run it once:
-     https://api.boligsiden.dk/search/cases?addressTypes=villa,condo&zipCodes=5000
-
-3. If it looks good, retire the old container and promote the new one:
+2. If it looks good, retire the old container and promote the new one:
      docker rm $OLD_CONTAINER
      docker rename $NEW_CONTAINER $OLD_CONTAINER
 
-4. If something's wrong, roll back:
+3. If something's wrong, roll back right away:
      docker stop $NEW_CONTAINER
      docker start $OLD_CONTAINER
+   or, after promoting, deploy an older release:
+     VERSION=<older version> $0
 ======================================================================
 EOF

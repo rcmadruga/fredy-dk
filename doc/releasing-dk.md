@@ -89,3 +89,17 @@ The "What's new" dialog has two parts, each with its own file and its own marker
 
 The first release, `29.2.1-dk.1`, is already written in `news.dk.json`. When the action cuts it, the
 News section of that pull request is added to the existing release rather than replacing it.
+
+## Deploying a release
+
+On the LXC, `tools/deploy/rebuild-on-lxc.sh` runs the released image, so nothing is built there:
+
+```bash
+~/rebuild-on-lxc.sh                        # the newest release (read from the GitHub API)
+VERSION=29.2.1-dk.1 ~/rebuild-on-lxc.sh    # a specific release, e.g. to roll back
+~/rebuild-on-lxc.sh --build                # build master locally, for something not released yet
+```
+
+It always pins a version. `:latest` is also pushed by `docker.yml` on every master commit, so it
+means "master right now", not "the last release". The package `ghcr.io/rcmadruga/fredy-dk` is
+public, so the LXC needs no `docker login`.
