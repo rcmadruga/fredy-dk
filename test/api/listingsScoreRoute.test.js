@@ -15,6 +15,7 @@ vi.mock('../../lib/services/storage/listingsStorage.js', () => ({
   getListingById: vi.fn(),
   getPricePerSqmByJob: vi.fn(() => new Map()),
 }));
+vi.mock('../../lib/services/storage/listingMediaStorage.js', () => ({ getListingGallery: vi.fn(() => []) }));
 vi.mock('../../lib/services/storage/watchListStorage.js', () => ({ toggleWatch: vi.fn(), ensureWatch: vi.fn() }));
 vi.mock('../../lib/services/storage/jobStorage.js', () => ({
   getJob: vi.fn(() => null),

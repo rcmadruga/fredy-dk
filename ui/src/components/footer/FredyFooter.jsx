@@ -11,6 +11,8 @@ import { useTranslation } from '../../services/i18n/i18n.jsx';
 import newsDkConfig from '../../assets/news/news.dk.json';
 import { footerVersion } from '../../services/news/newsSelection.js';
 import VersionModal from '../version/VersionModal.jsx';
+import UpdateToast from '../version/UpdateToast.jsx';
+import { IconArrowRight } from '../icons/StrokeIcons.jsx';
 
 /**
  * The heart in front of the credit: the one from the Fredy logo.
@@ -80,6 +82,11 @@ export default function FredyFooter() {
           <button type="button" className="fredyFooter__update" onClick={() => setNotesVisible(true)}>
             <span className="fredyFooter__updateDot" />
             {t('version.updateChip', { version: versionUpdate.version })}
+            <span className="fredyFooter__updateDivider" aria-hidden="true" />
+            <span className="fredyFooter__updateAction">
+              {t('version.whatsNew')}
+              <IconArrowRight aria-hidden="true" />
+            </span>
           </button>
         )}
         {upToDate && (
@@ -99,6 +106,7 @@ export default function FredyFooter() {
         </span>
       </span>
       {hasUpdate && <VersionModal visible={notesVisible} onClose={() => setNotesVisible(false)} />}
+      {hasUpdate && <UpdateToast onShowNotes={() => setNotesVisible(true)} />}
     </footer>
   );
 }

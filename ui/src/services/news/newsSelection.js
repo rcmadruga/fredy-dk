@@ -4,19 +4,16 @@
  */
 
 /**
- * One shipped release, as `ui/src/assets/news/news.json` declares it.
+ * One installed release, as `GET /api/version/releases` returns it: taken from the GitHub release
+ * list, newest first, at most the six newest that are not newer than the running version.
  *
  * @typedef {Object} NewsRelease
- * @property {string} version Semantic version, matching the tag the release went out under.
- * @property {string} [date] ISO date, shown next to the version.
- * @property {NewsEntry[]} entries What is worth telling someone about, in reading order.
- *
- * @typedef {Object} NewsEntry
- * @property {string} title
- * @property {string} text Inline HTML, rendered as-is. Written in English and not translated:
- *   release prose changes every few weeks and would otherwise have to be written twice, with the
- *   German half going stale the first time somebody forgot.
- * @property {string} [media] File name under `ui/src/assets/news/`. `.mp4` renders as a video.
+ * @property {string} version Semantic version, the tag the release went out under.
+ * @property {string} [date] ISO timestamp the release was published at.
+ * @property {string} [url] The release page on GitHub.
+ * @property {string} bodyHtml The release notes, rendered from markdown and sanitised server-side.
+ * @property {{title: string, items: number}[]} [outline] The top-level headings of the notes, down
+ *   to h3, each with the number of list items under it.
  */
 
 /**
@@ -49,12 +46,57 @@ export function compareVersions(a, b) {
 }
 
 /**
+ * The release to tell someone about after an upgrade: the newest installed one, if they have not
+ * been shown it yet.
+ *
+ * Only the newest, even when several were skipped. Somebody coming from 29 to 30 wants to know what
+ * 30 brought; the releases in between are in the What's New sheet for whoever cares.
+ *
+ * A `lastSeen` of null means "no marker stored" - a user created after this shipped. They are shown
+ * nothing and the current version is recorded for them, because a brand new account being greeted
+ * with the history of a product it has never used is noise, not news.
+ *
+ * @param {NewsRelease[]} releases Newest first, as the server sends them.
+ * @param {string|null|undefined} lastSeen The newest version this user has been shown.
+ * @returns {NewsRelease|null} `null` when there is nothing to say.
+ */
+export function selectUnseenRelease(releases, lastSeen) {
+  const newest = Array.isArray(releases) ? releases[0] : null;
+  if (newest == null || lastSeen == null || String(lastSeen).length === 0) {
+    return null;
+  }
+  return compareVersions(newest.version, lastSeen) > 0 ? newest : null;
+}
+
+/**
+ * The newest release in the list, used as the marker to store once the dialog is dismissed.
+ *
+ * Taken from the list rather than from the running version: the marker has to mean "you have seen
+ * everything that was listed". While GitHub cannot be reached the list is empty, so nothing is
+ * stored, and the news are still there to be shown once it answers again.
+ *
+ * @param {NewsRelease[]} releases Newest first, as the server sends them.
+ * @returns {string|null}
+ */
+export function newestVersion(releases) {
+  return (Array.isArray(releases) && releases[0]?.version) || null;
+}
+
+/* ------------------------------------------------------------------------------------------------
+ * Fredy DK
+ *
+ * The fork's own release news lives in `news.dk.json`, a file of releases like upstream's used to be,
+ * not a GitHub release list, so it has its own selection functions. They are pure and unused by the
+ * dialogs until the DK part of "What's new" is wired in again after the upstream 30 sync; the release
+ * tooling (`tools/release/dkRelease.js`) and the footer's version rely on the ordering below.
+ * ---------------------------------------------------------------------------------------------- */
+
+/**
  * Compare two Fredy DK versions, `<upstream version>-dk.<n>`.
  *
  * Ordered by the upstream core first and the dk counter second, so `29.2.1-dk.3` is older than
  * `29.3.0-dk.1`: the counter restarts whenever a sync bumps the upstream version. A version with
  * no `-dk.<n>` suffix counts as counter 0, which makes `0.0.0-dk.0` the "has seen nothing" marker.
- * Upstream's own `compareVersions` is deliberately left alone, since it ignores suffixes.
  *
  * @param {string} a
  * @param {string} b
@@ -70,15 +112,13 @@ export function compareDkVersions(a, b) {
 }
 
 /**
- * Whether a release is well-formed enough to show.
- *
- * A malformed entry is dropped rather than rendered: news.json is hand-edited on every release and
- * a missing field there must not take the dialog - or the page behind it - down with it.
+ * Whether a DK news entry is well-formed enough to show. A malformed entry is dropped rather than
+ * rendered: the file is hand-edited and a missing field must not take the page down with it.
  *
  * @param {any} release
  * @returns {boolean}
  */
-function isUsable(release) {
+function isUsableDkRelease(release) {
   return (
     release != null &&
     typeof release === 'object' &&
@@ -90,84 +130,37 @@ function isUsable(release) {
 }
 
 /**
- * Every release, newest first, with the unusable ones dropped.
+ * Every Fredy DK release, newest first, with the unusable ones dropped.
  *
- * @param {any} config The parsed news.json.
- * @param {(a: string, b: string) => number} [compare] Version ordering; upstream's by default.
- * @returns {NewsRelease[]}
+ * @param {any} config The parsed news.dk.json.
+ * @returns {{version: string, date?: string, entries: {title: string, text?: string}[]}[]}
  */
-export function allReleases(config, compare = compareVersions) {
+export function allDkReleases(config) {
   const releases = Array.isArray(config?.releases) ? config.releases : [];
   return releases
-    .filter(isUsable)
+    .filter(isUsableDkRelease)
     .map((release) => ({
       ...release,
       entries: release.entries.filter((entry) => entry != null && typeof entry.title === 'string'),
     }))
-    .sort((a, b) => compare(b.version, a.version));
-}
-
-/**
- * The releases someone has not been told about yet, oldest first.
- *
- * Oldest first because they are shown as consecutive steps and the story only makes sense in the
- * order it happened. Someone who skipped two releases gets both, which is the point: the previous
- * mechanism stored a single hash of the current payload, so skipping a release meant never hearing
- * about it.
- *
- * A `lastSeen` of null means "no marker stored" - a user created after this shipped. They are shown
- * nothing and the current version is recorded for them, because a brand new account being greeted
- * with the history of a product it has never used is noise, not news.
- *
- * @param {any} config The parsed news.json.
- * @param {string|null|undefined} lastSeen The newest version this user has been shown.
- * @param {(a: string, b: string) => number} [compare] Version ordering; upstream's by default.
- * @returns {NewsRelease[]} Empty when there is nothing to say.
- */
-export function selectUnseenReleases(config, lastSeen, compare = compareVersions) {
-  if (lastSeen == null || String(lastSeen).length === 0) {
-    return [];
-  }
-  return allReleases(config, compare)
-    .filter((release) => compare(release.version, lastSeen) > 0)
-    .reverse();
-}
-
-/**
- * The newest version named in the file, used as the marker to store once the dialog is dismissed.
- *
- * Taken from news.json rather than from package.json: the marker has to mean "you have seen
- * everything this file holds", and a build whose version is ahead of the newest written release
- * would otherwise silently swallow that release when it is added later.
- *
- * @param {any} config The parsed news.json.
- * @param {(a: string, b: string) => number} [compare] Version ordering; upstream's by default.
- * @returns {string|null}
- */
-export function newestVersion(config, compare = compareVersions) {
-  return allReleases(config, compare)[0]?.version ?? null;
-}
-
-/**
- * Every Fredy DK release, newest first. See `allReleases`.
- *
- * @param {any} config The parsed news.dk.json.
- * @returns {NewsRelease[]}
- */
-export function allDkReleases(config) {
-  return allReleases(config, compareDkVersions);
+    .sort((a, b) => compareDkVersions(b.version, a.version));
 }
 
 /**
  * The Fredy DK releases someone has not been told about yet, oldest first. A missing marker means
- * a new account and yields nothing, exactly as `selectUnseenReleases` does.
+ * a new account and yields nothing: it is not greeted with a history it never used.
  *
  * @param {any} config The parsed news.dk.json.
  * @param {string|null|undefined} lastSeen The newest DK version this user has been shown.
- * @returns {NewsRelease[]}
+ * @returns {ReturnType<typeof allDkReleases>}
  */
 export function selectUnseenDkReleases(config, lastSeen) {
-  return selectUnseenReleases(config, lastSeen, compareDkVersions);
+  if (lastSeen == null || String(lastSeen).length === 0) {
+    return [];
+  }
+  return allDkReleases(config)
+    .filter((release) => compareDkVersions(release.version, lastSeen) > 0)
+    .reverse();
 }
 
 /**
@@ -177,15 +170,15 @@ export function selectUnseenDkReleases(config, lastSeen) {
  * @returns {string|null}
  */
 export function newestDkVersion(config) {
-  return newestVersion(config, compareDkVersions);
+  return allDkReleases(config)[0]?.version ?? null;
 }
 
 /**
- * The version to show in the footer: the newest DK release (`releasedVersion`, or else the newest news
- * entry) when it belongs to the running upstream version, otherwise the upstream version alone.
+ * The version to show in the footer: the newest DK release (`releasedVersion`, or else the newest
+ * news entry) when it belongs to the running upstream version, otherwise the upstream version alone.
  *
  * After a sync bumps package.json, news.dk.json may still name the previous upstream core until the
- * next DK release is cut; showing `29.2.1-dk.1` on a 29.3.0 build would be wrong, so it is not.
+ * next DK release is cut; showing `29.2.1-dk.3` on a 30.1.3 build would be wrong, so it is not.
  *
  * @param {string|null|undefined} localVersion The running upstream version, from package.json.
  * @param {any} dkConfig The parsed news.dk.json.
@@ -193,7 +186,6 @@ export function newestDkVersion(config) {
  */
 export function footerVersion(localVersion, dkConfig) {
   // `releasedVersion` is written by every release, so it is current even when the release had no news.
-  // The newest news entry still counts, for a file that predates the field.
   const released = typeof dkConfig?.releasedVersion === 'string' ? dkConfig.releasedVersion : null;
   const newest = newestDkVersion(dkConfig);
   const dk = released && (!newest || compareDkVersions(released, newest) >= 0) ? released : newest;

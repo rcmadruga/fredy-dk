@@ -46,6 +46,7 @@ describe('storeListings, the terms of a rental', () => {
         latitude REAL,
         longitude REAL,
         price_per_sqm REAL,
+        added_manually INTEGER NOT NULL DEFAULT 0,
         UNIQUE (job_id, hash)
       );
       CREATE TABLE jobs (id TEXT PRIMARY KEY, name TEXT, deal_type TEXT);
