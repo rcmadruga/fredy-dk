@@ -4,53 +4,18 @@
  */
 
 import { useMemo, useState } from 'react';
-import { SideSheet, Tooltip, Tabs, TabPane } from '@douyinfe/semi-ui-19';
-import { IconBell } from '@douyinfe/semi-icons';
+import { SideSheet, Tooltip } from '@douyinfe/semi-ui-19';
+import { IconBell } from '../icons/StrokeIcons.jsx';
 
-import newsConfig from '../../assets/news/news.json';
-import newsDkConfig from '../../assets/news/news.dk.json';
-import {
-  allDkReleases,
-  allReleases,
-  selectUnseenDkReleases,
-  selectUnseenReleases,
-} from '../../services/news/newsSelection.js';
+import { selectUnseenRelease } from '../../services/news/newsSelection.js';
 import { useSelector } from '../../services/state/store.js';
 import { useTranslation, useLocale } from '../../services/i18n/i18n.jsx';
-import { NewsEntryBody } from './newsContent.jsx';
+import { NewsReleaseBody, formatReleaseDate } from './newsContent.jsx';
 
 import './NewsModal.less';
 
 /**
- * One part's releases, newest first.
- *
- * @param {Object} props
- * @param {import('../../services/news/newsSelection.js').NewsRelease[]} props.releases
- * @param {(value: string) => string|null} props.formatDate
- * @returns {React.ReactElement}
- */
-function ReleaseList({ releases, formatDate }) {
-  return releases.map((release) => (
-    <section key={release.version} className="news__release">
-      <header className="news__releaseHeader">
-        <h3 className="news__releaseVersion">v{release.version}</h3>
-        {formatDate(release.date) && <span className="news__releaseDate">{formatDate(release.date)}</span>}
-      </header>
-      {release.entries.map((entry, index) => (
-        <article key={index} className="news__historyEntry">
-          <h4 className="news__historyEntryTitle">{entry.title}</h4>
-          <NewsEntryBody entry={entry} />
-        </article>
-      ))}
-    </section>
-  ));
-}
-
-ReleaseList.displayName = 'ReleaseList';
-
-/**
- * Everything Fredy has announced, newest first, openable at any time. Two tabs: Fredy (upstream)
- * and Fredy DK (this fork), each with its own file and its own unread marker.
+ * The release notes of the newest installed releases, newest first, openable at any time.
  *
  * The dialog that appears on its own is easy to dismiss without reading, and until now that was
  * the end of it - there was no way back to what it had said. This is that way back, and it is also
@@ -64,45 +29,32 @@ export default function NewsHistory({ collapsed }) {
   const t = useTranslation();
   const locale = useLocale();
   const [visible, setVisible] = useState(false);
-  const releases = useMemo(() => allReleases(newsConfig), []);
-  const dkReleases = useMemo(() => allDkReleases(newsDkConfig), []);
+  const releases = useSelector((state) => state.news.releases);
   // The same marker the dialog that appears on its own writes when it is dismissed, so the dot on
   // the bell means what the dialog would have said and goes out when it has been said. Nothing is
   // invented here: a user with no marker stored - a fresh account - has no unseen releases by
   // definition, so the dot stays off rather than greeting them with a history they have no use for.
   const lastSeen = useSelector((state) => state.userSettings.settings.news_last_seen_version);
-  const lastSeenDk = useSelector((state) => state.userSettings.settings.news_dk_last_seen_version);
-  const hasUnread = useMemo(
-    () =>
-      selectUnseenReleases(newsConfig, lastSeen).length > 0 ||
-      selectUnseenDkReleases(newsDkConfig, lastSeenDk).length > 0,
-    [lastSeen, lastSeenDk],
-  );
+  const hasUnread = useMemo(() => selectUnseenRelease(releases, lastSeen) != null, [releases, lastSeen]);
 
-  if (releases.length === 0 && dkReleases.length === 0) {
+  if (releases.length === 0) {
     return null;
   }
 
-  const formatDate = (value) => {
-    if (!value) {
-      return null;
-    }
-    const date = new Date(value);
-    return Number.isNaN(date.getTime()) ? null : date.toLocaleDateString(locale, { dateStyle: 'long' });
-  };
-
-  // A bell in the account row rather than a labelled block of its own above the support button.
-  // The name it used to carry in full is now the tooltip and the aria-label, which is what it was
-  // doing for the icon rail already.
+  // A row among the sidebar's quiet utilities, labelled like the entries above it. In the rail the
+  // label is gone and the tooltip names it instead.
   const trigger = (
     <button
       type="button"
-      className="navigate__accountAction"
+      className="navigate__utility"
       onClick={() => setVisible(true)}
-      aria-label={t('nav.news')}
+      aria-label={collapsed ? t('nav.news') : undefined}
     >
-      <IconBell size="default" />
-      {hasUnread && <span className="navigate__badge" />}
+      <span className="navigate__utilityIcon">
+        <IconBell />
+      </span>
+      {!collapsed && <span>{t('nav.news')}</span>}
+      {hasUnread && <span className="navigate__badge" aria-hidden="true" />}
     </button>
   );
 
@@ -128,14 +80,17 @@ export default function NewsHistory({ collapsed }) {
         width={560}
         className="news__sheet"
       >
-        <Tabs type="line">
-          <TabPane tab={t('news.sectionFredy')} itemKey="fredy">
-            <ReleaseList releases={releases} formatDate={formatDate} />
-          </TabPane>
-          <TabPane tab={t('news.sectionDk')} itemKey="dk">
-            <ReleaseList releases={dkReleases} formatDate={formatDate} />
-          </TabPane>
-        </Tabs>
+        {releases.map((release) => (
+          <section key={release.version} className="news__release">
+            <header className="news__releaseHeader">
+              <h3 className="news__releaseVersion">v{release.version}</h3>
+              {formatReleaseDate(release.date, locale) && (
+                <span className="news__releaseDate">{formatReleaseDate(release.date, locale)}</span>
+              )}
+            </header>
+            <NewsReleaseBody release={release} />
+          </section>
+        ))}
       </SideSheet>
     </>
   );

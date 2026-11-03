@@ -8,9 +8,9 @@ import { useState } from 'react';
 import './FredyFooter.less';
 import { useSelector } from '../../services/state/store.js';
 import { useTranslation } from '../../services/i18n/i18n.jsx';
-import newsDkConfig from '../../assets/news/news.dk.json';
-import { footerVersion } from '../../services/news/newsSelection.js';
 import VersionModal from '../version/VersionModal.jsx';
+import UpdateToast from '../version/UpdateToast.jsx';
+import { IconArrowRight } from '../icons/StrokeIcons.jsx';
 
 /**
  * The heart in front of the credit: the one from the Fredy logo.
@@ -73,13 +73,16 @@ export default function FredyFooter() {
   return (
     <footer className="fredyFooter" aria-label={t('footer.landmark')}>
       <div className="fredyFooter__left">
-        <span className="fredyFooter__version">
-          Fredy v{footerVersion(versionUpdate?.localFredyVersion, newsDkConfig) || t('common.na')}
-        </span>
+        <span className="fredyFooter__version">Fredy v{versionUpdate?.localFredyVersion || t('common.na')}</span>
         {hasUpdate && (
           <button type="button" className="fredyFooter__update" onClick={() => setNotesVisible(true)}>
             <span className="fredyFooter__updateDot" />
             {t('version.updateChip', { version: versionUpdate.version })}
+            <span className="fredyFooter__updateDivider" aria-hidden="true" />
+            <span className="fredyFooter__updateAction">
+              {t('version.whatsNew')}
+              <IconArrowRight aria-hidden="true" />
+            </span>
           </button>
         )}
         {upToDate && (
@@ -99,6 +102,7 @@ export default function FredyFooter() {
         </span>
       </span>
       {hasUpdate && <VersionModal visible={notesVisible} onClose={() => setNotesVisible(false)} />}
+      {hasUpdate && <UpdateToast onShowNotes={() => setNotesVisible(true)} />}
     </footer>
   );
 }

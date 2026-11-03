@@ -5,9 +5,10 @@
 
 import { Link } from 'react-router';
 import { IconMapPin } from '@douyinfe/semi-icons';
-import no_image from '../../assets/no_image.png';
 import { formatPrice } from '../../services/price/priceService.js';
 import { useCurrencyOf } from '../../hooks/useCurrencyOf.js';
+import ListingPhoto from '../listings/ListingPhoto.jsx';
+import { listingPictureSrc } from '../../services/listings/listingPictures.js';
 import * as timeService from '../../services/time/timeService.js';
 import StatusControl from '../listings/StatusControl.jsx';
 import AffordabilityChip from '../listings/AffordabilityChip.jsx';
@@ -71,13 +72,7 @@ const ListingsTable = ({
           }}
         >
           <div className="listingsTable__row__thumb">
-            <img
-              src={item.image_url || no_image}
-              alt=""
-              onError={(e) => {
-                e.target.src = no_image;
-              }}
-            />
+            <ListingPhoto src={listingPictureSrc(item)} className="listingsTable__row__thumbPhoto" />
           </div>
 
           <div className="listingsTable__row__title">

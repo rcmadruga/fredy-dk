@@ -30,8 +30,7 @@ const JOBS_WITHOUT_SCORE = `
   CREATE TABLE jobs (
     id TEXT PRIMARY KEY, user_id TEXT, enabled INTEGER DEFAULT 1, name TEXT, blacklist TEXT, provider TEXT,
     notification_adapter TEXT, shared_with_user TEXT DEFAULT '[]', spatial_filter TEXT, spec_filter TEXT,
-    commute_filter TEXT, deal_type TEXT, last_run_at INTEGER
-  );
+    commute_filter TEXT, deal_type TEXT, last_run_at INTEGER, score_config TEXT, excluded_locations TEXT NOT NULL DEFAULT '[]');
 `;
 
 describe('migration 52 - score_config on jobs', () => {
@@ -82,7 +81,11 @@ describe('score_config through jobStorage and POST /api/jobs', () => {
         fields TEXT NOT NULL DEFAULT '{}', visibility TEXT NOT NULL DEFAULT 'private',
         created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL
       );
-      CREATE TABLE listings (job_id TEXT, is_active INTEGER, manually_deleted INTEGER);
+      CREATE TABLE listings (job_id TEXT, is_active INTEGER, manually_deleted INTEGER,
+        rental_terms TEXT,
+        sale_terms TEXT,
+        added_manually INTEGER NOT NULL DEFAULT 0
+      );
     `);
     storage = await import('../../lib/services/storage/jobStorage.js');
     const plugin = (await import('../../lib/api/routes/jobRouter.js')).default;
