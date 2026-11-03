@@ -11,6 +11,7 @@ vi.mock('../../lib/services/storage/listingsStorage.js', () => ({
   getAvailableProviders: vi.fn(() => []),
   getListingById: vi.fn(() => null),
 }));
+vi.mock('../../lib/services/storage/listingMediaStorage.js', () => ({ getListingGallery: vi.fn(() => []) }));
 vi.mock('../../lib/services/storage/watchListStorage.js', () => ({ toggleWatch: vi.fn(), ensureWatch: vi.fn() }));
 vi.mock('../../lib/services/storage/jobStorage.js', () => ({ getJob: vi.fn(() => null) }));
 vi.mock('../../lib/services/storage/settingsStorage.js', () => ({

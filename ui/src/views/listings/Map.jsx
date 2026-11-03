@@ -91,6 +91,9 @@ const LISTING_POPUP_MAX_WIDTH = '380px';
 
 const RangeSlider = _RangeSlider?.default ?? _RangeSlider;
 
+/** How long the price slider has to rest before the pins follow it. */
+const PRICE_COMMIT_DELAY_MS = 200;
+
 const { Text } = Typography;
 
 export default function MapView() {
@@ -212,7 +215,14 @@ export default function MapView() {
   // Price range: stored as priceMin/priceMax URL params; default max derived from loaded listings
   const urlPriceMin = searchParams.has('priceMin') ? Number(searchParams.get('priceMin')) : null;
   const urlPriceMax = searchParams.has('priceMax') ? Number(searchParams.get('priceMax')) : null;
+  // Two values, because the slider reports every pixel of a drag. `priceRange` is what the slider
+  // and its labels show, and follows the thumb. `filterRange` is what the pins are filtered by and
+  // what the address bar says, and only takes the value once the thumb rests: each change of it
+  // rebuilds every marker and its popup, and dozens of those a second made the map stutter.
   const [priceRange, setPriceRange] = useState([urlPriceMin ?? 0, urlPriceMax ?? 0]);
+  const [filterRange, setFilterRange] = useState(priceRange);
+  const priceCommitTimer = useRef(null);
+  useEffect(() => () => clearTimeout(priceCommitTimer.current), []);
 
   // Read from the address bar rather than from the controls, which the folded panel on a phone does
   // not render: what is on in the URL is what is hiding pins.
@@ -258,7 +268,9 @@ export default function MapView() {
     // than zeroed - a bookmarked `?priceMin=300000` used to arrive here as no filter at all,
     // because this reset both ends whenever `priceMax` happened to be absent.
     if (urlPriceMax === null) {
-      setPriceRange([urlPriceMin ?? 0, getMaxPrice()]);
+      const range = [urlPriceMin ?? 0, getMaxPrice()];
+      setPriceRange(range);
+      setFilterRange(range);
     }
   }, [listings]);
 
@@ -270,14 +282,17 @@ export default function MapView() {
   };
 
   const filterListings = () => {
-    const max = priceRange[1] && priceRange[1] > 0 ? priceRange[1] : getMaxPrice();
-    const narrowed = priceRange[0] > 0 || max < getMaxPrice();
+    // `filterRange`, not `priceRange`: the latter follows the slider thumb while it is dragged, and the
+    // pins are only rebuilt once the thumb is let go.
+    const min = filterRange[0];
+    const max = filterRange[1] && filterRange[1] > 0 ? filterRange[1] : getMaxPrice();
+    const narrowed = min > 0 || max < getMaxPrice();
 
     // A listing without a price passes while the slider is untouched. It used to be dropped here
     // whatever the slider said, so the map showed fewer listings than the overview with no filter at
     // all. Once the range is narrowed it cannot say whether the listing is inside it, and drops out.
     return listings.filter((listing) =>
-      narrowed ? listing.price && listing.price >= priceRange[0] && listing.price <= max : true,
+      narrowed ? listing.price && listing.price >= min && listing.price <= max : true,
     );
   };
 
@@ -286,7 +301,7 @@ export default function MapView() {
   // cannot claim a stack that is not on the map.
   const hasStacks = useMemo(
     () => groupListingsByPosition(filterListings()).some((group) => group.listings.length > 1),
-    [listings, priceRange],
+    [listings, filterRange],
   );
 
   const handleMapReady = (mapInstance) => {
@@ -314,10 +329,15 @@ export default function MapView() {
     });
   };
 
-  const handlePriceRange = (val) => {
-    const maxPrice = getMaxPrice();
-    if (maxPrice <= 0) return; // skip until listings are loaded
-    setPriceRange(val);
+  /**
+   * Filter the pins by a price range and write it into the address bar.
+   *
+   * @param {number[]} val
+   * @param {number} maxPrice
+   * @returns {void}
+   */
+  const commitPriceRange = (val, maxPrice) => {
+    setFilterRange(val);
     setSearchParams(
       (prev) => {
         const next = new URLSearchParams(prev);
@@ -335,6 +355,16 @@ export default function MapView() {
       },
       { replace: true },
     );
+  };
+
+  const handlePriceRange = (val) => {
+    const maxPrice = getMaxPrice();
+    if (maxPrice <= 0) return; // skip until listings are loaded
+    setPriceRange(val);
+    // A pause rather than the end of a drag, so a click on the track and the arrow keys, which
+    // report no drag at all, are applied the same way.
+    clearTimeout(priceCommitTimer.current);
+    priceCommitTimer.current = setTimeout(() => commitPriceRange(val, maxPrice), PRICE_COMMIT_DELAY_MS);
   };
 
   const fetchListings = async () => {
@@ -524,7 +554,7 @@ export default function MapView() {
       // to reopen and this the popup allowed to clear the param again.
       const holdsOpenListing = () => grouped.some((listing) => listing.id === openListingIdRef.current);
 
-      const { element, transitMount, unmount, currentId } = createListingPopupContent({
+      const { element, transitMount, activate, unmount, currentId } = createListingPopupContent({
         listings: grouped,
         t,
         locale,
@@ -554,8 +584,10 @@ export default function MapView() {
       }).setDOMContent(element);
 
       // The stop list is only worth a request once the popup is actually opened, and it is the
-      // same for the whole group, so it is mounted once and survives paging.
+      // same for the whole group, so it is mounted once per opening and survives paging.
+      let unmountTransit = null;
       popup.on('open', () => {
+        activate();
         refit();
         setOpenListingRef.current(currentId());
         // The container, not the title: see `focusAfterOpen` above. `preventScroll`, because the
@@ -566,20 +598,28 @@ export default function MapView() {
           element.focus({ preventScroll: true });
         }
 
-        if (!transitMount || transitMount.dataset.mounted === 'true') return;
-        transitMount.dataset.mounted = 'true';
+        if (!transitMount || unmountTransit != null) return;
 
-        const unmount = mountPopupNode(
+        unmountTransit = mountPopupNode(
           transitMount,
           <NearbyStops lat={lat} lng={lng} limit={3} departureLimit={5} />,
           language,
         );
-        popupRoots.current.push(unmount);
+        popupRoots.current.push(unmountTransit);
       });
 
       // Only this group's own popup may clear the param, and only when a person closed it: a
       // filter change removes the marker and MapLibre reports that as a close too.
       popup.on('close', () => {
+        // The departure board polls every minute while it is mounted. Left mounted in a closed
+        // popup, ten popups opened and closed again meant ten invisible boards polling for as long
+        // as the map stayed open. It mounts again on the next open.
+        if (unmountTransit != null) {
+          const unmount = unmountTransit;
+          unmountTransit = null;
+          popupRoots.current = popupRoots.current.filter((entry) => entry !== unmount);
+          unmount();
+        }
         if (isTearingDownRef.current || !holdsOpenListing()) return;
         setOpenListingRef.current(null);
       });
@@ -638,7 +678,7 @@ export default function MapView() {
     // has to redraw it. Without it the dark variant would only appear the next time one of the
     // others changed. The open popup is deliberately *not* in here - it is read through a ref, see
     // openListingIdRef, because rebuilding the markers would close the popup that just opened.
-  }, [listings, priceRange, homeAddresses, distanceFilter, isDark]);
+  }, [listings, filterRange, homeAddresses, distanceFilter, isDark]);
 
   return (
     <>
@@ -722,7 +762,7 @@ export default function MapView() {
                     cannot work is the honest place for that sentence - it used to be a full-width
                     banner above the map, on every visit, for a fact that never changes. */}
                 <div className="map-panel__row">
-                  <Text size="small" strong className="map-panel__label">
+                  <Text size="small" className="map-panel__label">
                     {t('map.filterDistanceLabel')}
                   </Text>
                   <Select
@@ -743,7 +783,7 @@ export default function MapView() {
                 </div>
 
                 <div className="map-panel__row">
-                  <Text size="small" strong className="map-panel__label">
+                  <Text size="small" className="map-panel__label">
                     {t('map.filterPriceLabel')}
                   </Text>
                   <div className="map-view-container__price-slider">
