@@ -313,12 +313,23 @@ describe('the command line', () => {
     expect(config.releases).toHaveLength(2);
   });
 
-  it('news: leaves the file alone when the PR has no News section', () => {
-    const before = fs.readFileSync(path.join(dir, NEWS_DK_PATH), 'utf8');
+  it('news: a PR without a News section adds no entry but still records the version', () => {
     const PR_JSON = prFile({ title: 'Fix', body: '## What\n\nx', url: 'u', number: 1 });
+    const before = JSON.parse(fs.readFileSync(path.join(dir, NEWS_DK_PATH), 'utf8'));
     main(['news'], { cwd: dir, write, env: { PR_JSON, VERSION: '29.2.1-dk.2' } });
+    expect(out.join('')).toBe('changed\n');
+    const after = JSON.parse(fs.readFileSync(path.join(dir, NEWS_DK_PATH), 'utf8'));
+    expect(after.releases).toEqual(before.releases);
+    expect(after.releasedVersion).toBe('29.2.1-dk.2');
+  });
+
+  it('news: repeating a release changes nothing the second time', () => {
+    const PR_JSON = prFile({ title: 'Fix', body: 'x', url: 'u', number: 1 });
+    const env = { PR_JSON, VERSION: '29.2.1-dk.2' };
+    main(['news'], { cwd: dir, write, env });
+    out.length = 0;
+    main(['news'], { cwd: dir, write, env });
     expect(out.join('')).toBe('none\n');
-    expect(fs.readFileSync(path.join(dir, NEWS_DK_PATH), 'utf8')).toBe(before);
   });
 
   it('news: needs a version and a PR file', () => {
