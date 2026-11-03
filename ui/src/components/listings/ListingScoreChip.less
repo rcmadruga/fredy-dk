@@ -1,0 +1,56 @@
+/*
+ * Copyright (c) 2026 by Christian Kellner.
+ * Licensed under Apache-2.0 with Commons Clause and Attribution/Naming Clause
+ */
+
+@import '../../tokens.less';
+
+.listingScoreChip {
+  display: inline-block;
+  min-width: 28px;
+  padding: 1px @space-2;
+  border: 1px solid;
+  border-radius: @radius-chip;
+  font-size: @text-xs;
+  font-weight: 700;
+  line-height: 1.5;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  vertical-align: middle;
+  cursor: default;
+
+  &--good {
+    color: @color-success;
+    border-color: rgb(@color-success-rgb / 40%);
+    background-color: rgb(@color-success-rgb / 12%);
+  }
+
+  &--fair {
+    color: @color-warning;
+    border-color: @color-border-bright;
+    background-color: @color-fill-1;
+  }
+
+  &--poor {
+    color: @color-error;
+    border-color: rgb(@color-error-rgb / 40%);
+    background-color: rgb(@color-error-rgb / 12%);
+  }
+
+  &__tip {
+    min-width: 140px;
+
+    ul {
+      margin: @space-1 0 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    li {
+      display: flex;
+      justify-content: space-between;
+      gap: @space-4;
+      font-variant-numeric: tabular-nums;
+    }
+  }
+}

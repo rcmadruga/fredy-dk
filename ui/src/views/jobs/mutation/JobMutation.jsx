@@ -12,6 +12,7 @@ import ProviderTable from '../../../components/table/ProviderTable';
 import ProviderMutator from './components/provider/ProviderMutator';
 import AreaFilter from './components/areaFilter/AreaFilter';
 import CommuteFilter from './components/CommuteFilter.jsx';
+import ScoreConfig from './components/ScoreConfig.jsx';
 import Headline from '../../../components/headline/Headline';
 import SettingsEmptyState from '../../../components/settingsShell/SettingsEmptyState';
 import SettingsSaveBar from '../../../components/settingsShell/SettingsSaveBar.jsx';
@@ -98,6 +99,7 @@ export default function JobMutator() {
   const defaultSpatialFilter = sourceJob?.spatialFilter || null;
   const defaultSpecFilter = sourceJob?.specFilter || null;
   const defaultCommuteFilter = sourceJob?.commuteFilter || null;
+  const defaultScoreConfig = sourceJob?.scoreConfig || null;
   // Deliberately not defaulted for a new job: the user has to say what they are looking for,
   // because it decides which half of their finance profile applies to everything this job finds.
   const defaultDealType = sourceJob?.dealType || null;
@@ -115,6 +117,7 @@ export default function JobMutator() {
   const [spatialFilter, setSpatialFilter] = useState(defaultSpatialFilter);
   const [specFilter, setSpecFilter] = useState(defaultSpecFilter);
   const [commuteFilter, setCommuteFilter] = useState(defaultCommuteFilter);
+  const [scoreConfig, setScoreConfig] = useState(defaultScoreConfig);
   const [dealType, setDealType] = useState(defaultDealType);
   /** Whether the value in the deal type field was guessed rather than chosen. */
   const [dealTypeWasInferred, setDealTypeWasInferred] = useState(false);
@@ -195,6 +198,7 @@ export default function JobMutator() {
     if (draft.spatialFilter !== undefined) setSpatialFilter(draft.spatialFilter);
     if (draft.specFilter !== undefined) setSpecFilter(draft.specFilter);
     if (draft.commuteFilter !== undefined) setCommuteFilter(draft.commuteFilter);
+    if (draft.scoreConfig !== undefined) setScoreConfig(draft.scoreConfig);
     setDraftRestored(true);
   }, [draftId]);
 
@@ -213,6 +217,7 @@ export default function JobMutator() {
       spatialFilter,
       specFilter,
       commuteFilter,
+      scoreConfig,
     };
     // A stored job always "has content", so without this every visit to its form left a copy
     // behind. The next visit restored that copy over whatever had changed in the meantime - a job
@@ -234,6 +239,7 @@ export default function JobMutator() {
     spatialFilter,
     specFilter,
     commuteFilter,
+    scoreConfig,
   ]);
 
   // The deal type decides which half of the finance profile applies to everything this job finds,
@@ -273,6 +279,7 @@ export default function JobMutator() {
     spatialFilter: defaultSpatialFilter,
     specFilter: defaultSpecFilter,
     commuteFilter: defaultCommuteFilter,
+    scoreConfig: defaultScoreConfig,
   };
 
   const discardChanges = () => {
@@ -288,6 +295,7 @@ export default function JobMutator() {
     setSpatialFilter(baseline.spatialFilter);
     setSpecFilter(baseline.specFilter);
     setCommuteFilter(baseline.commuteFilter);
+    setScoreConfig(baseline.scoreConfig);
     // A guessed deal type is only a guess about a provider that has just been discarded.
     setDealTypeWasInferred(false);
   };
@@ -303,6 +311,7 @@ export default function JobMutator() {
     spatialFilter,
     specFilter,
     commuteFilter,
+    scoreConfig,
   };
 
   // Compared, not tracked. Drives the save bar, so a character typed and deleted again closes it
@@ -374,6 +383,7 @@ export default function JobMutator() {
         spatialFilter,
         specFilter,
         commuteFilter,
+        scoreConfig,
         dealType,
         enabled,
         jobId: jobToBeEdit?.id || null,
@@ -759,6 +769,18 @@ export default function JobMutator() {
             </SegmentPart>
           </Collapse.Panel>
         </Collapse>
+
+        {/* Not a filter either: it holds nothing back, it only decides how listings are scored. Its own
+            card, in plain sight, because the weights are the point of the score and a default the
+            user never sees is a default they never change. */}
+        <SegmentPart
+          Icon={IconFilter}
+          name={t('jobs.mutation.sectionScore')}
+          helpText={t('jobs.mutation.scoreHelp')}
+          helpMode="popover"
+        >
+          <ScoreConfig value={scoreConfig} onChange={setScoreConfig} dealType={dealType} />
+        </SegmentPart>
 
         {/* Outside the fold, and after it: neither is a filter. Who else sees this job and whether
             it runs at all are decisions about the job itself, and burying them under a heading that
