@@ -7,7 +7,9 @@ import { useMemo, useState } from 'react';
 import { SideSheet, Tooltip } from '@douyinfe/semi-ui-19';
 import { IconBell } from '../icons/StrokeIcons.jsx';
 
-import { selectUnseenRelease } from '../../services/news/newsSelection.js';
+import newsDkConfig from '../../assets/news/news.dk.json';
+import { dkReleaseNotes } from '../../services/news/dkNews.js';
+import { selectUnseenDkReleases, selectUnseenRelease } from '../../services/news/newsSelection.js';
 import { useSelector } from '../../services/state/store.js';
 import { useTranslation, useLocale } from '../../services/i18n/i18n.jsx';
 import { NewsReleaseBody, formatReleaseDate } from './newsContent.jsx';
@@ -35,9 +37,15 @@ export default function NewsHistory({ collapsed }) {
   // invented here: a user with no marker stored - a fresh account - has no unseen releases by
   // definition, so the dot stays off rather than greeting them with a history they have no use for.
   const lastSeen = useSelector((state) => state.userSettings.settings.news_last_seen_version);
-  const hasUnread = useMemo(() => selectUnseenRelease(releases, lastSeen) != null, [releases, lastSeen]);
+  const lastSeenDk = useSelector((state) => state.userSettings.settings.news_dk_last_seen_version);
+  const dkReleases = useMemo(() => dkReleaseNotes(newsDkConfig), []);
+  const hasUnread = useMemo(
+    () =>
+      selectUnseenRelease(releases, lastSeen) != null || selectUnseenDkReleases(newsDkConfig, lastSeenDk).length > 0,
+    [releases, lastSeen, lastSeenDk],
+  );
 
-  if (releases.length === 0) {
+  if (releases.length === 0 && dkReleases.length === 0) {
     return null;
   }
 
@@ -80,6 +88,19 @@ export default function NewsHistory({ collapsed }) {
         width={560}
         className="news__sheet"
       >
+        {dkReleases.length > 0 && <h2 className="news__part">{t('news.sectionDk')}</h2>}
+        {dkReleases.map((release) => (
+          <section key={release.version} className="news__release">
+            <header className="news__releaseHeader">
+              <h3 className="news__releaseVersion">v{release.version}</h3>
+              {formatReleaseDate(release.date, locale) && (
+                <span className="news__releaseDate">{formatReleaseDate(release.date, locale)}</span>
+              )}
+            </header>
+            <NewsReleaseBody release={release} />
+          </section>
+        ))}
+        {releases.length > 0 && dkReleases.length > 0 && <h2 className="news__part">{t('news.sectionFredy')}</h2>}
         {releases.map((release) => (
           <section key={release.version} className="news__release">
             <header className="news__releaseHeader">

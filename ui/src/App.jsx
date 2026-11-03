@@ -20,6 +20,7 @@ import Navigation from './components/navigation/Navigation.jsx';
 import { Layout } from '@douyinfe/semi-ui-19';
 import FredyFooter from './components/footer/FredyFooter.jsx';
 import NewsModal from './components/news/NewsModal.jsx';
+import NewsDkModal from './components/news/NewsDkModal.jsx';
 import OnboardingTour from './components/tour/OnboardingTour.jsx';
 import inDevelopment from './services/developmentMode.js';
 import { I18nProvider, availableLanguages } from './services/i18n/i18n.jsx';
@@ -244,6 +245,7 @@ export default function FredyApp() {
                   {settings.demoMode && <DemoBanner />}
                   {settings.analyticsEnabled === null && !settings.demoMode && <TrackingModal />}
                   {!settings.demoMode && <NewsModal />}
+                  {!settings.demoMode && <NewsDkModal />}
                   <Suspense fallback={null}>
                     <Routes>
                       <Route path="/403" element={<InsufficientPermission />} />
