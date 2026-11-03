@@ -33,6 +33,15 @@ const advert = (tid, headline = 'Ernæringsassistent') => ({
 });
 
 describe('parseSearchPage', () => {
+  it('reads the page under the renamed key Jobindex uses since November 2026', () => {
+    const renamed = PAGE.replace('"jobsearch/result_app"', '"jobsearch/result_app/list"');
+
+    expect(renamed).not.toBe(PAGE);
+    const parsed = parseSearchPage(renamed);
+    expect(parsed.totalPages).toBe(7);
+    expect(parsed.ads).toHaveLength(5);
+  });
+
   it('reads the real recorded page', () => {
     const parsed = parseSearchPage(PAGE);
 
