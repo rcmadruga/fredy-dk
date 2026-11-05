@@ -1727,6 +1727,7 @@
   "score.metric.home.size": "Yaşam alanı",
   "score.metric.home.bathrooms": "Banyolar",
   "score.metric.home.internet": "İnternet hızı",
+  "score.metric.home.energy": "Enerji sınıfı",
   "score.metric.home.newBuild": "Yapım veya yenilemeden bu yana yıl",
   "score.metric.home.upkeep": "Tahmini bakım",
   "score.metric.home.parking": "Otopark belirtilmiş",

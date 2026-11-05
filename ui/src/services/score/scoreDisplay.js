@@ -79,6 +79,9 @@ export function formatMetricValue(value, unit, { t, locale, currency = 'EUR' }) 
       return number(value, locale, 1);
     case 'bool':
       return t(value >= 0.5 ? 'score.yes' : 'score.no');
+    case 'energy':
+      // The 0-6 scale back as its letter: 6 = A down to 0 = G.
+      return 'GFEDCBA'.charAt(Math.max(0, Math.min(6, Math.round(value)))) || 'G';
     default:
       return number(value, locale, 1);
   }

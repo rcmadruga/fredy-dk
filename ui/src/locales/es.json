@@ -1766,6 +1766,7 @@
   "score.metric.home.size": "Superficie habitable",
   "score.metric.home.bathrooms": "Baños",
   "score.metric.home.internet": "Velocidad de internet",
+  "score.metric.home.energy": "Certificado energético",
   "score.metric.home.newBuild": "Años desde la construcción o reforma",
   "score.metric.home.upkeep": "Mantenimiento estimado",
   "score.metric.home.parking": "Aparcamiento mencionado",

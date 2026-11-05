@@ -61,6 +61,7 @@ export const SCORE_METRICS = Object.freeze([
   metric('home', 'size', 'm2', null, null),
   metric('home', 'bathrooms', 'count', 2, 1),
   metric('home', 'internet', 'mbit', 1000, 50),
+  metric('home', 'energy', 'energy', 5, 1),
   metric('home', 'newBuild', 'years', 5, 60, { buyOnly: true }),
   metric('home', 'upkeep', 'krPerM2', 100, 400, { buyOnly: true }),
   metric('home', 'parking', 'bool', 1, 0, { defaultWeight: 0.5 }),

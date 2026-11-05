@@ -67,6 +67,9 @@ describe('formatMetricValue', () => {
     [2, 'count', '2'],
     [1, 'bool', 'score.yes'],
     [0, 'bool', 'score.no'],
+    [6, 'energy', 'A'],
+    [5, 'energy', 'B'],
+    [1, 'energy', 'F'],
   ])('writes %s as a %s', (value, unit, expected) => {
     expect(formatMetricValue(value, unit, env)).toBe(expected);
   });
@@ -169,6 +172,7 @@ describe('the strings the score card asks for', () => {
       'days',
       'years',
       'mbit',
+      'energy',
       'grade',
       'count',
       'bool',

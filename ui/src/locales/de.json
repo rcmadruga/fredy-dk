@@ -1789,6 +1789,7 @@
   "score.metric.home.size": "Wohnfläche",
   "score.metric.home.bathrooms": "Badezimmer",
   "score.metric.home.internet": "Internetgeschwindigkeit",
+  "score.metric.home.energy": "Energieklasse",
   "score.metric.home.newBuild": "Jahre seit Bau oder Sanierung",
   "score.metric.home.upkeep": "Geschätzte Instandhaltung",
   "score.metric.home.parking": "Stellplatz erwähnt",
