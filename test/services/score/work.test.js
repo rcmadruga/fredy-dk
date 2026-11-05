@@ -18,6 +18,27 @@ const entry = (label, minutes, extra = {}) => ({
 });
 
 describe('resolveCommuteLabel', () => {
+  it('falls back to the one saved street address when the job names none', () => {
+    const work = { label: 'Work', address: 'Østerbrogade 1, København', mode: 'transit' };
+    const supermarket = { label: 'Groceries', category: 'supermarket' };
+    expect(resolveCommuteLabel(null, null, [work, supermarket])).toBe('Work');
+    expect(resolveCommuteLabel(null, null, [{ address: 'Hillerødgade 5' }])).toBe('Hillerødgade 5');
+  });
+
+  it('does not guess between several saved addresses, or past a commute filter that names several', () => {
+    const a = { label: 'Work', address: 'A 1' };
+    const b = { label: 'School', address: 'B 2' };
+    expect(resolveCommuteLabel(null, null, [a, b])).toBeNull();
+    expect(resolveCommuteLabel(null, { limits: { Work: 30, School: 20 } }, [a])).toBeNull();
+    expect(resolveCommuteLabel(null, null, [{ label: 'Groceries', category: 'supermarket' }])).toBeNull();
+  });
+
+  it('still lets the job and its commute filter win over the fallback', () => {
+    const only = [{ label: 'Home office', address: 'C 3' }];
+    expect(resolveCommuteLabel({ commute: { label: 'Office' } }, null, only)).toBe('Office');
+    expect(resolveCommuteLabel(null, { limits: { Work: 35 } }, only)).toBe('Work');
+  });
+
   it('prefers the label in the score config', () => {
     const filter = { limits: { Work: 35 } };
     expect(resolveCommuteLabel({ commute: { label: 'Office' } }, filter)).toBe('Office');
