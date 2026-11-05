@@ -48,6 +48,9 @@ describe('formatRaw', () => {
     [2, 'count', '2'],
     [1, 'bool', 'yes'],
     [0, 'bool', 'no'],
+    [6, 'energy', 'A'],
+    [4, 'energy', 'C'],
+    [0, 'energy', 'G'],
   ])('writes %s as a %s', (value, unit, expected) => {
     expect(formatRaw(value, unit)).toBe(expected);
   });

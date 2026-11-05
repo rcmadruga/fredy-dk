@@ -199,11 +199,12 @@ describe('home.parking', () => {
 });
 
 describe('the Home group', () => {
-  it('registers six metrics in the plan order', () => {
+  it('registers seven metrics in the plan order', () => {
     expect(HOME_METRICS.map((metric) => metric.id)).toEqual([
       'size',
       'bathrooms',
       'internet',
+      'energy',
       'newBuild',
       'upkeep',
       'parking',
@@ -211,13 +212,53 @@ describe('the Home group', () => {
     expect(HOME_METRICS.every((metric) => metric.group === 'home')).toBe(true);
   });
 
-  it('judges a rental over the four metrics that apply to it', () => {
+  it('judges a rental over the five metrics that apply to it', () => {
     const result = scoreListing({ dealType: 'rent' }, null, {}, HOME_METRICS);
-    expect(result.groups[3].metrics.map((m) => m.id)).toEqual(['size', 'bathrooms', 'internet', 'parking']);
+    expect(result.groups[3].metrics.map((m) => m.id)).toEqual(['size', 'bathrooms', 'internet', 'energy', 'parking']);
   });
 
-  it('judges a purchase over all six', () => {
+  it('judges a purchase over all seven', () => {
     const result = scoreListing({ dealType: 'buy' }, null, {}, HOME_METRICS);
-    expect(result.groups[3].metrics).toHaveLength(6);
+    expect(result.groups[3].metrics).toHaveLength(7);
+  });
+});
+
+describe('home.energy', () => {
+  const energy = HOME_METRICS.find((metric) => metric.id === 'energy');
+
+  it('reads only the first letter, so new-build and plus labels count as A', async () => {
+    const { energyLabelScale } = await import('../../../lib/services/score/metrics/home.js');
+    expect(energyLabelScale('A2020')).toBe(6);
+    expect(energyLabelScale('a2015')).toBe(6);
+    expect(energyLabelScale('A+')).toBe(6);
+    expect(energyLabelScale('B')).toBe(5);
+    expect(energyLabelScale(' d ')).toBe(3);
+    expect(energyLabelScale('G')).toBe(0);
+    expect(energyLabelScale('H')).toBe(0);
+  });
+
+  it('is missing without a recognisable label', async () => {
+    const { energyLabelScale } = await import('../../../lib/services/score/metrics/home.js');
+    expect(energyLabelScale(null)).toBeNull();
+    expect(energyLabelScale('')).toBeNull();
+    expect(energyLabelScale('X')).toBeNull();
+    expect(energy.raw({}, {})).toBeNull();
+  });
+
+  it('prefers the Danish sale terms and falls back to the German energy class', () => {
+    expect(energy.raw({ sale_terms: { energyLabel: 'C' }, energy_class: 'A' }, {})).toBe(4);
+    expect(energy.raw({ energy_class: 'E' }, {})).toBe(2);
+  });
+
+  it('scores B and better 100, C 75, D 50, E 25, F and worse 0 by default', () => {
+    const scoreOf = (label) =>
+      homeScore({ sale_terms: { energyLabel: label } }, {}, ['energy']).metrics.find((m) => m.id === 'energy').score;
+    expect(scoreOf('A2020')).toBe(100);
+    expect(scoreOf('B')).toBe(100);
+    expect(scoreOf('C')).toBe(75);
+    expect(scoreOf('D')).toBe(50);
+    expect(scoreOf('E')).toBe(25);
+    expect(scoreOf('F')).toBe(0);
+    expect(scoreOf('G')).toBe(0);
   });
 });

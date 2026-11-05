@@ -1789,6 +1789,7 @@
   "score.metric.home.size": "Living space",
   "score.metric.home.bathrooms": "Bathrooms",
   "score.metric.home.internet": "Internet speed",
+  "score.metric.home.energy": "Energy label",
   "score.metric.home.newBuild": "Years since built or renovated",
   "score.metric.home.upkeep": "Estimated upkeep",
   "score.metric.home.parking": "Parking mentioned",

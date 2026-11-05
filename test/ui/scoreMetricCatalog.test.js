@@ -59,11 +59,18 @@ describe('groupsForDealType', () => {
 
 describe('metricsOfGroup', () => {
   it('leaves the buy-only metrics out for a rental', () => {
-    expect(metricsOfGroup('home', 'rent').map((m) => m.id)).toEqual(['size', 'bathrooms', 'internet', 'parking']);
+    expect(metricsOfGroup('home', 'rent').map((m) => m.id)).toEqual([
+      'size',
+      'bathrooms',
+      'internet',
+      'energy',
+      'parking',
+    ]);
     expect(metricsOfGroup('home', 'buy').map((m) => m.id)).toEqual([
       'size',
       'bathrooms',
       'internet',
+      'energy',
       'newBuild',
       'upkeep',
       'parking',
