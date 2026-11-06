@@ -156,3 +156,23 @@ export function destinationFor(location, target) {
   }
   return target;
 }
+
+/**
+ * At or below this width the sidebar is a rail: it starts folded to its icons, and folds again
+ * whenever the user goes somewhere.
+ *
+ * The sidebar sits beside the page, not over it, so unfolded on a phone it takes more than half of
+ * the screen and squeezes whatever page was just chosen into the rest of it. That is how the map
+ * ended up unusable until a reload, which is the only other thing that folds it again.
+ */
+export const NAV_RAIL_BREAKPOINT = 850;
+
+/**
+ * Whether the sidebar has to fold away after the user picks a destination.
+ *
+ * @param {number} width The window's inner width in pixels.
+ * @returns {boolean}
+ */
+export function foldsAfterNavigation(width) {
+  return Number.isFinite(width) && width <= NAV_RAIL_BREAKPOINT;
+}
