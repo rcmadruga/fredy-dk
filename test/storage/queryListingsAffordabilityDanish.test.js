@@ -76,6 +76,7 @@ describe('queryListings affordability band with homes priced in kroner', () => {
         id TEXT PRIMARY KEY,
         job_id TEXT,
         price REAL,
+        currency TEXT,
         charges_included INTEGER,
         charges REAL,
         sale_terms TEXT,
@@ -127,13 +128,13 @@ describe('queryListings affordability band with homes priced in kroner', () => {
     );
 
     const insert = db.prepare(
-      `INSERT INTO listings (id, job_id, price, provider, sale_terms, title) VALUES (?, 'job-buy', ?, ?, ?, ?)`,
+      `INSERT INTO listings (id, job_id, price, provider, sale_terms, title, currency) VALUES (?, 'job-buy', ?, ?, ?, ?, ?)`,
     );
     for (const row of DANISH) {
-      insert.run(row.id, row.price, 'boligsiden', row.saleTerms ? JSON.stringify(row.saleTerms) : null, row.id);
+      insert.run(row.id, row.price, 'boligsiden', row.saleTerms ? JSON.stringify(row.saleTerms) : null, row.id, 'DKK');
     }
     for (const row of GERMAN) {
-      insert.run(row.id, row.price, 'immoscout', null, row.id);
+      insert.run(row.id, row.price, 'immoscout', null, row.id, 'EUR');
     }
 
     vi.resetModules();

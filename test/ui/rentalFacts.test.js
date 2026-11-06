@@ -5,7 +5,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { buildRentalFacts } from '../../ui/src/views/listings/listingFacts.js';
-import { formatPrice } from '../../ui/src/services/price/priceService.js';
+import { formatListingPrice } from '../../ui/src/services/price/priceService.js';
 import en from '../../ui/src/locales/en.json';
 
 // Echoes the key and its values, so an assertion can say which line carries what without depending
@@ -13,7 +13,7 @@ import en from '../../ui/src/locales/en.json';
 const t = (key, params) => (params ? `${key}(${Object.values(params).join(',')})` : key);
 const NOW = new Date('2026-10-04T10:00:00Z');
 const ctx = (extra = {}) => ({ t, locale: 'en', currency: 'DKK', now: NOW, ...extra });
-const money = (n) => formatPrice(n, 'en', null, 'DKK');
+const money = (n) => formatListingPrice(n, 'en', 'DKK');
 
 const rental = (over = {}, terms = {}) => ({
   dealType: 'rent',

@@ -251,7 +251,7 @@ describe('the page', () => {
   it('counts the filters a folded panel hides, so an emptier map explains itself', () => {
     expect(viewJsx).toMatch(/activeCount=\{activeFilterCount\}/);
     expect(viewJsx).toMatch(
-      /const activeFilterCount = countActiveMapFilters\(\{\s*filterCount: sharedFilterCount,\s*priceMin: urlPriceMin,\s*priceMax: urlPriceMax,?\s*\}\);/,
+      /const activeFilterCount = countActiveMapFilters\(\{\s*filterCount: sharedFilterCount,\s*priceMin: mixedCurrencies \? null : urlPriceMin,\s*priceMax: mixedCurrencies \? null : urlPriceMax,?\s*\}\);/,
     );
     // The shared filters are counted the way the overview counts them, so a filter means the same on both.
     expect(viewJsx).toMatch(/const sharedFilterCount = countActiveFilters\(urlState\);/);
@@ -512,6 +512,6 @@ describe('the map and the overview share their filters', () => {
   });
 
   it('does not drop a listing for having no price while the slider is untouched', () => {
-    expect(viewJsx).toMatch(/narrowed \? listing\.price/);
+    expect(viewJsx).toMatch(/!narrowed \? true : listing\.price/);
   });
 });

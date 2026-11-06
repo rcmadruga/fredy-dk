@@ -5,7 +5,7 @@
 
 import { Link } from 'react-router';
 import { IconMapPin } from '@douyinfe/semi-icons';
-import { formatPrice } from '../../services/price/priceService.js';
+import { formatListingPrice } from '../../services/price/priceService.js';
 import { useCurrencyOf } from '../../hooks/useCurrencyOf.js';
 import ListingPhoto from '../listings/ListingPhoto.jsx';
 import { listingPictureSrc } from '../../services/listings/listingPictures.js';
@@ -99,7 +99,7 @@ const ListingsTable = ({
             {item.price ? (
               <>
                 <span className="listingsTable__row__amount">
-                  {formatPrice(item.price, locale, null, currencyOf(item.provider))}
+                  {formatListingPrice(item.price, locale, item.currency)}
                 </span>
                 <span className="listingsTable__row__perSqm">
                   <PricePerSqmBadge listing={item} />
@@ -108,13 +108,14 @@ const ListingsTable = ({
                     verdict={item.affordabilityVerdict}
                     dealType={item.dealType}
                     chargesIncluded={rentIncludesCharges(item)}
-                    currency={currencyOf(item.provider)}
+                    currency={currencyOf(item)}
                   />
                   <PriceChangeBadge
+                    currency={item.currency}
                     price={item.price}
                     previousPrice={item.previous_price}
                     changedAt={item.price_changed_at}
-                    currency={currencyOf(item.provider)}
+                    currency={currencyOf(item)}
                   />
                 </span>
               </>

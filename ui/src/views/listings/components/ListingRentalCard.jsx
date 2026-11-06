@@ -27,7 +27,7 @@ export default function ListingRentalCard({ listing }) {
   const locale = useLocale();
   const currencyOf = useCurrencyOf();
 
-  const facts = buildRentalFacts(listing, { t, locale, currency: currencyOf(listing?.provider) });
+  const facts = buildRentalFacts(listing, { t, locale, currency: currencyOf(listing) });
   if (facts == null) return null;
   const { availability, rows, moveIn, warnings, socialHousing, priority } = facts;
 

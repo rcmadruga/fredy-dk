@@ -44,6 +44,7 @@ const PROFILE = {
 const listing = (id, price, dealType = 'buy') => ({
   id,
   price,
+  currency: 'EUR',
   dealType,
   title: `Listing ${id}`,
   provider: 'immoscout',
@@ -211,7 +212,14 @@ describe('POST /affordability', () => {
   it('falls back to the price heuristic when a listing has no deal type', async () => {
     // A listing from a job that predates the deal type: no dealType at all, so the price decides.
     // Below the 30.000 threshold it is read as a rent and scored as one.
-    const legacy = { id: 'legacy', price: 1200, title: 'Legacy', provider: 'immoscout', link: 'https://x/legacy' };
+    const legacy = {
+      id: 'legacy',
+      price: 1200,
+      title: 'Legacy',
+      provider: 'immoscout',
+      currency: 'EUR',
+      link: 'https://x/legacy',
+    };
     queryListings.mockReturnValue({ totalNumber: 1, page: 1, result: [legacy] });
     const app = await buildApp();
     const response = await app.inject({ method: 'POST', url: '/affordability', payload: { profile: PROFILE } });
@@ -400,6 +408,22 @@ describe('GET /listing/:listingId', () => {
 
     expect(response.statusCode).toBe(404);
     expect(getListingById).toHaveBeenCalledWith('someone-elses', 'user-1', false);
+  });
+
+  it('does not run EUR financing against a PLN listing', async () => {
+    getListingById.mockReturnValue({ ...listing('pl', 1050000), currency: 'PLN' });
+    const app = await buildApp();
+    const detail = (await app.inject({ method: 'GET', url: '/listing/pl' })).json();
+    expect(detail).toMatchObject({ result: null, scored: null, unsupportedCurrency: true });
+    await app.close();
+  });
+
+  // Filtered afterwards they would still use up the cap, and euro listings past it go unscored.
+  it('keeps currencies without a finance model out of the affordability sweep in the query itself', async () => {
+    const app = await buildApp();
+    await app.inject({ method: 'POST', url: '/affordability', payload: { profile: PROFILE } });
+    expect(queryListings.mock.calls.at(-1)[0]).toMatchObject({ currencyFilter: ['EUR', 'DKK'] });
+    await app.close();
   });
 
   it('returns no figures for a listing without a price', async () => {

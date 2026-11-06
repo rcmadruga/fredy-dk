@@ -27,13 +27,13 @@ const tileOf = (listing) => buildObjectFacts(listing, ctx).tiles.find((tile) => 
 
 describe('the price per m² in the "at a glance" box', () => {
   it("shows the portal's own figure when the sale terms state one, even without the stored column", () => {
-    expect(tileOf(sale)).toBe(formatPricePerSqm(19960, 'da-DK', 'DKK', false));
+    expect(tileOf(sale)).toBe(formatPricePerSqm(19960, 'da-DK', false, 'DKK'));
     expect(tileOf(sale)).not.toBeNull();
   });
 
   it('divides the price by the size when the portal states nothing', () => {
     const listing = { ...sale, sale_terms: { ownerCostMonthly: 3900 } };
-    expect(tileOf(listing)).toBe(formatPricePerSqm(19960, 'da-DK', 'DKK', false));
+    expect(tileOf(listing)).toBe(formatPricePerSqm(19960, 'da-DK', false, 'DKK'));
     // 2,495,000 kr over 125 m² is 19,960 kr/m².
     expect(pricePerSqmOf(listing, null)).toBe(19960);
   });
@@ -60,6 +60,6 @@ describe('the price per m² in the "at a glance" box', () => {
     expect(pricePerSqmOf(listing, { pricePerSqm: 4000 })).toBe(4000);
     expect(
       buildObjectFacts(listing, { t, locale: 'de-DE' }).tiles.find((tile) => tile.id === 'pricePerSqm').value,
-    ).toBe(formatPricePerSqm(4000, 'de-DE', 'EUR', false));
+    ).toBe(formatPricePerSqm(4000, 'de-DE', false, 'EUR'));
   });
 });

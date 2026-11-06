@@ -5,7 +5,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { buildSaleFacts, RELISTED_GAP_DAYS } from '../../ui/src/views/listings/listingFacts.js';
-import { formatPrice } from '../../ui/src/services/price/priceService.js';
+import { formatListingPrice } from '../../ui/src/services/price/priceService.js';
 import en from '../../ui/src/locales/en.json';
 import fs from 'fs';
 import path from 'path';
@@ -16,7 +16,7 @@ import { fileURLToPath } from 'url';
 const t = (key, params) => (params ? `${key}(${Object.values(params).join(',')})` : key);
 const NOW = new Date('2026-10-10T10:00:00Z');
 const ctx = (extra = {}) => ({ t, locale: 'en', currency: 'DKK', now: NOW, ...extra });
-const money = (n) => formatPrice(n, 'en', null, 'DKK');
+const money = (n) => formatListingPrice(n, 'en', 'DKK');
 
 const terms = (over = {}) => ({
   ownerCostMonthly: 3900,
@@ -301,7 +301,7 @@ describe('buildSaleFacts, the earlier sales', () => {
   it('works out the price per m2 at the time, and leaves it out where the register has no area', () => {
     const { sales } = buildSaleFacts(sale({ sales: history }), ctx()).sales;
 
-    expect(sales[1].perM2).toBe(formatPrice(Math.round(1450000 / 229), 'en', 0, 'DKK') + '/m²');
+    expect(sales[1].perM2).toBe(formatListingPrice(Math.round(1450000 / 229), 'en', 'DKK', 0) + '/m²');
     expect(sales[2].perM2).toBeNull();
   });
 

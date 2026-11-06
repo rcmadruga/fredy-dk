@@ -224,12 +224,18 @@ export default function MapView() {
   const priceCommitTimer = useRef(null);
   useEffect(() => () => clearTimeout(priceCommitTimer.current), []);
 
+  // Priced listings only, as on the server: a price bound drops the others in any currency.
+  const currencies = [...new Set(listings.filter((listing) => listing.price).map((listing) => listing.currency))];
+  const mixedCurrencies = currencies.length > 1;
+  const currency = currencies[0] ?? 'EUR';
+
   // Read from the address bar rather than from the controls, which the folded panel on a phone does
-  // not render: what is on in the URL is what is hiding pins.
+  // not render: what is on in the URL is what is hiding pins. A price bound hides none across
+  // currencies, so it does not count there.
   const activeFilterCount = countActiveMapFilters({
     filterCount: sharedFilterCount,
-    priceMin: urlPriceMin,
-    priceMax: urlPriceMax,
+    priceMin: mixedCurrencies ? null : urlPriceMin,
+    priceMax: mixedCurrencies ? null : urlPriceMax,
   });
   const screenWidth = useScreenWidth();
 
@@ -291,8 +297,9 @@ export default function MapView() {
     // A listing without a price passes while the slider is untouched. It used to be dropped here
     // whatever the slider said, so the map showed fewer listings than the overview with no filter at
     // all. Once the range is narrowed it cannot say whether the listing is inside it, and drops out.
+    // Across currencies a price bound means nothing (see `mixedCurrencies`), so it hides no pin.
     return listings.filter((listing) =>
-      narrowed ? listing.price && listing.price >= min && listing.price <= max : true,
+      mixedCurrencies || !narrowed ? true : listing.price && listing.price >= min && listing.price <= max,
     );
   };
 
@@ -786,13 +793,23 @@ export default function MapView() {
                   <Text size="small" className="map-panel__label">
                     {t('map.filterPriceLabel')}
                   </Text>
-                  <div className="map-view-container__price-slider">
-                    <div className="map__rangesliderLabels">
-                      <span>{formatEuroCompact(priceRange[0], locale)}</span>
-                      <span>{formatEuroCompact(priceRange[1] || getMaxPrice(), locale)}</span>
+                  {mixedCurrencies ? (
+                    <Text size="small">{t('listings.mixedCurrencyPriceFilter')}</Text>
+                  ) : (
+                    <div className="map-view-container__price-slider">
+                      <div className="map__rangesliderLabels">
+                        <span>{formatEuroCompact(priceRange[0], locale, currency)}</span>
+                        <span>{formatEuroCompact(priceRange[1] || getMaxPrice(), locale, currency)}</span>
+                      </div>
+                      <RangeSlider
+                        min={0}
+                        max={getMaxPrice()}
+                        step={100}
+                        value={priceRange}
+                        onInput={handlePriceRange}
+                      />
                     </div>
-                    <RangeSlider min={0} max={getMaxPrice()} step={100} value={priceRange} onInput={handlePriceRange} />
-                  </div>
+                  )}
                 </div>
 
                 {!hasHome && (

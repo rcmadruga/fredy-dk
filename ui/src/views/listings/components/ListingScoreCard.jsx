@@ -152,7 +152,7 @@ export default function ListingScoreCard({ listing }) {
 
   if (!score || spokes.length === 0) return null;
 
-  const env = { t, locale, currency: currencyOf(listing?.provider) };
+  const env = { t, locale, currency: currencyOf(listing) };
   const totalBand = bandOf(score.total);
   const toggle = (id) =>
     setOpen((previous) => {

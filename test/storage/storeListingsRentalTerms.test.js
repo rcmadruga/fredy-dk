@@ -24,6 +24,7 @@ describe('storeListings, the terms of a rental', () => {
         provider TEXT,
         job_id TEXT,
         price REAL,
+        currency TEXT,
         charges_included INTEGER,
         charges REAL,
         rental_terms TEXT,

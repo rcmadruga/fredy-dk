@@ -26,6 +26,7 @@ describe('listing media storage', () => {
         provider TEXT,
         job_id TEXT,
         price REAL,
+        currency TEXT NOT NULL DEFAULT 'EUR',
         charges_included INTEGER,
         charges REAL,
         size REAL,
@@ -230,6 +231,7 @@ describe('listing media storage', () => {
     const listing = (hash, overrides = {}) => ({
       id: hash,
       price: 900,
+      currency: 'EUR',
       size: 50,
       rooms: 2,
       title: `Flat ${hash}`,

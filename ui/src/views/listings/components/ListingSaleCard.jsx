@@ -32,7 +32,7 @@ export default function ListingSaleCard({ listing, finance = null }) {
   const facts = buildSaleFacts(listing, {
     t,
     locale,
-    currency: currencyOf(listing?.provider),
+    currency: currencyOf(listing),
     yourFinance: finance?.result ?? null,
   });
   if (facts == null) return null;

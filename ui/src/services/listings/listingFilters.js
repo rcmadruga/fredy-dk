@@ -5,7 +5,7 @@
 
 import { parseCommuteFilter } from '../../components/transit/travelTimeFormat.js';
 import { parseString, parseNumber, parseNullableBoolean } from '../../hooks/useSearchParamState.js';
-import { formatPrice } from '../price/priceService.js';
+import { formatListingPrice } from '../price/priceService.js';
 
 /**
  * What the listings overview is filtered by, and how to say it out loud.
@@ -408,7 +408,7 @@ export function describeActiveFilters(values, { t, jobs = [], providers = [], lo
         ? t('listings.filterMoveInChipFrom', { from: day(window.from) })
         : t('listings.filterMoveInChipTo', { to: day(window.to) });
     },
-    ejmax: () => t('listings.filterOwnerCostChip', { amount: formatPrice(values.ejmax, locale, null, 'DKK') }),
+    ejmax: () => t('listings.filterOwnerCostChip', { amount: formatListingPrice(values.ejmax, locale, 'DKK') }),
     energy: () => t('listings.filterEnergyChip', { label: values.energy }),
     relisted: () => t('listings.filterRelistedOnly'),
     reduced: () => t('listings.filterReducedOnly'),

@@ -23,7 +23,7 @@ import {
   ENERGY_LABELS,
   OWNER_COST_STEPS,
 } from '../../services/listings/listingFilters.js';
-import { formatPrice } from '../../services/price/priceService.js';
+import { formatListingPrice } from '../../services/price/priceService.js';
 import { useTranslation, useLocale } from '../../services/i18n/i18n.jsx';
 
 /**
@@ -194,7 +194,7 @@ export default function ListingsFilterPanel({
         >
           {OWNER_COST_STEPS.map((amount) => (
             <Select.Option key={amount} value={amount}>
-              {t('listings.filterOwnerCostOption', { amount: formatPrice(amount, locale, null, 'DKK') })}
+              {t('listings.filterOwnerCostOption', { amount: formatListingPrice(amount, locale, 'DKK') })}
             </Select.Option>
           ))}
         </FilterSelect>

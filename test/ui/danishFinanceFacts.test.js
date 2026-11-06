@@ -6,12 +6,12 @@
 import { describe, it, expect } from 'vitest';
 import { buildDanishFinanceFacts, buildSaleFacts } from '../../ui/src/views/listings/listingFacts.js';
 import { computeDanishResult } from '../../lib/services/finance/dk/result.js';
-import { formatPrice } from '../../ui/src/services/price/priceService.js';
+import { formatListingPrice } from '../../ui/src/services/price/priceService.js';
 
 // Echoes the key and its values, so an assertion can say which line carries what without depending
 // on wording.
 const t = (key, params) => (params ? `${key}(${Object.values(params).join(',')})` : key);
-const money = (n) => formatPrice(Math.round(n), 'en', null, 'DKK');
+const money = (n) => formatListingPrice(Math.round(n), 'en', 'DKK');
 
 const profile = {
   personA: { label: 'A', enabled: true, age: 35, primaryIncome: 40000, secondaryIncome: 0 },

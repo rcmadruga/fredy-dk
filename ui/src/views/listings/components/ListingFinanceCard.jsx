@@ -43,6 +43,11 @@ export default function ListingFinanceCard({ listing, finance }) {
   const navigate = useNavigate();
   const isRental = listing?.dealType === 'rent';
 
+  // A currency with no model behind it (anything but euros, and a rent in kroner): said, not hidden.
+  if (finance?.unsupportedCurrency) {
+    return <Text type="tertiary">{t('listing.detail.financeCurrencyUnsupported')}</Text>;
+  }
+
   if (isRental) {
     return finance?.scored == null ? null : (
       <RentCard scored={finance.scored} budget={finance.budget} t={t} locale={locale} />
