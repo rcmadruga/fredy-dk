@@ -7,7 +7,6 @@ import { Tooltip } from '@douyinfe/semi-ui-19';
 
 import { formatDeviation, formatPricePerSqm, readMarketBenchmark } from '../../services/listings/marketBenchmark.js';
 import { useTranslation, useLocale } from '../../services/i18n/i18n.jsx';
-import { useCurrencyOf } from '../../hooks/useCurrencyOf.js';
 
 import './PricePerSqmBadge.less';
 
@@ -36,7 +35,6 @@ import './PricePerSqmBadge.less';
 export default function PricePerSqmBadge({ listing, withTooltip = true }) {
   const t = useTranslation();
   const locale = useLocale();
-  const currencyOf = useCurrencyOf();
 
   const benchmark = readMarketBenchmark(listing);
   if (benchmark == null) {
@@ -47,9 +45,7 @@ export default function PricePerSqmBadge({ listing, withTooltip = true }) {
 
   const badge = (
     <span className="pricePerSqmBadge">
-      <span className="pricePerSqmBadge__value">
-        {formatPricePerSqm(pricePerSqm, locale, currencyOf(listing?.provider))}
-      </span>
+      <span className="pricePerSqmBadge__value">{formatPricePerSqm(pricePerSqm, locale, true, listing.currency)}</span>
       {verdict != null && (
         <span className={`pricePerSqmBadge__deviation pricePerSqmBadge__deviation--${verdict}`}>
           {formatDeviation(percent, locale)}
@@ -91,7 +87,7 @@ export function describeBenchmark(benchmark, t, locale) {
   return [
     t(`listings.pricePerSqmVerdict.${verdict}`, { percent: formatDeviation(Math.abs(percent), locale, false) }),
     t('listings.pricePerSqmTooltip', {
-      median: formatPricePerSqm(median, locale),
+      median: formatPricePerSqm(median, locale, true, benchmark.currency),
       count: String(sampleSize ?? 0),
       radius: String(radiusKm ?? 0),
     }),

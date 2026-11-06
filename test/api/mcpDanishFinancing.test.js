@@ -62,6 +62,7 @@ describe('calculate_financing for a home priced in kroner', () => {
       price: 2000000,
       dealType: 'buy',
       provider: 'boligsiden',
+      currency: 'DKK',
       sale_terms: { ownerCostMonthly: 3000 },
     });
 
@@ -80,7 +81,13 @@ describe('calculate_financing for a home priced in kroner', () => {
   });
 
   it('says plainly that the figure is the loans alone when no ejerudgift is known', async () => {
-    getListingById.mockReturnValue({ id: 'dk2', price: 2000000, dealType: 'buy', provider: 'boligsiden' });
+    getListingById.mockReturnValue({
+      id: 'dk2',
+      price: 2000000,
+      dealType: 'buy',
+      provider: 'boligsiden',
+      currency: 'DKK',
+    });
 
     const md = textOf(await callTool('calculate_financing', { listingId: 'dk2' }));
 
@@ -89,7 +96,13 @@ describe('calculate_financing for a home priced in kroner', () => {
   });
 
   it('takes the Danish rates the caller passes', async () => {
-    getListingById.mockReturnValue({ id: 'dk3', price: 2000000, dealType: 'buy', provider: 'boligsiden' });
+    getListingById.mockReturnValue({
+      id: 'dk3',
+      price: 2000000,
+      dealType: 'buy',
+      provider: 'boligsiden',
+      currency: 'DKK',
+    });
 
     const md = textOf(
       await callTool('calculate_financing', { listingId: 'dk3', annualRate: 3, bankRate: 5, downPaymentPct: 10 }),
@@ -100,7 +113,13 @@ describe('calculate_financing for a home priced in kroner', () => {
   });
 
   it('keeps the German model for a listing priced in euros', async () => {
-    getListingById.mockReturnValue({ id: 'de1', price: 400000, dealType: 'buy', provider: 'immoscout' });
+    getListingById.mockReturnValue({
+      id: 'de1',
+      price: 400000,
+      dealType: 'buy',
+      provider: 'immoscout',
+      currency: 'EUR',
+    });
 
     const md = textOf(await callTool('calculate_financing', { listingId: 'de1' }));
 

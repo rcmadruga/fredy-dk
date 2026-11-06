@@ -18,7 +18,7 @@ describe('listings filtered by what a for-sale advert states', () => {
     db = new Database(':memory:');
     db.exec(`
       CREATE TABLE listings (
-        id TEXT PRIMARY KEY, hash TEXT, provider TEXT, job_id TEXT, price REAL, charges_included INTEGER,
+        id TEXT PRIMARY KEY, hash TEXT, provider TEXT, job_id TEXT, price REAL, currency TEXT, charges_included INTEGER,
         charges REAL, rental_terms TEXT, sale_terms TEXT, size REAL, rooms REAL, title TEXT, address TEXT,
         link TEXT, image_url TEXT, description TEXT, created_at INTEGER, published_at INTEGER, is_active INTEGER,
         manually_deleted INTEGER DEFAULT 0, latitude REAL, longitude REAL, status TEXT
@@ -34,8 +34,8 @@ describe('listings filtered by what a for-sale advert states', () => {
       db
         .prepare(
           `INSERT INTO listings (id, hash, provider, job_id, price, sale_terms, title, created_at, is_active,
-                                 manually_deleted, latitude, longitude)
-           VALUES (@id, @id, 'boligsiden', 'job-1', 2000000, @terms, @id, 1, @active, 0, @lat, @lng)`,
+                                 manually_deleted, latitude, longitude, currency)
+           VALUES (@id, @id, 'boligsiden', 'job-1', 2000000, @terms, @id, 1, @active, 0, @lat, @lng, 'DKK')`,
         )
         .run({ id, terms: terms == null ? null : JSON.stringify(terms), active: 1, lat: 55.4, lng: 10.4, ...over });
 

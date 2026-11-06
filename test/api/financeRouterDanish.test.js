@@ -85,6 +85,7 @@ describe('GET /listing/:id for a home priced in kroner', () => {
     price: 2000000,
     dealType: 'buy',
     provider: 'boligsiden',
+    currency: 'DKK',
     sale_terms: { ownerCostMonthly: 3900, publicValuation: 2700000 },
   };
 
@@ -113,7 +114,13 @@ describe('GET /listing/:id for a home priced in kroner', () => {
   });
 
   it('leaves a listing priced in euros on the German model', async () => {
-    getListingById.mockReturnValue({ id: 'de1', price: 400000, dealType: 'buy', provider: 'immoscout' });
+    getListingById.mockReturnValue({
+      id: 'de1',
+      price: 400000,
+      dealType: 'buy',
+      provider: 'immoscout',
+      currency: 'EUR',
+    });
     getUserSettings.mockReturnValue({ finance_profile: PROFILE });
 
     const app = await buildApp();

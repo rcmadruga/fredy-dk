@@ -3,7 +3,7 @@
  * Licensed under Apache-2.0 with Commons Clause and Attribution/Naming Clause
  */
 
-import { formatPrice, DEFAULT_CURRENCY } from '../../services/price/priceService.js';
+import { formatListingPrice, DEFAULT_CURRENCY } from '../../services/price/priceService.js';
 import { formatDecimal } from '../../services/number/numberService.js';
 import { formatDeviation, formatPricePerSqm, readMarketBenchmark } from '../../services/listings/marketBenchmark.js';
 import { rentIncludesCharges, verdictExplanation } from '../../services/finance/rentBasis.js';
@@ -73,7 +73,7 @@ export function buildObjectFacts(listing, ctx) {
   const perSqm = pricePerSqmOf(row, benchmark);
 
   const price = {
-    text: row.price != null ? formatPrice(row.price, locale, null, currency) : na,
+    text: row.price != null ? formatListingPrice(row.price, locale, currency) : na,
     // Split so the page can set the digits large and leave the currency symbol at reading size.
     // A 40px euro sign is louder than the sum it belongs to, and every listing has the same one.
     ...splitPrice(row.price, locale, na, currency),
@@ -102,7 +102,7 @@ export function buildObjectFacts(listing, ctx) {
       label: t('listing.detail.fieldPricePerSqm'),
       // Without the unit: the tile's own label already says "per m²", and repeating it there is
       // what pushed the figure past the width of a third of the rail.
-      value: perSqm != null ? formatPricePerSqm(perSqm, locale, currency, false) : null,
+      value: perSqm != null ? formatPricePerSqm(perSqm, locale, false, currency) : null,
       // Two different explanations. With a benchmark the interesting part is the comparison and
       // where it came from; without one it is why no comparison is shown, which is a question the
       // page would otherwise leave the reader to guess at.
@@ -175,7 +175,7 @@ function priceReferenceKey(row, isRental) {
  * @param {number|null|undefined} value
  * @param {string} locale
  * @param {string} fallback - Shown when there is no price at all.
- * @param {string} [currency='EUR'] ISO 4217 code of the listing's provider.
+ * @param {string} [currency='EUR'] ISO 4217 code of the listing.
  * @returns {{amount: string, currency: string|null}}
  */
 function splitPrice(value, locale, fallback, currency = DEFAULT_CURRENCY) {
@@ -197,7 +197,7 @@ function splitPrice(value, locale, fallback, currency = DEFAULT_CURRENCY) {
     };
   } catch {
     // An unknown locale is not worth an empty price; the joined form is still readable.
-    return { amount: formatPrice(value, locale, null, currency), currency: null };
+    return { amount: formatListingPrice(value, locale, currency), currency: null };
   }
 }
 
@@ -481,7 +481,7 @@ export function buildRentalFacts(listing, ctx) {
 
   const { t, locale } = ctx;
   const currency = ctx.currency ?? DEFAULT_CURRENCY;
-  const money = (value) => formatPrice(value, locale, null, currency);
+  const money = (value) => formatListingPrice(value, locale, currency);
   const terms = row.rental_terms ?? {};
   const rent = Number.isFinite(row.price) ? row.price : null;
   const charges = Number.isFinite(row.charges) && row.charges > 0 ? row.charges : null;
@@ -625,7 +625,7 @@ function changeToToday(then, now, locale, money) {
 export function buildDanishFinanceFacts(result, ctx) {
   const { t, locale } = ctx;
   const dk = result.dk;
-  const money = (value) => (value == null ? '-' : formatPrice(Math.round(value), locale, null, 'DKK'));
+  const money = (value) => (value == null ? '-' : formatListingPrice(Math.round(value), locale, 'DKK'));
   const debtFree = (result.debtFreeAges ?? [])
     .filter((person) => person.ageWhenDebtFree != null)
     .map((person) => `${person.label} ${person.ageWhenDebtFree}`)
@@ -714,7 +714,7 @@ export function buildSaleFacts(listing, ctx) {
 
   const { t, locale } = ctx;
   const currency = ctx.currency ?? DEFAULT_CURRENCY;
-  const money = (value) => formatPrice(value, locale, null, currency);
+  const money = (value) => formatListingPrice(value, locale, currency);
   const area = (value) => `${formatDecimal(value, locale)} m²`;
   const has = (value) => value != null;
 
@@ -731,7 +731,7 @@ export function buildSaleFacts(listing, ctx) {
     costs.push({
       id: 'pricePerM2',
       label: t('listing.detail.salePricePerM2'),
-      value: formatPricePerSqm(terms.pricePerM2, locale, currency),
+      value: formatPricePerSqm(terms.pricePerM2, locale, true, currency),
     });
   }
   if (has(terms.downPayment)) {
@@ -802,7 +802,9 @@ export function buildSaleFacts(listing, ctx) {
             return {
               date: dateFormat.format(new Date(`${earlier.date}T00:00:00Z`)),
               amount: money(earlier.amount),
-              perM2: has(earlier.area) ? formatPricePerSqm(earlier.amount / earlier.area, locale, currency) : null,
+              perM2: has(earlier.area)
+                ? formatPricePerSqm(earlier.amount / earlier.area, locale, true, currency)
+                : null,
               change: free ? changeToToday(earlier.amount, row.price, locale, money) : null,
               free,
               typeLabel: t(SALE_TYPE_KEYS[earlier.type] ?? SALE_TYPE_KEYS.other),

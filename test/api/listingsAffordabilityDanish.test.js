@@ -46,11 +46,19 @@ const PROFILE = {
 const DANISH_HOME = {
   id: 'dk-1',
   provider: 'boligsiden',
+  currency: 'DKK',
   dealType: 'buy',
   price: 3000000,
   sale_terms: { ownerCostMonthly: 4000 },
 };
-const GERMAN_HOME = { id: 'de-1', provider: 'immoscout', dealType: 'buy', price: 3000000, sale_terms: null };
+const GERMAN_HOME = {
+  id: 'de-1',
+  provider: 'immoscout',
+  currency: 'EUR',
+  dealType: 'buy',
+  price: 3000000,
+  sale_terms: null,
+};
 
 async function buildApp(plugin, prefix = '/') {
   const app = Fastify();

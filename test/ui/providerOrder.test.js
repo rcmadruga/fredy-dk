@@ -110,7 +110,7 @@ describe('the flag of a country', () => {
 });
 
 describe('the providers Fredy actually ships', () => {
-  it('come out German first, then Austrian, Swiss, Spanish, Italian and French', async () => {
+  it('come out German first, then Austrian, Swiss, Spanish, Italian, French and Polish', async () => {
     const metas = (await getProviders()).map((p) => p.metaInformation);
     const countries = sortProviders(metas).map(groupCountryOf);
     const ranks = countries.map((code) => COUNTRY_ORDER.indexOf(code));
@@ -119,7 +119,7 @@ describe('the providers Fredy actually ships', () => {
     expect(ranks).toEqual([...ranks].sort((a, b) => a - b));
     // 'pt' never appears here even though idealista covers it: groupCountryOf picks one
     // representative country per provider - the best-ranked one - and es outranks pt for idealista.
-    expect(new Set(countries)).toEqual(new Set(['de', 'at', 'ch', 'es', 'it', 'fr', 'dk']));
+    expect(new Set(countries)).toEqual(new Set(['de', 'at', 'ch', 'es', 'it', 'fr', 'dk', 'pl']));
   });
 
   it('lead with ImmoScout24, Immowelt and Kleinanzeigen', async () => {

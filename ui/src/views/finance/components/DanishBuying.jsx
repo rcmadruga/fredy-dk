@@ -10,7 +10,7 @@ import { SegmentPart } from '../../../components/segment/SegmentPart.jsx';
 import KpiCard from '../../../components/cards/KpiCard.jsx';
 import { NumberField } from './ProfileForm.jsx';
 import VerdictBanner from './VerdictBanner.jsx';
-import { formatPrice } from '../../../services/price/priceService.js';
+import { formatListingPrice } from '../../../services/price/priceService.js';
 import { formatDecimal } from '../../../services/number/numberService.js';
 import { useTranslation, useLocale } from '../../../services/i18n/i18n.jsx';
 
@@ -30,7 +30,7 @@ const BAND_LIMITS = Object.freeze([40, 60, 80]);
  */
 function kr(value, locale) {
   if (value == null || !Number.isFinite(Number(value))) return '-';
-  return formatPrice(Math.round(Number(value)), locale, null, 'DKK');
+  return formatListingPrice(Math.round(Number(value)), locale, 'DKK');
 }
 
 /**

@@ -7,7 +7,7 @@ import { renderToString } from 'react-dom/server';
 import { IconChevronLeft, IconChevronRight } from '@douyinfe/semi-icons';
 import { listingPictureSrc } from '../../services/listings/listingPictures.js';
 import { availableModes, formatMinutes, hasAnyTime } from '../../components/transit/travelTimeFormat.js';
-import { formatPrice } from '../../services/price/priceService.js';
+import { formatListingPrice } from '../../services/price/priceService.js';
 import { escapeHtml } from '../../components/map/escapeHtml.js';
 import { formatDecimal } from '../../services/number/numberService.js';
 import { mountPopupNode } from '../../components/map/popupContent.jsx';
@@ -205,7 +205,7 @@ function renderListingBody(listing, index, total, t, locale, currencyOf) {
   // muted beside it, the title, the address. Only the two facts that are Fredy's own bookkeeping
   // keep a label, because a search's name and a portal's are not self-explanatory on their own.
   const price = listing.price
-    ? escapeHtml(formatPrice(listing.price, locale, null, currencyOf?.(listing.provider)))
+    ? escapeHtml(formatListingPrice(listing.price, locale, listing.currency ?? currencyOf?.(listing.provider)))
     : t('common.na');
   const size = listing.size != null ? `${escapeHtml(formatDecimal(listing.size, locale))} m²` : '';
 

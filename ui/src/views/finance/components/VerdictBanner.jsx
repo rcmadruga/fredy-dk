@@ -4,7 +4,7 @@
  */
 
 import { VERDICT_COLORS, formatEuro } from '../../../components/cards/chartTheme.js';
-import { formatPrice } from '../../../services/price/priceService.js';
+import { formatListingPrice } from '../../../services/price/priceService.js';
 import { useTranslation, useLocale } from '../../../services/i18n/i18n.jsx';
 
 import './VerdictBanner.less';
@@ -46,7 +46,7 @@ export default function VerdictBanner({
 
   // Whole units: a verdict line is read, not reconciled.
   const money = (value) =>
-    currency ? formatPrice(Math.round(Number(value)), locale, null, currency) : formatEuro(value, locale);
+    currency ? formatListingPrice(Math.round(Number(value)), locale, currency) : formatEuro(value, locale);
 
   const color = VERDICT_COLORS[verdict] ?? VERDICT_COLORS.unaffordable;
   const percent = share == null ? null : (share * 100).toFixed(0);

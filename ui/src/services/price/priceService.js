@@ -38,7 +38,7 @@ function codeOf(currency) {
  * @param {string} currency ISO 4217 code.
  * @returns {Intl.NumberFormat}
  */
-function priceFormatter(locale, fractionDigits, currency) {
+function currencyFormatter(locale, fractionDigits, currency) {
   const key = `${locale}:${fractionDigits}:${currency}`;
   let formatter = formatterCache.get(key);
   if (formatter == null) {
@@ -67,14 +67,19 @@ function priceFormatter(locale, fractionDigits, currency) {
  *
  * @param {number|string} price
  * @param {string} [locale='de-DE'] BCP 47 locale, from `useLocale()` inside components.
+ * @param {string} [currency='EUR'] ISO 4217 currency.
  * @param {number|null} [fractionDigits=null] Forces an exact number of decimals instead of the rule
  *   above. Asking prices are read one at a time and are better off without a permanent `,00`, but a
  *   price per square metre is read down a column against its neighbours, and `13 €` beside
  *   `21,76 €` reads as a different kind of number rather than a rounder one.
- * @param {string} [currency='EUR'] ISO 4217 code, from the listing's provider (see `useCurrencyOf`).
  * @returns {string}
  */
-export const formatPrice = (price, locale = DEFAULT_LOCALE, fractionDigits = null, currency = DEFAULT_CURRENCY) => {
+export const formatListingPrice = (
+  price,
+  locale = DEFAULT_LOCALE,
+  currency = DEFAULT_CURRENCY,
+  fractionDigits = null,
+) => {
   const code = codeOf(currency);
   const parsedPrice = Number(price);
   if (!Number.isFinite(parsedPrice)) {
@@ -82,7 +87,7 @@ export const formatPrice = (price, locale = DEFAULT_LOCALE, fractionDigits = nul
   }
 
   const digits = fractionDigits ?? (Number.isInteger(parsedPrice) ? 0 : 2);
-  return priceFormatter(locale || DEFAULT_LOCALE, digits, code).format(parsedPrice);
+  return currencyFormatter(locale || DEFAULT_LOCALE, digits, code).format(parsedPrice);
 };
 
 /**
@@ -110,7 +115,7 @@ export const currencyUnit = (currency = DEFAULT_CURRENCY, locale = DEFAULT_LOCAL
 };
 
 /**
- * {@link formatPrice} in euros, for the places that are euros by construction: the market
+ * {@link formatListingPrice} in euros, for the places that are euros by construction: the market
  * benchmark and the finance tools, whose reference data is German.
  *
  * @param {number|string} price
@@ -119,4 +124,4 @@ export const currencyUnit = (currency = DEFAULT_CURRENCY, locale = DEFAULT_LOCAL
  * @returns {string}
  */
 export const formatEuroPrice = (price, locale = DEFAULT_LOCALE, fractionDigits = null) =>
-  formatPrice(price, locale, fractionDigits, DEFAULT_CURRENCY);
+  formatListingPrice(price, locale, DEFAULT_CURRENCY, fractionDigits);

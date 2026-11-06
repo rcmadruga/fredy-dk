@@ -5,7 +5,7 @@
 
 import { SegmentPart } from '../../../components/segment/SegmentPart.jsx';
 import { NumberField } from './ProfileForm.jsx';
-import { currencyUnit, formatPrice, DEFAULT_CURRENCY } from '../../../services/price/priceService.js';
+import { currencyUnit, formatListingPrice, DEFAULT_CURRENCY } from '../../../services/price/priceService.js';
 import { useTranslation, useLocale } from '../../../services/i18n/i18n.jsx';
 
 import './HouseholdHeadline.less';
@@ -96,7 +96,7 @@ export default function HouseholdHeadline({
             <div className="householdHeadline__row">
               <span className="householdHeadline__caption">{t('finance.form.housingBudget')}</span>
               <span className="householdHeadline__value">
-                {formatPrice(Math.round(housingBudget ?? 0), locale, null, currency)}
+                {formatListingPrice(Math.round(housingBudget ?? 0), locale, currency)}
               </span>
             </div>
             <div className="householdHeadline__bar" aria-hidden="true">

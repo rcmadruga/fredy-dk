@@ -6,7 +6,7 @@
 import { Link } from 'react-router';
 import { IconPaperclip } from '@douyinfe/semi-icons';
 import { listingPictureSrc } from '../../../services/listings/listingPictures.js';
-import { formatPrice } from '../../../services/price/priceService.js';
+import { formatListingPrice } from '../../../services/price/priceService.js';
 import { useCurrencyOf } from '../../../hooks/useCurrencyOf.js';
 import { formatDecimal } from '../../../services/number/numberService.js';
 import * as timeService from '../../../services/time/timeService.js';
@@ -109,7 +109,7 @@ const ListingsGrid = ({
               {item.price && (
                 <div className="listingsGrid__card__price">
                   <span className="listingsGrid__card__amount">
-                    {formatPrice(item.price, locale, null, currencyOf(item.provider))}
+                    {formatListingPrice(item.price, locale, item.currency)}
                   </span>
                   {/* Next to the price rather than on a line of its own: it is the same figure said
                       a second way, and reading the two together is the whole point. */}
@@ -119,13 +119,14 @@ const ListingsGrid = ({
                     verdict={item.affordabilityVerdict}
                     dealType={item.dealType}
                     chargesIncluded={rentIncludesCharges(item)}
-                    currency={currencyOf(item.provider)}
+                    currency={currencyOf(item)}
                   />
                   <PriceChangeBadge
+                    currency={item.currency}
                     price={item.price}
                     previousPrice={item.previous_price}
                     changedAt={item.price_changed_at}
-                    currency={currencyOf(item.provider)}
+                    currency={currencyOf(item)}
                   />
                 </div>
               )}

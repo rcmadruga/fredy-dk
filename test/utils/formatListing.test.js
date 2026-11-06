@@ -63,17 +63,23 @@ describe('formatListing currency', () => {
   });
 
   it('prints kroner for a provider that lists in DKK', () => {
-    expect(formatListing(listing, 'en', 'DKK').price).toBe('2.000.000 kr.');
+    expect(formatListing({ ...listing, currency: 'DKK' }, 'en').price).toBe('2.000.000 kr.');
   });
 
   it('falls back to the code for a currency it has no symbol for, and to euros for junk', () => {
-    expect(formatListing(listing, 'en', 'SEK').price).toBe('2.000.000 SEK');
-    expect(formatListing(listing, 'en', 'kroner').price).toBe('2.000.000 €');
+    expect(formatListing({ ...listing, currency: 'SEK' }, 'en').price).toBe('2.000.000 SEK');
+    expect(formatListing({ ...listing, currency: 'kroner' }, 'en').price).toBe('2.000.000 €');
   });
 
   it('carries the currency through a price change', () => {
-    const change = { listing, oldPrice: 2100000, newPrice: 2000000, changePercent: -4.8, direction: 'down' };
-    const formatted = formatPriceChange(change, 'en', 'DKK');
+    const change = {
+      listing: { ...listing, currency: 'DKK' },
+      oldPrice: 2100000,
+      newPrice: 2000000,
+      changePercent: -4.8,
+      direction: 'down',
+    };
+    const formatted = formatPriceChange(change, 'en');
     expect(formatted.oldPrice).toBe('2.100.000 kr.');
     expect(formatted.newPrice).toBe('2.000.000 kr.');
     expect(formatted.price).toBe('2.000.000 kr.');
