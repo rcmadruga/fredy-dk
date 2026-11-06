@@ -32,7 +32,7 @@ import { useTranslation } from '../../services/i18n/i18n.jsx';
 // A pure function that already answers exactly this question for the dashboard's own rows. A copy
 // here would be a second set of rounding rules for the same clock.
 import { relativeTime } from '../../services/time/relativeTime.js';
-import { destinationFor, navTreeFor, resolveActiveKey, startsSection } from './navModel.js';
+import { destinationFor, foldsAfterNavigation, navTreeFor, resolveActiveKey, startsSection } from './navModel.js';
 
 /** How long after a promised run the status is asked for again: the run itself takes a moment. */
 const STATUS_REFRESH_GRACE_MS = 60 * 1000;
@@ -95,17 +95,25 @@ export default function Navigation({ isAdmin }) {
   const t = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
-  // Between the overview and the map the filters travel with the user; see `destinationFor`.
-  const go = (key) => navigate(destinationFor(location, key));
-
   const width = useScreenWidth();
-  const [collapsed, setCollapsed] = useState(width <= 850);
+  const [collapsed, setCollapsed] = useState(foldsAfterNavigation(width));
 
+  // Between the overview and the map the filters travel with the user; see `destinationFor`.
+  const go = (key) => {
+    navigate(destinationFor(location, key));
+    // On a phone the unfolded sidebar covers most of the screen, so picking a page has to put it
+    // away - including the page the user is already on, which changes no route and so is missed by
+    // the effect below.
+    if (foldsAfterNavigation(width)) setCollapsed(true);
+  };
+
+  // Folded on a narrow screen, and folded again whenever the route changes, however it changed:
+  // the back button and links inside a page do not go through `go`.
   useEffect(() => {
-    if (width <= 850) {
+    if (foldsAfterNavigation(width)) {
       setCollapsed(true);
     }
-  }, [width]);
+  }, [width, location.pathname]);
 
   // Whose session this is. Already in the store from the call App makes before it renders anything,
   // so the sidebar asks nothing of its own.

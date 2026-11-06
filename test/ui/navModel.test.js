@@ -15,6 +15,8 @@ import {
   resolveActiveKey,
   startsSection,
   destinationFor,
+  foldsAfterNavigation,
+  NAV_RAIL_BREAKPOINT,
 } from '../../ui/src/components/navigation/navModel.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -161,5 +163,38 @@ describe('destinationFor', () => {
 
   it('does not rewrite the address of the page the user is already on', () => {
     expect(destinationFor({ pathname: '/map', search: '?job=j1' }, '/map')).toBe('/map');
+  });
+});
+
+describe('foldsAfterNavigation', () => {
+  it('folds the sidebar after a navigation on a phone or a narrow tablet', () => {
+    expect(foldsAfterNavigation(390)).toBe(true);
+    expect(foldsAfterNavigation(768)).toBe(true);
+    expect(foldsAfterNavigation(NAV_RAIL_BREAKPOINT)).toBe(true);
+  });
+
+  it('leaves it as the user set it on a wide screen', () => {
+    expect(foldsAfterNavigation(NAV_RAIL_BREAKPOINT + 1)).toBe(false);
+    expect(foldsAfterNavigation(1400)).toBe(false);
+  });
+
+  it('does nothing for a width it cannot read', () => {
+    expect(foldsAfterNavigation(undefined)).toBe(false);
+    expect(foldsAfterNavigation(NaN)).toBe(false);
+  });
+});
+
+describe('Navigation folds the sidebar after going somewhere', () => {
+  const source = fs.readFileSync(path.join(here, '../../ui/src/components/navigation/Navigation.jsx'), 'utf-8');
+
+  it('uses the one rule rather than a number of its own', () => {
+    expect(source).toContain('foldsAfterNavigation');
+    expect(source).not.toMatch(/width\s*<=\s*850/);
+  });
+
+  it('folds on a click, and again whenever the route changes', () => {
+    // The click handler covers the page already open; the effect covers the back button and links.
+    expect(source).toMatch(/const go = \(key\) => \{[\s\S]*foldsAfterNavigation\(width\)[\s\S]*setCollapsed\(true\)/);
+    expect(source).toMatch(/\[width, location\.pathname\]/);
   });
 });
